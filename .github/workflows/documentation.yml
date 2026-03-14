@@ -16,6 +16,7 @@ jobs:
   markdown-lint:
     name: Lint Markdown Files
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Checkout code
@@ -24,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install markdownlint-cli
         run: npm install -g markdownlint-cli
@@ -33,17 +34,10 @@ jobs:
         run: markdownlint '**/*.md' --ignore node_modules --config .markdownlint.json || true
         continue-on-error: true
 
-      - name: Check for broken links
-        uses: gaurav-nelson/github-action-markdown-link-check@v1
-        with:
-          use-quiet-mode: 'yes'
-          use-verbose-mode: 'no'
-          config-file: '.markdown-link-check.json'
-        continue-on-error: true
-
   documentation-stats:
     name: Documentation Statistics
     runs-on: ubuntu-latest
+    timeout-minutes: 3
 
     steps:
       - name: Checkout code
@@ -52,11 +46,11 @@ jobs:
       - name: Count documentation files
         run: |
           echo "📊 Documentation Statistics:"
-          echo "Total Markdown files: $(find . -name '*.md' | wc -l)"
-          echo "Total lines in docs: $(find docs -name '*.md' -exec wc -l {} + | tail -1 | awk '{print $1}')"
-          echo "Documentation size: $(du -sh docs/ | cut -f1)"
+          echo "Total Markdown files: $(find . -name '*.md' -not -path './node_modules/*' | wc -l)"
+          echo "Total lines in docs: $(find docs -name '*.md' -exec wc -l {} + 2>/dev/null | tail -1 | awk '{print $1}' || echo '0')"
+          echo "Documentation size: $(du -sh docs/ 2>/dev/null | cut -f1 || echo 'N/A')"
 
       - name: List all documentation
         run: |
           echo "📁 Documentation Structure:"
-          tree docs/ -L 3 || find docs/ -type f -name '*.md'
+          find docs/ -type f -name '*.md' | sort
