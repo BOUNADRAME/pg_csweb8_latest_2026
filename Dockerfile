@@ -10,7 +10,7 @@
 
 FROM php:8.1-apache AS base
 
-# Install system dependencies
+# Install system dependencies for ALL database drivers
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -20,10 +20,20 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     libpq-dev \
     unzip \
+    unixodbc-dev \
+    gnupg2 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
+# Install Microsoft ODBC Driver for SQL Server
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && apt-get update \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions for MySQL and PostgreSQL
 RUN docker-php-ext-install \
     pdo \
     pdo_mysql \
@@ -34,6 +44,10 @@ RUN docker-php-ext-install \
     xml \
     zip \
     opcache
+
+# Install PHP extensions for SQL Server
+RUN pecl install sqlsrv-5.11.1 pdo_sqlsrv-5.11.1 \
+    && docker-php-ext-enable sqlsrv pdo_sqlsrv
 
 # Enable Apache modules
 RUN a2enmod rewrite headers ssl
