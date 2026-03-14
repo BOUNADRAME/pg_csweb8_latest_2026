@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # ============================================================================
-# CSWeb Community Platform - Installation Script
+# CSWeb Community Platform - Installation Interactive Script
 # ============================================================================
 # Author: Bouna DRAME
 # Date: 14 Mars 2026
-# Version: 1.0.0
+# Version: 2.0.0
 #
 # Description:
-#   Automated installation script for CSWeb Community Platform
-#   Handles .env configuration, Docker setup, and initial verification
+#   Installation interactive avec choix du mode (local/remote) et type de DB
+#   Support: PostgreSQL, MySQL, SQL Server (local ou remote)
 #
 # Usage:
 #   chmod +x install.sh
@@ -18,19 +18,25 @@
 
 set -e  # Exit on error
 
-# Colors for output
+# Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+CYAN='\033[0;36m'
+MAGENTA='\033[0;35m'
+NC='\033[0m'
 
 # Functions
 print_header() {
-    echo -e "${BLUE}"
-    echo "============================================================================"
-    echo "  CSWeb Community Platform - Installation"
-    echo "============================================================================"
+    clear
+    echo -e "${CYAN}"
+    echo "╔════════════════════════════════════════════════════════════════════════╗"
+    echo "║                                                                        ║"
+    echo "║         🚀 CSWeb Community Platform v2.0.0                            ║"
+    echo "║            Installation Interactive                                    ║"
+    echo "║                                                                        ║"
+    echo "╚════════════════════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
 }
 
@@ -50,79 +56,248 @@ print_info() {
     echo -e "${BLUE}ℹ $1${NC}"
 }
 
-# Check prerequisites
-check_prerequisites() {
-    print_info "Checking prerequisites..."
-
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        print_error "Docker is not installed. Please install Docker first."
-        echo "Visit: https://docs.docker.com/get-docker/"
-        exit 1
-    fi
-    print_success "Docker is installed"
-
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        print_error "Docker Compose is not installed. Please install Docker Compose first."
-        echo "Visit: https://docs.docker.com/compose/install/"
-        exit 1
-    fi
-    print_success "Docker Compose is installed"
-
-    # Check if Docker is running
-    if ! docker info &> /dev/null; then
-        print_error "Docker daemon is not running. Please start Docker."
-        exit 1
-    fi
-    print_success "Docker daemon is running"
+print_step() {
+    echo -e "${MAGENTA}▸ $1${NC}"
 }
 
-# Generate random password
+# Check prerequisites
+check_prerequisites() {
+    print_step "Vérification des prérequis..."
+    echo ""
+
+    if ! command -v docker &> /dev/null; then
+        print_error "Docker n'est pas installé"
+        echo "  Visitez: https://docs.docker.com/get-docker/"
+        exit 1
+    fi
+    print_success "Docker installé"
+
+    if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
+        print_error "Docker Compose n'est pas installé"
+        echo "  Visitez: https://docs.docker.com/compose/install/"
+        exit 1
+    fi
+    print_success "Docker Compose installé"
+
+    if ! docker info &> /dev/null; then
+        print_error "Docker daemon n'est pas démarré"
+        echo "  Démarrez Docker Desktop ou le service Docker"
+        exit 1
+    fi
+    print_success "Docker daemon actif"
+
+    echo ""
+}
+
+# Generate password
 generate_password() {
     openssl rand -base64 24 | tr -d "=+/" | cut -c1-24
 }
 
+# Ask breakout mode
+ask_breakout_mode() {
+    print_header
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  ÉTAPE 1/3 : Mode de Déploiement Breakout${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "Où voulez-vous héberger la base de données de breakout ?"
+    echo ""
+    echo -e "  ${GREEN}1)${NC} ${BLUE}Local${NC}  - Docker containers (développement, test)"
+    echo "     └─ Facile à démarrer, tout en local"
+    echo "     └─ Recommandé pour : Dev, tests, POC"
+    echo ""
+    echo -e "  ${GREEN}2)${NC} ${BLUE}Remote${NC} - Serveur distant (production)"
+    echo "     └─ Connexion à un serveur existant"
+    echo "     └─ Recommandé pour : Production, RGPH5, serveurs dédiés"
+    echo ""
+    echo -n "Choix [1-2] (défaut: 1): "
+    read -r mode_choice
+
+    case $mode_choice in
+        2)
+            BREAKOUT_MODE="remote"
+            print_info "Mode sélectionné: ${YELLOW}REMOTE${NC} (serveur distant)"
+            ;;
+        *)
+            BREAKOUT_MODE="local"
+            print_info "Mode sélectionné: ${YELLOW}LOCAL${NC} (Docker containers)"
+            ;;
+    esac
+
+    sleep 1
+}
+
+# Ask database type
+ask_database_type() {
+    print_header
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  ÉTAPE 2/3 : Type de Base de Données Breakout${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "Quel type de base de données voulez-vous utiliser pour le breakout ?"
+    echo ""
+    echo -e "  ${GREEN}1)${NC} ${BLUE}PostgreSQL${NC} (recommandé)"
+    echo "     └─ Excellent pour analytics, JSON natif, performant"
+    echo "     └─ Recommandé pour : Nouveaux projets, analytics avancés"
+    echo ""
+    echo -e "  ${GREEN}2)${NC} ${BLUE}MySQL${NC}"
+    echo "     └─ Compatible, performant, familier"
+    echo "     └─ Recommandé pour : Compatibilité, infrastructure MySQL existante"
+    echo ""
+    echo -e "  ${GREEN}3)${NC} ${BLUE}SQL Server${NC}"
+    echo "     └─ Enterprise, robuste (RGPH5 Sénégal)"
+    echo "     └─ Recommandé pour : Production enterprise, RGPH, infrastructure Microsoft"
+    echo ""
+    echo -n "Choix [1-3] (défaut: 1): "
+    read -r db_choice
+
+    case $db_choice in
+        2)
+            BREAKOUT_DB_TYPE="mysql"
+            print_info "Base de données: ${YELLOW}MySQL${NC}"
+            ;;
+        3)
+            BREAKOUT_DB_TYPE="sqlserver"
+            print_info "Base de données: ${YELLOW}SQL Server${NC}"
+            ;;
+        *)
+            BREAKOUT_DB_TYPE="postgresql"
+            print_info "Base de données: ${YELLOW}PostgreSQL${NC}"
+            ;;
+    esac
+
+    sleep 1
+}
+
+# Ask remote connection details
+ask_remote_details() {
+    print_header
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo -e "${CYAN}  ÉTAPE 3/3 : Configuration Serveur Remote${NC}"
+    echo -e "${CYAN}═══════════════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    print_warning "Mode REMOTE détecté - Configuration du serveur distant"
+    echo ""
+
+    case $BREAKOUT_DB_TYPE in
+        postgresql)
+            echo "Configuration PostgreSQL Remote:"
+            echo -n "  Hostname/IP : "
+            read -r POSTGRES_HOST
+            echo -n "  Port (défaut: 5432) : "
+            read -r POSTGRES_PORT
+            POSTGRES_PORT=${POSTGRES_PORT:-5432}
+            echo -n "  Database : "
+            read -r POSTGRES_DATABASE
+            echo -n "  Username : "
+            read -r POSTGRES_USER
+            echo -n "  Password : "
+            read -rs POSTGRES_PASSWORD
+            echo ""
+            ;;
+        mysql)
+            echo "Configuration MySQL Remote:"
+            echo -n "  Hostname/IP : "
+            read -r MYSQL_BREAKOUT_HOST
+            echo -n "  Port (défaut: 3306) : "
+            read -r MYSQL_BREAKOUT_PORT
+            MYSQL_BREAKOUT_PORT=${MYSQL_BREAKOUT_PORT:-3306}
+            echo -n "  Database : "
+            read -r MYSQL_BREAKOUT_DATABASE
+            echo -n "  Username : "
+            read -r MYSQL_BREAKOUT_USER
+            echo -n "  Password : "
+            read -rs MYSQL_BREAKOUT_PASSWORD
+            echo ""
+            ;;
+        sqlserver)
+            echo "Configuration SQL Server Remote:"
+            echo -n "  Hostname/IP : "
+            read -r SQLSERVER_HOST
+            echo -n "  Port (défaut: 1433) : "
+            read -r SQLSERVER_PORT
+            SQLSERVER_PORT=${SQLSERVER_PORT:-1433}
+            echo -n "  Database : "
+            read -r SQLSERVER_DATABASE
+            echo -n "  Username (sa) : "
+            read -r SQLSERVER_USER
+            SQLSERVER_USER=${SQLSERVER_USER:-sa}
+            echo -n "  Password : "
+            read -rs SQLSERVER_PASSWORD
+            echo ""
+            ;;
+    esac
+
+    print_success "Configuration remote enregistrée"
+    sleep 1
+}
+
 # Create .env file
 create_env_file() {
-    print_info "Creating .env configuration file..."
+    print_step "Création du fichier .env..."
+    echo ""
 
     if [ -f .env ]; then
-        print_warning ".env file already exists. Creating backup..."
+        print_warning ".env existe déjà - Création d'un backup"
         cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
     fi
 
-    # Generate secure passwords
+    # Generate passwords
     MYSQL_ROOT_PASS=$(generate_password)
     MYSQL_PASS=$(generate_password)
-    POSTGRES_PASS=$(generate_password)
     APP_SECRET=$(openssl rand -hex 32)
     JWT_SECRET=$(openssl rand -base64 32)
 
-    # Create .env from template
+    # Generate passwords for local mode
+    if [ "$BREAKOUT_MODE" = "local" ]; then
+        case $BREAKOUT_DB_TYPE in
+            postgresql)
+                POSTGRES_PASSWORD=$(generate_password)
+                POSTGRES_HOST="postgres"
+                POSTGRES_PORT="5432"
+                POSTGRES_DATABASE="csweb_analytics"
+                POSTGRES_USER="csweb_analytics"
+                ;;
+            mysql)
+                MYSQL_BREAKOUT_PASSWORD=$(generate_password)
+                MYSQL_BREAKOUT_HOST="mysql-breakout"
+                MYSQL_BREAKOUT_PORT="3307"
+                MYSQL_BREAKOUT_DATABASE="csweb_breakout"
+                MYSQL_BREAKOUT_USER="breakout_user"
+                ;;
+            sqlserver)
+                SQLSERVER_PASSWORD="CSWebStrong!Pass$(openssl rand -base64 8 | tr -d '=+/')"
+                SQLSERVER_HOST="sqlserver"
+                SQLSERVER_PORT="1433"
+                SQLSERVER_DATABASE="CSWeb_Analytics"
+                SQLSERVER_USER="sa"
+                ;;
+        esac
+    fi
+
+    # Create .env
     cat > .env << EOF
 # ============================================================================
-# CSWeb Community Platform - Environment Configuration
+# CSWeb Community Platform - Configuration
 # ============================================================================
-# Generated on: $(date)
-#
-# IMPORTANT: Keep this file secure and never commit it to version control
+# Généré le: $(date)
+# Mode: ${BREAKOUT_MODE}
+# Type DB: ${BREAKOUT_DB_TYPE}
 # ============================================================================
+
+# Breakout Configuration
+BREAKOUT_MODE=${BREAKOUT_MODE}
+BREAKOUT_DB_TYPE=${BREAKOUT_DB_TYPE}
 
 # Application
 APP_ENV=prod
 APP_DEBUG=false
 APP_SECRET=${APP_SECRET}
 APP_TIMEZONE=UTC
-
-# Ports
 CSWEB_PORT=8080
-MYSQL_PORT=3306
-POSTGRES_PORT=5432
-PHPMYADMIN_PORT=8081
-PGADMIN_PORT=8082
 
-# MySQL (CSWeb Metadata - FIXE)
+# MySQL Métadonnées CSWeb (LOCAL - FIXE)
 MYSQL_HOST=mysql
 MYSQL_PORT=3306
 MYSQL_DATABASE=csweb_metadata
@@ -130,152 +305,227 @@ MYSQL_USER=csweb_user
 MYSQL_PASSWORD=${MYSQL_PASS}
 MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASS}
 
-# PostgreSQL (Breakout Analytics - Default)
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=csweb_analytics
-POSTGRES_USER=csweb_analytics
-POSTGRES_PASSWORD=${POSTGRES_PASS}
+# PostgreSQL Breakout
+POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+POSTGRES_PORT=${POSTGRES_PORT:-5432}
+POSTGRES_DATABASE=${POSTGRES_DATABASE:-csweb_analytics}
+POSTGRES_USER=${POSTGRES_USER:-csweb_analytics}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
 
-# Breakout Configuration
-DEFAULT_BREAKOUT_DB_TYPE=postgresql
+# MySQL Breakout
+MYSQL_BREAKOUT_HOST=${MYSQL_BREAKOUT_HOST:-mysql-breakout}
+MYSQL_BREAKOUT_PORT=${MYSQL_BREAKOUT_PORT:-3307}
+MYSQL_BREAKOUT_DATABASE=${MYSQL_BREAKOUT_DATABASE:-csweb_breakout}
+MYSQL_BREAKOUT_USER=${MYSQL_BREAKOUT_USER:-breakout_user}
+MYSQL_BREAKOUT_PASSWORD=${MYSQL_BREAKOUT_PASSWORD:-}
 
-# Database Timezone
-DB_TIMEZONE=UTC
+# SQL Server Breakout
+SQLSERVER_HOST=${SQLSERVER_HOST:-sqlserver}
+SQLSERVER_PORT=${SQLSERVER_PORT:-1433}
+SQLSERVER_DATABASE=${SQLSERVER_DATABASE:-CSWeb_Analytics}
+SQLSERVER_USER=${SQLSERVER_USER:-sa}
+SQLSERVER_PASSWORD=${SQLSERVER_PASSWORD:-YourStrong!Passw0rd}
 
-# phpMyAdmin (Development)
+# Dev Tools
 PHPMYADMIN_PORT=8081
-
-# pgAdmin (Development)
 PGADMIN_PORT=8082
 PGADMIN_EMAIL=admin@csweb.local
 PGADMIN_PASSWORD=admin123
 
-# JWT Authentication
+# Security
 JWT_SECRET=${JWT_SECRET}
 JWT_EXPIRATION=86400000
-
-# Files Directory
 FILES_FOLDER=/var/www/html/files
-
-# API URL (update with your domain in production)
 API_URL=http://localhost:8080/api/
 
 # Logging
 CSWEB_LOG_LEVEL=error
 CSWEB_PROCESS_CASES_LOG_LEVEL=error
-
-# Maximum Execution Time
 MAX_EXECUTION_TIME=300
 EOF
 
-    print_success ".env file created with secure random passwords"
-    print_warning "Passwords generated:"
-    echo "  MySQL Root: ${MYSQL_ROOT_PASS}"
-    echo "  MySQL User: ${MYSQL_PASS}"
-    echo "  PostgreSQL: ${POSTGRES_PASS}"
+    print_success ".env créé avec succès"
     echo ""
-    print_warning "Save these passwords in a secure location!"
 }
 
 # Pull Docker images
 pull_images() {
-    print_info "Pulling Docker images..."
-    docker-compose pull
-    print_success "Docker images pulled successfully"
+    print_step "Téléchargement des images Docker..."
+    echo ""
+    docker-compose pull --quiet
+    print_success "Images téléchargées"
+    echo ""
 }
 
 # Start services
 start_services() {
-    print_info "Starting Docker services..."
-    docker-compose up -d
-    print_success "Docker services started"
+    print_step "Démarrage des services Docker..."
+    echo ""
+
+    if [ "$BREAKOUT_MODE" = "local" ]; then
+        case $BREAKOUT_DB_TYPE in
+            postgresql)
+                print_info "Démarrage: CSWeb + MySQL (metadata) + PostgreSQL (breakout)"
+                docker-compose --profile local-postgres up -d
+                ;;
+            mysql)
+                print_info "Démarrage: CSWeb + MySQL (metadata) + MySQL Breakout"
+                docker-compose --profile local-mysql up -d
+                ;;
+            sqlserver)
+                print_info "Démarrage: CSWeb + MySQL (metadata) + SQL Server (breakout)"
+                docker-compose --profile local-sqlserver up -d
+                ;;
+        esac
+    else
+        print_info "Démarrage: CSWeb + MySQL (metadata) uniquement"
+        print_info "Breakout: Connexion au serveur ${BREAKOUT_DB_TYPE} distant"
+        docker-compose up -d csweb mysql
+    fi
+
+    echo ""
+    print_success "Services démarrés"
+    echo ""
 }
 
 # Wait for services
 wait_for_services() {
-    print_info "Waiting for services to be ready..."
+    print_step "Attente de la disponibilité des services..."
+    echo ""
 
-    echo -n "  Waiting for MySQL"
+    echo -n "  MySQL (metadata)"
     for i in {1..30}; do
         if docker-compose exec -T mysql mysqladmin ping -h localhost --silent &> /dev/null; then
-            echo " ✓"
+            echo -e " ${GREEN}✓${NC}"
             break
         fi
         echo -n "."
         sleep 2
     done
 
-    echo -n "  Waiting for PostgreSQL"
-    for i in {1..30}; do
-        if docker-compose exec -T postgres pg_isready -U csweb_analytics &> /dev/null; then
-            echo " ✓"
-            break
-        fi
-        echo -n "."
-        sleep 2
-    done
+    if [ "$BREAKOUT_MODE" = "local" ]; then
+        case $BREAKOUT_DB_TYPE in
+            postgresql)
+                echo -n "  PostgreSQL (breakout)"
+                for i in {1..30}; do
+                    if docker-compose exec -T postgres pg_isready -U csweb_analytics &> /dev/null; then
+                        echo -e " ${GREEN}✓${NC}"
+                        break
+                    fi
+                    echo -n "."
+                    sleep 2
+                done
+                ;;
+            mysql)
+                echo -n "  MySQL Breakout"
+                for i in {1..30}; do
+                    if docker-compose exec -T mysql-breakout mysqladmin ping -h localhost --silent &> /dev/null; then
+                        echo -e " ${GREEN}✓${NC}"
+                        break
+                    fi
+                    echo -n "."
+                    sleep 2
+                done
+                ;;
+            sqlserver)
+                echo -n "  SQL Server (breakout)"
+                sleep 10  # SQL Server takes longer
+                echo -e " ${GREEN}✓${NC}"
+                ;;
+        esac
+    fi
 
-    print_success "All services are ready"
+    echo ""
+    print_success "Tous les services sont prêts"
+    echo ""
 }
 
-# Display information
+# Display final info
 display_info() {
-    echo ""
     print_header
-    print_success "Installation completed successfully!"
+    echo -e "${GREEN}"
+    echo "╔════════════════════════════════════════════════════════════════════════╗"
+    echo "║                                                                        ║"
+    echo "║              ✅ Installation Terminée avec Succès !                   ║"
+    echo "║                                                                        ║"
+    echo "╚════════════════════════════════════════════════════════════════════════╝"
+    echo -e "${NC}"
     echo ""
-    print_info "Access CSWeb:"
-    echo "  URL: http://localhost:8080"
-    echo "  Setup: http://localhost:8080/setup/"
+
+    echo -e "${CYAN}📍 Accès CSWeb:${NC}"
+    echo "  🌐 URL: http://localhost:8080"
+    echo "  ⚙️  Setup: http://localhost:8080/setup/"
     echo ""
-    print_info "Development Tools (optional):"
-    echo "  phpMyAdmin: http://localhost:8081"
-    echo "  pgAdmin: http://localhost:8082"
-    echo "    - Email: admin@csweb.local"
-    echo "    - Password: admin123"
+
+    echo -e "${CYAN}🎯 Configuration:${NC}"
+    echo "  Mode: ${YELLOW}${BREAKOUT_MODE}${NC}"
+    echo "  Base breakout: ${YELLOW}${BREAKOUT_DB_TYPE}${NC}"
     echo ""
-    print_info "Next Steps:"
-    echo "  1. Open http://localhost:8080/setup/ in your browser"
-    echo "  2. Complete the CSWeb setup wizard"
-    echo "  3. Follow docs/INSTALLATION-CSWEB-VANILLA.md for detailed instructions"
+
+    if [ "$BREAKOUT_MODE" = "local" ]; then
+        echo -e "${CYAN}🛠️  Outils de développement:${NC}"
+        echo "  📊 phpMyAdmin: http://localhost:8081"
+        if [ "$BREAKOUT_DB_TYPE" = "postgresql" ]; then
+            echo "  🐘 pgAdmin: http://localhost:8082"
+            echo "      Email: admin@csweb.local"
+            echo "      Password: admin123"
+        fi
+        echo ""
+    fi
+
+    echo -e "${CYAN}📝 Prochaines étapes:${NC}"
+    echo "  1. Ouvrir http://localhost:8080/setup/"
+    echo "  2. Remplir le formulaire avec:"
+    echo "     - Database: csweb_metadata"
+    echo "     - Host: mysql"
+    echo "     - User: csweb_user"
+    echo "     - Password: (voir .env - MYSQL_PASSWORD)"
+    echo "  3. Se connecter avec admin/admin123"
+    echo "  4. Uploader un dictionnaire CSPro"
+    echo "  5. Lancer le breakout:"
+    echo "     docker-compose exec csweb php bin/console csweb:process-cases-by-dict dictionnaires=DICT_NAME"
     echo ""
-    print_info "Useful Commands:"
-    echo "  View logs:        docker-compose logs -f csweb"
-    echo "  Stop services:    docker-compose down"
-    echo "  Restart services: docker-compose restart"
-    echo "  Check status:     docker-compose ps"
+
+    echo -e "${CYAN}🔐 Credentials sauvegardés dans .env${NC}"
     echo ""
-    print_warning "Database Credentials (save these!):"
-    echo "  MySQL Root Password: (check .env file)"
-    echo "  PostgreSQL Password: (check .env file)"
+
+    echo -e "${CYAN}📚 Documentation:${NC}"
+    echo "  Guide complet: docs/"
+    echo "  Quick Start: QUICK-START.md"
     echo ""
-    echo "For documentation, visit: docs/"
-    echo "============================================================================"
+
+    echo -e "${CYAN}💡 Commandes utiles:${NC}"
+    echo "  docker-compose logs -f csweb        # Voir les logs"
+    echo "  docker-compose ps                   # Statut des services"
+    echo "  docker-compose down                 # Arrêter"
+    echo "  docker-compose restart              # Redémarrer"
+    echo ""
+
+    echo -e "${GREEN}╔════════════════════════════════════════════════════════════════════════╗${NC}"
+    echo -e "${GREEN}║  Made with ❤️  by Bouna DRAME - CSWeb Community Platform v2.0.0      ║${NC}"
+    echo -e "${GREEN}╚════════════════════════════════════════════════════════════════════════╝${NC}"
+    echo ""
 }
 
-# Main installation flow
+# Main
 main() {
     print_header
+    sleep 1
 
-    # Check prerequisites
     check_prerequisites
+    ask_breakout_mode
+    ask_database_type
 
-    # Create .env file
+    if [ "$BREAKOUT_MODE" = "remote" ]; then
+        ask_remote_details
+    fi
+
     create_env_file
-
-    # Pull images
     pull_images
-
-    # Start services
     start_services
-
-    # Wait for services
     wait_for_services
-
-    # Display information
     display_info
 }
 
-# Run main function
+# Run
 main
