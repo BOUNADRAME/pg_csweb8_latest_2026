@@ -1,0 +1,452 @@
+---
+title: Premier Breakout
+description: Tutorial step-by-step pour votre premier breakout CSWeb
+---
+
+import { Callout } from '../../components/Callout'
+
+# Premier Breakout - Tutorial Step-by-Step
+
+Ce tutorial vous guide pas à pas pour réaliser votre **premier breakout** avec CSWeb Community Platform.
+
+<Callout type="info">
+  **Temps estimé :** 5-10 minutes
+
+  **Prérequis :** CSWeb doit être installé et fonctionnel. [Voir l'installation →](/getting-started/installation)
+</Callout>
+
+---
+
+## Qu'est-ce que le Breakout ?
+
+Le **breakout** est le processus de transformation des données CSPro (format binaire `.csdb`) en **tables SQL relationnelles** pour permettre l'analyse et le reporting.
+
+### Avant le Breakout
+
+```
+┌────────────────────────┐
+│   Base CSWeb (MySQL)   │
+├────────────────────────┤
+│ cases.csdb (binaire)   │
+│   - Case 1             │
+│   - Case 2             │
+│   - Case 3             │
+│   ...                  │
+└────────────────────────┘
+```
+
+### Après le Breakout
+
+```
+┌─────────────────────────────┐
+│ Base Analytics (PostgreSQL) │
+├─────────────────────────────┤
+│ eval_producteurs (table)    │
+│   - id, nom, region, ...    │
+│ eval_observations (table)   │
+│   - id, producteur_id, ...  │
+│ eval_photos (table)         │
+│   - id, observation_id, ... │
+└─────────────────────────────┘
+```
+
+<Callout type="success">
+  Les données breakées peuvent être requêtées avec SQL standard et connectées à Power BI, Tableau, etc.
+</Callout>
+
+---
+
+## Étape 1 : Uploader un Dictionnaire CSPro
+
+### Via l'Interface Web
+
+1. **Se connecter à CSWeb**
+   ```
+   http://localhost:8080
+   ```
+
+2. **Aller dans "Dictionaries"**
+   - Menu : `Data` → `Dictionaries`
+
+3. **Upload d'un dictionnaire**
+   - Cliquer sur `Upload Dictionary`
+   - Sélectionner votre fichier `.dcf` (CSPro dictionary)
+   - Exemple : `EVAL_PRODUCTEURS_USAID.dcf`
+   - Cliquer sur `Upload`
+
+4. **Vérifier l'upload**
+   - Le dictionnaire doit apparaître dans la liste
+   - Noter l'ID du dictionnaire (ex: `3`)
+
+<Callout type="info">
+  **Où trouver un dictionnaire de test ?** Utilisez les exemples CSPro fournis dans `cspro/examples/` ou créez-en un avec CSPro Designer.
+</Callout>
+
+### Via l'API
+
+```bash
+# Upload via API (avancé)
+curl -X POST http://localhost:8080/api/dictionaries/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@EVAL_PRODUCTEURS_USAID.dcf"
+```
+
+---
+
+## Étape 2 : Configurer la Base de Données Breakout
+
+### Créer le Schéma de Destination
+
+**Pour PostgreSQL (recommandé) :**
+
+```bash
+# Se connecter à PostgreSQL
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+
+# Créer un schéma pour le dictionnaire
+CREATE SCHEMA IF NOT EXISTS eval_producteurs;
+
+# Vérifier
+\dn
+```
+
+**Pour MySQL :**
+
+```bash
+# Se connecter à MySQL
+docker exec -it csweb_mysql mysql -u csweb_user -p
+
+# Créer une base pour le dictionnaire
+CREATE DATABASE IF NOT EXISTS eval_producteurs;
+
+# Vérifier
+SHOW DATABASES;
+```
+
+<Callout type="warning">
+  **Important :** Le nom du schéma/database doit correspondre au nom de votre dictionnaire (en minuscules).
+</Callout>
+
+### Configurer la Connexion Breakout
+
+**Option 1 : Via fichier `.env`**
+
+```env
+# Base par défaut pour le breakout
+BREAKOUT_DB_TYPE=postgresql
+BREAKOUT_DB_HOST=csweb_postgres
+BREAKOUT_DB_PORT=5432
+BREAKOUT_DB_NAME=csweb_analytics
+BREAKOUT_DB_USER=csweb_user
+BREAKOUT_DB_PASSWORD=VOTRE_MOT_DE_PASSE
+BREAKOUT_DB_SCHEMA=eval_producteurs
+```
+
+**Option 2 : Via API (par dictionnaire)**
+
+```bash
+curl -X POST http://localhost:8080/api/dictionaries/3/breakout-config \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dbType": "postgresql",
+    "host": "csweb_postgres",
+    "port": 5432,
+    "database": "csweb_analytics",
+    "schema": "eval_producteurs",
+    "user": "csweb_user",
+    "password": "VOTRE_MOT_DE_PASSE"
+  }'
+```
+
+---
+
+## Étape 3 : Lancer le Breakout
+
+### Via CLI (Recommandé)
+
+```bash
+# Se connecter au container CSWeb
+docker exec -it csweb_app bash
+
+# Lancer le breakout sélectif
+php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS_USAID
+
+# Ou avec l'ID du dictionnaire
+php bin/console csweb:process-cases-by-dict --dict-id=3
+```
+
+**Sortie attendue :**
+
+```
+Breakout Sélectif CSWeb
+=======================
+
+Dictionnaire: EVAL_PRODUCTEURS_USAID (ID: 3)
+Base cible: PostgreSQL (csweb_postgres:5432)
+Schéma: eval_producteurs
+
+[1/5] Création des tables...         ✅
+[2/5] Extraction des cases...        ✅ (125 cases)
+[3/5] Transformation des données...  ✅
+[4/5] Insertion dans PostgreSQL...   ✅ (125 lignes)
+[5/5] Création des index...          ✅
+
+Breakout terminé avec succès !
+Durée: 12.5 secondes
+```
+
+<Callout type="success">
+  Si vous voyez "Breakout terminé avec succès", passez à l'étape 4 ! ✅
+</Callout>
+
+### Via API
+
+```bash
+# Déclencher le breakout via API
+curl -X POST http://localhost:8080/api/breakout/EVAL_PRODUCTEURS_USAID/trigger \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Vérifier le statut
+curl http://localhost:8080/api/breakout/EVAL_PRODUCTEURS_USAID/status \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Via Admin Panel (À venir)
+
+L'interface React Admin Panel permettra de déclencher les breakouts en 1 clic (roadmap v1.5).
+
+---
+
+## Étape 4 : Vérifier les Tables Créées
+
+### Avec pgAdmin (PostgreSQL)
+
+1. **Ouvrir pgAdmin**
+   ```
+   http://localhost:8082
+   ```
+
+2. **Se connecter au serveur**
+   - Host : `csweb_postgres`
+   - Port : `5432`
+   - Database : `csweb_analytics`
+   - Username : `csweb_user`
+
+3. **Explorer le schéma**
+   - Naviguer vers : `Servers` → `csweb_postgres` → `Databases` → `csweb_analytics` → `Schemas` → `eval_producteurs` → `Tables`
+
+4. **Vérifier les tables créées**
+   - `producteurs` (table principale)
+   - `observations` (table enfant)
+   - `photos` (table enfant)
+   - etc.
+
+### Avec SQL
+
+**PostgreSQL :**
+
+```sql
+-- Lister les tables du schéma
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'eval_producteurs';
+
+-- Compter les lignes
+SELECT COUNT(*) FROM eval_producteurs.producteurs;
+
+-- Voir un échantillon de données
+SELECT * FROM eval_producteurs.producteurs LIMIT 10;
+```
+
+**MySQL :**
+
+```sql
+-- Lister les tables
+SHOW TABLES FROM eval_producteurs;
+
+-- Compter les lignes
+SELECT COUNT(*) FROM eval_producteurs.producteurs;
+
+-- Voir un échantillon
+SELECT * FROM eval_producteurs.producteurs LIMIT 10;
+```
+
+<Callout type="info">
+  **Structure des tables :** CSWeb crée automatiquement les tables basées sur la structure de votre dictionnaire CSPro.
+</Callout>
+
+---
+
+## Étape 5 : Requêter les Données
+
+Maintenant que les données sont breakées, vous pouvez les requêter avec SQL :
+
+### Exemples de Requêtes
+
+**Compter les producteurs par région :**
+
+```sql
+SELECT
+  region,
+  COUNT(*) as total_producteurs
+FROM eval_producteurs.producteurs
+GROUP BY region
+ORDER BY total_producteurs DESC;
+```
+
+**Joindre producteurs et observations :**
+
+```sql
+SELECT
+  p.nom_producteur,
+  p.region,
+  o.type_culture,
+  o.rendement
+FROM eval_producteurs.producteurs p
+JOIN eval_producteurs.observations o ON p.producteur_id = o.producteur_id
+WHERE p.region = 'Dakar';
+```
+
+**Analyser les observations avec photos :**
+
+```sql
+SELECT
+  p.nom_producteur,
+  COUNT(ph.photo_id) as nombre_photos
+FROM eval_producteurs.producteurs p
+LEFT JOIN eval_producteurs.photos ph ON p.producteur_id = ph.producteur_id
+GROUP BY p.nom_producteur
+HAVING COUNT(ph.photo_id) > 0;
+```
+
+---
+
+## Étape 6 : Connecter à un Outil de BI
+
+### Power BI
+
+1. **Ouvrir Power BI Desktop**
+2. **Get Data** → **PostgreSQL**
+3. **Entrer les paramètres :**
+   - Server : `localhost:5432`
+   - Database : `csweb_analytics`
+   - Username : `csweb_user`
+   - Password : `[POSTGRES_PASSWORD]`
+4. **Sélectionner les tables du schéma `eval_producteurs`**
+5. **Créer vos visualisations !**
+
+### Tableau
+
+1. **Ouvrir Tableau Desktop**
+2. **Connect** → **PostgreSQL**
+3. **Entrer les paramètres :**
+   - Server : `localhost`
+   - Port : `5432`
+   - Database : `csweb_analytics`
+   - Schema : `eval_producteurs`
+4. **Drag & drop les tables pour créer vos dashboards**
+
+### Metabase (Open Source)
+
+```bash
+# Déployer Metabase avec Docker
+docker run -d -p 3001:3000 --name metabase metabase/metabase
+
+# Accéder à Metabase
+http://localhost:3001
+
+# Connecter à PostgreSQL CSWeb
+Database type: PostgreSQL
+Host: host.docker.internal (macOS/Windows) ou [IP_MACHINE] (Linux)
+Port: 5432
+Database name: csweb_analytics
+Username: csweb_user
+Password: [POSTGRES_PASSWORD]
+```
+
+---
+
+## Troubleshooting
+
+### Erreur : "Dictionary not found"
+
+**Cause :** Le nom du dictionnaire est incorrect ou n'existe pas.
+
+**Solution :**
+```bash
+# Lister tous les dictionnaires disponibles
+docker exec -it csweb_app php bin/console csweb:list-dictionaries
+
+# Utiliser le nom exact
+php bin/console csweb:process-cases-by-dict [NOM_EXACT]
+```
+
+### Erreur : "Database connection failed"
+
+**Cause :** PostgreSQL n'est pas accessible ou mauvaises credentials.
+
+**Solution :**
+```bash
+# Vérifier que PostgreSQL tourne
+docker-compose ps csweb_postgres
+
+# Tester la connexion
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+
+# Vérifier les variables .env
+docker exec csweb_app env | grep BREAKOUT
+```
+
+### Erreur : "PDO driver not found"
+
+**Cause :** Le driver PostgreSQL n'est pas installé dans le container.
+
+**Solution :**
+```bash
+# Vérifier les drivers disponibles
+docker exec -it csweb_app php bin/console csweb:check-database-drivers
+
+# Si pdo_pgsql est manquant, rebuild le container
+docker-compose up -d --build csweb_app
+```
+
+### Breakout trop lent
+
+**Cause :** Grand volume de données (>100k cases).
+
+**Solutions :**
+- Utiliser PostgreSQL au lieu de MySQL (plus rapide)
+- Activer les indexes après le breakout
+- Utiliser le breakout incrémental (roadmap v1.5)
+
+```bash
+# Créer des index pour accélérer les requêtes
+CREATE INDEX idx_producteur_region ON eval_producteurs.producteurs(region);
+CREATE INDEX idx_observation_producteur ON eval_producteurs.observations(producteur_id);
+```
+
+---
+
+## Prochaines Étapes
+
+Félicitations ! Vous avez réalisé votre premier breakout. 🎉
+
+Voici ce que vous pouvez faire ensuite :
+
+1. **[Vérification Complète](/getting-started/verify)** - Checklist de vérification de l'installation
+2. **[Breakout Sélectif Avancé](/guides/breakout/selective)** - Breakout automatique, scheduler, monitoring
+3. **[Configuration Multi-DB](/guides/database/multi-db)** - Basculer entre PostgreSQL, MySQL, SQL Server
+4. **[Scheduler](/guides/admin/scheduler)** - Automatiser les breakouts avec des jobs cron
+
+<Callout type="info">
+  **Besoin d'aide ?** Consultez la [FAQ](/reference/troubleshooting/faq) ou rejoignez notre [Discord](https://discord.gg/csweb-community).
+</Callout>
+
+---
+
+## Crédits
+
+Le **breakout sélectif par dictionnaire** a été développé par **Assietou Diagne** (ANSD, Sénégal) et intégré dans CSWeb Community Platform.
+
+[En savoir plus sur l'architecture →](/guides/architecture/flexible)

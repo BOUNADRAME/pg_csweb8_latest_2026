@@ -1,0 +1,5 @@
+{
+  "environment": "Variables d'environnement",
+  "docker-compose": "Configuration Docker",
+  "drivers": "Database Drivers"
+}
