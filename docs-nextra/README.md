@@ -421,3 +421,4 @@ export default {
 **Auteur :** Bouna DRAME
 **License :** Apache 2.0
 **Version :** 2.0.0
+**Documentation :** 47 pages complètes ✅
