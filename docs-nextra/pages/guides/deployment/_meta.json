@@ -1,0 +1,7 @@
+{
+  "docker-dev": "Docker Développement",
+  "docker-prod": "Docker Production",
+  "remote": "Déploiement Remote",
+  "backup": "Backup & Restore",
+  "vanilla-migration": "Migration depuis Vanilla"
+}

@@ -1,0 +1,486 @@
+---
+title: Installation
+description: Installer CSWeb Community Platform en 5 minutes avec Docker
+---
+
+import { Callout } from '../../components/Callout'
+import { Tabs } from '../../components/Tabs'
+
+# Installation CSWeb Community Platform
+
+Ce guide vous permettra d'installer et de démarrer CSWeb Community Platform en **5 minutes** avec Docker.
+
+<Callout type="info">
+  **Temps estimé :** 5-10 minutes (téléchargement Docker images inclus)
+</Callout>
+
+---
+
+## Prérequis
+
+### Système Requis
+
+| Composant | Version Minimale | Recommandé |
+|-----------|------------------|------------|
+| **Docker** | 20.10+ | Latest |
+| **Docker Compose** | 2.0+ | Latest |
+| **RAM** | 4 GB | 8 GB |
+| **Disque** | 10 GB | 20 GB |
+| **CPU** | 2 cores | 4 cores |
+
+### Installation Docker
+
+<Tabs items={['Ubuntu/Debian', 'macOS', 'Windows']}>
+  <div>
+```bash
+# Installation Docker sur Ubuntu/Debian
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Vérifier l'installation
+docker --version
+docker-compose --version
+```
+  </div>
+  <div>
+```bash
+# Installation Docker sur macOS avec Homebrew
+brew install --cask docker
+
+# OU télécharger Docker Desktop :
+# https://www.docker.com/products/docker-desktop/
+
+# Démarrer Docker Desktop depuis Applications
+# Vérifier l'installation
+docker --version
+docker-compose --version
+```
+  </div>
+  <div>
+```powershell
+# Windows - Télécharger Docker Desktop
+# https://www.docker.com/products/docker-desktop/
+
+# Après installation, redémarrer le PC
+# Ouvrir PowerShell et vérifier
+docker --version
+docker-compose --version
+```
+  </div>
+</Tabs>
+
+<Callout type="warning">
+  **Windows :** Assurez-vous que WSL 2 est installé. Docker Desktop l'installera automatiquement si nécessaire.
+</Callout>
+
+---
+
+## Installation Rapide (5 minutes)
+
+### Étape 1 : Cloner le Projet
+
+```bash
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+```
+
+### Étape 2 : Configuration Environnement
+
+```bash
+# Copier le fichier .env d'exemple
+cp .env.example .env
+
+# Éditer .env (IMPORTANT : Changer les secrets !)
+nano .env  # ou vim, code, etc.
+```
+
+**Variables critiques à modifier :**
+
+```env
+# SÉCURITÉ - GÉNÉRER DES VALEURS ALÉATOIRES
+APP_SECRET=CHANGEZ_CETTE_VALEUR_32_CARACTERES
+DATABASE_URL="mysql://csweb_user:CHANGEZ_MOT_DE_PASSE@csweb_mysql:3306/csweb_db"
+
+# POSTGRESQL (Base Breakout)
+POSTGRES_DB=csweb_analytics
+POSTGRES_USER=csweb_user
+POSTGRES_PASSWORD=CHANGEZ_MOT_DE_PASSE
+POSTGRES_HOST=csweb_postgres
+POSTGRES_PORT=5432
+
+# MYSQL (Base Metadata CSWeb)
+MYSQL_ROOT_PASSWORD=CHANGEZ_MOT_DE_PASSE_ROOT
+MYSQL_DATABASE=csweb_db
+MYSQL_USER=csweb_user
+MYSQL_PASSWORD=CHANGEZ_MOT_DE_PASSE
+```
+
+<Callout type="error">
+  **IMPORTANT :** Ne laissez JAMAIS les mots de passe par défaut en production ! Générez des valeurs aléatoires de 32 caractères minimum.
+</Callout>
+
+**Générer des secrets aléatoires :**
+
+```bash
+# Linux/macOS
+openssl rand -hex 32
+
+# OU
+head -c 32 /dev/urandom | base64
+```
+
+### Étape 3 : Démarrer les Services Docker
+
+```bash
+# Démarrer tous les services en arrière-plan
+docker-compose up -d
+
+# Vérifier que tous les containers tournent
+docker-compose ps
+```
+
+**Sortie attendue :**
+
+```
+NAME                  STATUS              PORTS
+csweb_app            Up (healthy)        0.0.0.0:8080->80/tcp
+csweb_mysql          Up (healthy)        0.0.0.0:3306->3306/tcp
+csweb_postgres       Up (healthy)        0.0.0.0:5432->5432/tcp
+phpmyadmin           Up                  0.0.0.0:8081->80/tcp
+pgadmin              Up                  0.0.0.0:8082->80/tcp
+```
+
+<Callout type="success">
+  Si tous les containers sont "Up (healthy)", l'installation a réussi ! ✅
+</Callout>
+
+### Étape 4 : Accéder à CSWeb
+
+Ouvrez votre navigateur et accédez à :
+
+**CSWeb Application :**
+```
+http://localhost:8080
+```
+
+**Outils Admin (Développement) :**
+- phpMyAdmin (MySQL) : http://localhost:8081
+- pgAdmin (PostgreSQL) : http://localhost:8082
+
+<Callout type="info">
+  **Connexion par défaut :**
+  - Username : `admin`
+  - Password : Défini dans `.env` (variable `CSWEB_ADMIN_PASSWORD`)
+</Callout>
+
+---
+
+## Configuration Initiale via Setup.php
+
+### Étape 5 : Wizard de Configuration
+
+Après le premier démarrage, vous devez configurer CSWeb via `setup.php` :
+
+1. **Accéder au wizard :**
+   ```
+   http://localhost:8080/setup/
+   ```
+
+2. **Vérification des prérequis :**
+   - PHP 8.1+ ✅
+   - Extensions requises (PDO, MySQLi, cURL) ✅
+   - Permissions d'écriture ✅
+
+3. **Configuration Base de Données :**
+   ```
+   Database Host: csweb_mysql
+   Database Name: csweb_db
+   Username: csweb_user
+   Password: [MOT_DE_PASSE_MYSQL_ENV]
+   ```
+
+4. **Compte Admin :**
+   - Username : `admin`
+   - Email : votre@email.com
+   - Password : [CHOISIR_MOT_DE_PASSE_FORT]
+
+5. **Finaliser :**
+   - Cliquer sur "Install"
+   - Patienter 30-60 secondes
+   - Redirection automatique vers login
+
+<Callout type="warning">
+  **Sécurité :** Après l'installation, supprimez ou renommez le dossier `setup/` pour éviter tout accès non autorisé.
+</Callout>
+
+---
+
+## Vérification de l'Installation
+
+### Vérifier les Drivers de Base de Données
+
+```bash
+# Se connecter au container CSWeb
+docker exec -it csweb_app bash
+
+# Lancer la commande de vérification des drivers
+php bin/console csweb:check-database-drivers
+```
+
+**Sortie attendue :**
+
+```
+Database Drivers Check
+======================
+
+✅ PDO Driver: Available
+✅ PostgreSQL (pdo_pgsql): Available
+✅ MySQL (pdo_mysql): Available
+✅ SQL Server (pdo_sqlsrv): Available
+
+All required database drivers are installed!
+```
+
+<Callout type="success">
+  Si tous les drivers sont "Available", vous pouvez utiliser PostgreSQL, MySQL ou SQL Server pour le breakout.
+</Callout>
+
+### Tester la Connexion PostgreSQL
+
+```bash
+# Depuis votre machine hôte
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+
+# Ou depuis pgAdmin (http://localhost:8082)
+# Host: csweb_postgres
+# Port: 5432
+# Username: csweb_user
+# Password: [POSTGRES_PASSWORD]
+```
+
+### Tester la Connexion MySQL
+
+```bash
+# Depuis votre machine hôte
+docker exec -it csweb_mysql mysql -u csweb_user -p
+
+# Ou depuis phpMyAdmin (http://localhost:8081)
+# Server: csweb_mysql
+# Username: csweb_user
+# Password: [MYSQL_PASSWORD]
+```
+
+---
+
+## Architecture Docker
+
+### Services Déployés
+
+```
+┌────────────────────────────────────────────────────┐
+│              Docker Compose Stack                   │
+├────────────────────────────────────────────────────┤
+│                                                     │
+│  ┌─────────────┐   ┌──────────┐   ┌────────────┐  │
+│  │   CSWeb     │───│  MySQL   │   │ PostgreSQL │  │
+│  │  (Apache)   │   │(Metadata)│   │ (Analytics)│  │
+│  │   :8080     │   │  :3306   │   │   :5432    │  │
+│  └─────────────┘   └──────────┘   └────────────┘  │
+│         │                                           │
+│  ┌──────────────────────────────────────────────┐  │
+│  │        csweb-network (bridge)                │  │
+│  └──────────────────────────────────────────────┘  │
+│                                                     │
+│  ┌───────────┐              ┌────────────┐         │
+│  │phpMyAdmin │              │  pgAdmin   │         │
+│  │   :8081   │              │   :8082    │         │
+│  └───────────┘              └────────────┘         │
+│  (dev only)                 (dev only)             │
+└────────────────────────────────────────────────────┘
+
+Volumes Persistants:
+├── csweb_files      (fichiers uploadés)
+├── csweb_logs       (logs application)
+├── mysql_data       (données MySQL)
+└── postgres_data    (données PostgreSQL)
+```
+
+### Volumes Docker
+
+Les données sont persistées dans des volumes Docker :
+
+```bash
+# Lister les volumes
+docker volume ls | grep csweb
+
+# Inspecter un volume
+docker volume inspect pg_csweb8_latest_2026_postgres_data
+
+# Backup d'un volume
+docker run --rm -v pg_csweb8_latest_2026_postgres_data:/data -v $(pwd):/backup ubuntu tar czf /backup/postgres_backup.tar.gz /data
+```
+
+---
+
+## Commandes Docker Utiles
+
+### Gestion des Services
+
+```bash
+# Démarrer tous les services
+docker-compose up -d
+
+# Arrêter tous les services
+docker-compose down
+
+# Redémarrer un service spécifique
+docker-compose restart csweb_app
+
+# Voir les logs d'un service
+docker-compose logs -f csweb_app
+
+# Voir les logs de tous les services
+docker-compose logs -f
+
+# Rebuild après modification
+docker-compose up -d --build
+```
+
+### Maintenance
+
+```bash
+# Entrer dans le container CSWeb
+docker exec -it csweb_app bash
+
+# Entrer dans PostgreSQL
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+
+# Entrer dans MySQL
+docker exec -it csweb_mysql mysql -u root -p
+
+# Vérifier l'utilisation des ressources
+docker stats
+
+# Nettoyer les containers arrêtés
+docker container prune
+
+# Nettoyer les volumes non utilisés
+docker volume prune
+```
+
+---
+
+## Modes de Déploiement
+
+### Mode Développement (Par défaut)
+
+Inclut phpMyAdmin et pgAdmin pour faciliter le développement :
+
+```bash
+docker-compose up -d
+```
+
+### Mode Production
+
+Exclut les outils de développement pour la sécurité :
+
+```bash
+docker-compose --profile production up -d
+```
+
+Différences :
+- ❌ Pas de phpMyAdmin
+- ❌ Pas de pgAdmin
+- ✅ Health checks renforcés
+- ✅ Restart automatique (`unless-stopped`)
+
+<Callout type="warning">
+  En production, utilisez TOUJOURS des mots de passe forts et limitez l'accès aux ports (firewall).
+</Callout>
+
+---
+
+## Troubleshooting
+
+### Port 8080 déjà utilisé
+
+**Erreur :**
+```
+Error starting userland proxy: listen tcp4 0.0.0.0:8080: bind: address already in use
+```
+
+**Solution :**
+```bash
+# Trouver le processus utilisant le port
+sudo lsof -i :8080
+
+# Tuer le processus
+sudo kill -9 [PID]
+
+# OU changer le port dans docker-compose.yml
+ports:
+  - "8888:80"  # Au lieu de 8080:80
+```
+
+### Container ne démarre pas (unhealthy)
+
+**Vérifier les logs :**
+```bash
+docker-compose logs csweb_app
+docker-compose logs csweb_postgres
+```
+
+**Vérifier la santé :**
+```bash
+docker inspect csweb_app | grep -A 20 Health
+```
+
+### Permission denied sur volumes
+
+**Linux/macOS :**
+```bash
+# Corriger les permissions
+sudo chown -R $USER:$USER .
+chmod -R 755 storage/
+```
+
+### Database connection refused
+
+**Vérifier que les containers sont sur le même réseau :**
+```bash
+docker network inspect pg_csweb8_latest_2026_csweb-network
+```
+
+**Vérifier les variables d'environnement :**
+```bash
+docker exec csweb_app env | grep DATABASE
+```
+
+---
+
+## Prochaines Étapes
+
+Maintenant que CSWeb est installé, voici ce que vous pouvez faire :
+
+1. **[Premier Breakout](/getting-started/first-breakout)** - Tutorial step-by-step
+2. **[Vérification](/getting-started/verify)** - Checklist de vérification complète
+3. **[Configuration Multi-DB](/guides/database/multi-db)** - Configurer PostgreSQL/MySQL/SQL Server
+4. **[Breakout Sélectif](/guides/breakout/selective)** - Guide complet du breakout par dictionnaire
+
+<Callout type="info">
+  **Besoin d'aide ?** Consultez la section [Troubleshooting](/reference/troubleshooting/common-issues) ou rejoignez notre [Discord](https://discord.gg/csweb-community).
+</Callout>
+
+---
+
+## Installation Sans Docker (Legacy)
+
+Si vous ne pouvez pas utiliser Docker, consultez le guide d'installation vanilla :
+
+[Installation CSWeb Vanilla (Apache + MySQL manuel) →](/guides/deployment/vanilla-migration)
+
+<Callout type="warning">
+  L'installation manuelle prend 2-3 jours et nécessite une expertise système. Nous recommandons fortement Docker.
+</Callout>

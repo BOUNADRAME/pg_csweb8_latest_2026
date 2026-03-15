@@ -1,0 +1,455 @@
+---
+title: Vérification
+description: Checklist de vérification de l'installation CSWeb
+---
+
+import { Callout } from '../../components/Callout'
+
+# Checklist de Vérification
+
+Cette checklist vous permet de vérifier que votre installation CSWeb Community Platform est **complète et fonctionnelle**.
+
+<Callout type="info">
+  **Objectif :** S'assurer que tous les composants fonctionnent avant de passer en production.
+</Callout>
+
+---
+
+## 1. Services Docker
+
+### Vérifier que tous les containers tournent
+
+```bash
+docker-compose ps
+```
+
+**Résultat attendu :**
+
+| NAME | STATUS | PORTS |
+|------|--------|-------|
+| csweb_app | Up (healthy) | 0.0.0.0:8080->80/tcp |
+| csweb_mysql | Up (healthy) | 0.0.0.0:3306->3306/tcp |
+| csweb_postgres | Up (healthy) | 0.0.0.0:5432->5432/tcp |
+| phpmyadmin | Up | 0.0.0.0:8081->80/tcp |
+| pgadmin | Up | 0.0.0.0:8082->80/tcp |
+
+✅ **Tous les services doivent être "Up"**
+✅ **csweb_app, csweb_mysql, csweb_postgres doivent être "healthy"**
+
+<Callout type="error">
+  Si un container est "Restarting" ou "Exited", consultez les logs :
+  ```bash
+  docker-compose logs [SERVICE_NAME]
+  ```
+</Callout>
+
+---
+
+## 2. Accès Web
+
+### CSWeb Application
+
+```bash
+curl http://localhost:8080
+```
+
+✅ Doit retourner du HTML (page d'accueil CSWeb)
+
+**Ou dans votre navigateur :**
+```
+http://localhost:8080
+```
+
+✅ La page d'accueil CSWeb doit s'afficher
+
+### phpMyAdmin (Développement)
+
+```
+http://localhost:8081
+```
+
+✅ Interface de connexion phpMyAdmin visible
+✅ Se connecter avec :
+- Server : `csweb_mysql`
+- Username : `csweb_user`
+- Password : `[MYSQL_PASSWORD depuis .env]`
+
+### pgAdmin (Développement)
+
+```
+http://localhost:8082
+```
+
+✅ Interface de connexion pgAdmin visible
+✅ Se connecter avec :
+- Email : `admin@csweb.local` (défini dans docker-compose.yml)
+- Password : `[PGADMIN_PASSWORD depuis .env]`
+
+---
+
+## 3. Connexion Admin CSWeb
+
+### Login Admin
+
+1. Aller sur http://localhost:8080
+2. Cliquer sur "Login" ou "Admin"
+3. Se connecter avec :
+   - Username : `admin`
+   - Password : `[CSWEB_ADMIN_PASSWORD défini lors du setup]`
+
+✅ Connexion réussie
+✅ Dashboard admin accessible
+
+<Callout type="warning">
+  Si vous ne pouvez pas vous connecter, vérifiez que vous avez bien complété le setup via `http://localhost:8080/setup/`.
+</Callout>
+
+---
+
+## 4. Drivers de Base de Données
+
+### Vérifier les drivers disponibles
+
+```bash
+docker exec -it csweb_app php bin/console csweb:check-database-drivers
+```
+
+**Résultat attendu :**
+
+```
+Database Drivers Check
+======================
+
+✅ PDO Driver: Available
+✅ PostgreSQL (pdo_pgsql): Available
+✅ MySQL (pdo_mysql): Available
+✅ SQL Server (pdo_sqlsrv): Available
+
+All required database drivers are installed!
+```
+
+✅ Tous les drivers doivent être "Available"
+
+<Callout type="error">
+  Si un driver est "Not Available", vous devez rebuild le container :
+  ```bash
+  docker-compose up -d --build csweb_app
+  ```
+</Callout>
+
+---
+
+## 5. Connexions Bases de Données
+
+### Tester PostgreSQL
+
+```bash
+# Depuis votre machine hôte
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "SELECT version();"
+```
+
+✅ Doit afficher la version PostgreSQL (ex: `PostgreSQL 16.1`)
+
+**Ou depuis pgAdmin :**
+1. Ouvrir http://localhost:8082
+2. Ajouter serveur :
+   - Name : `CSWeb PostgreSQL`
+   - Host : `csweb_postgres`
+   - Port : `5432`
+   - Database : `csweb_analytics`
+   - Username : `csweb_user`
+   - Password : `[POSTGRES_PASSWORD]`
+
+✅ Connexion réussie
+
+### Tester MySQL
+
+```bash
+# Depuis votre machine hôte
+docker exec -it csweb_mysql mysql -u csweb_user -p -e "SELECT VERSION();"
+```
+
+✅ Doit afficher la version MySQL (ex: `8.0.35`)
+
+**Ou depuis phpMyAdmin :**
+1. Ouvrir http://localhost:8081
+2. Se connecter (voir section 2)
+3. Vérifier que la base `csweb_db` existe
+
+✅ Base `csweb_db` présente
+
+---
+
+## 6. Premier Breakout
+
+### Vérifier qu'un dictionnaire a été uploadé
+
+Via l'interface web :
+1. Aller sur http://localhost:8080
+2. Menu : `Data` → `Dictionaries`
+
+✅ Au moins 1 dictionnaire visible dans la liste
+
+### Lancer le breakout
+
+```bash
+docker exec -it csweb_app php bin/console csweb:process-cases-by-dict [NOM_DICTIONNAIRE]
+```
+
+✅ Breakout se termine sans erreur
+✅ Message "Breakout terminé avec succès !"
+
+### Vérifier les tables créées
+
+**PostgreSQL :**
+
+```bash
+docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "\dt [SCHEMA].*"
+```
+
+✅ Tables créées dans le schéma spécifié
+
+**MySQL :**
+
+```bash
+docker exec -it csweb_mysql mysql -u csweb_user -p -e "USE [DATABASE]; SHOW TABLES;"
+```
+
+✅ Tables créées dans la base spécifiée
+
+---
+
+## 7. Volumes Persistants
+
+### Vérifier que les volumes existent
+
+```bash
+docker volume ls | grep csweb
+```
+
+**Résultat attendu :**
+
+```
+local     pg_csweb8_latest_2026_csweb_files
+local     pg_csweb8_latest_2026_csweb_logs
+local     pg_csweb8_latest_2026_mysql_data
+local     pg_csweb8_latest_2026_postgres_data
+local     pg_csweb8_latest_2026_pgadmin_data
+```
+
+✅ 5 volumes présents
+
+### Vérifier le contenu des volumes
+
+```bash
+# Inspecter le volume PostgreSQL
+docker volume inspect pg_csweb8_latest_2026_postgres_data
+
+# Vérifier l'emplacement
+# Mountpoint: /var/lib/docker/volumes/pg_csweb8_latest_2026_postgres_data/_data
+```
+
+✅ Chaque volume a un "Mountpoint" valide
+
+---
+
+## 8. Logs et Monitoring
+
+### Vérifier les logs CSWeb
+
+```bash
+# Logs en temps réel
+docker-compose logs -f csweb_app
+
+# Dernières 50 lignes
+docker-compose logs --tail=50 csweb_app
+```
+
+✅ Pas d'erreurs critiques (ERROR, CRITICAL)
+✅ Logs affichent les requêtes HTTP
+
+### Vérifier les logs PostgreSQL
+
+```bash
+docker-compose logs --tail=50 csweb_postgres
+```
+
+✅ Pas d'erreurs de connexion
+✅ Messages de démarrage normaux
+
+### Vérifier les logs MySQL
+
+```bash
+docker-compose logs --tail=50 csweb_mysql
+```
+
+✅ Pas d'erreurs de connexion
+✅ Messages de démarrage normaux
+
+---
+
+## 9. Ressources Système
+
+### Vérifier l'utilisation des ressources
+
+```bash
+docker stats --no-stream
+```
+
+**Résultat attendu :**
+
+| CONTAINER | CPU % | MEM USAGE | MEM % | NET I/O |
+|-----------|-------|-----------|-------|---------|
+| csweb_app | < 10% | < 512MB | < 10% | - |
+| csweb_postgres | < 5% | < 256MB | < 5% | - |
+| csweb_mysql | < 5% | < 256MB | < 5% | - |
+
+✅ CPU < 20% (idle)
+✅ MEM < 2GB total
+
+<Callout type="warning">
+  Si la mémoire dépasse 80% de la RAM disponible, augmentez la RAM allouée à Docker (Docker Desktop settings).
+</Callout>
+
+---
+
+## 10. Sécurité
+
+### Vérifier les mots de passe
+
+```bash
+# Vérifier que les secrets ne sont PAS les valeurs par défaut
+docker exec csweb_app env | grep -E "PASSWORD|SECRET"
+```
+
+❌ **NE DOIT PAS contenir :**
+- `changeme`
+- `password`
+- `secret`
+- `123456`
+
+✅ **DOIT contenir :** Des valeurs aléatoires de 32+ caractères
+
+<Callout type="error">
+  **CRITIQUE :** Si vous utilisez des mots de passe par défaut, régénérez-les immédiatement :
+  ```bash
+  openssl rand -hex 32
+  ```
+  Puis mettez à jour `.env` et redémarrez les services.
+</Callout>
+
+### Vérifier que setup.php est désactivé
+
+```bash
+# En production, setup.php doit être supprimé ou renommé
+docker exec -it csweb_app ls public/setup/
+```
+
+✅ Doit retourner "No such file or directory" (ou renommé en `setup_disabled/`)
+
+---
+
+## 11. Performance
+
+### Test de charge basique
+
+```bash
+# Installer Apache Bench (si pas déjà installé)
+# Ubuntu/Debian
+sudo apt-get install apache2-utils
+
+# macOS (inclus par défaut)
+# Windows : télécharger ab.exe
+
+# Test : 100 requêtes, 10 concurrentes
+ab -n 100 -c 10 http://localhost:8080/
+```
+
+**Résultat attendu :**
+
+```
+Requests per second: > 50 [#/sec]
+Time per request: < 200 [ms]
+Failed requests: 0
+```
+
+✅ Pas de requêtes échouées
+✅ Temps de réponse < 500ms
+
+---
+
+## 12. Backup et Restore
+
+### Tester un backup PostgreSQL
+
+```bash
+# Créer un backup
+docker exec -it csweb_postgres pg_dump -U csweb_user csweb_analytics > backup_test.sql
+
+# Vérifier que le fichier n'est pas vide
+ls -lh backup_test.sql
+```
+
+✅ Fichier `backup_test.sql` créé
+✅ Taille > 0 bytes
+
+### Tester un backup MySQL
+
+```bash
+# Créer un backup
+docker exec -it csweb_mysql mysqldump -u csweb_user -p csweb_db > backup_mysql_test.sql
+
+# Vérifier
+ls -lh backup_mysql_test.sql
+```
+
+✅ Fichier `backup_mysql_test.sql` créé
+✅ Taille > 0 bytes
+
+[Guide complet Backup & Restore →](/guides/deployment/backup)
+
+---
+
+## Récapitulatif
+
+| Catégorie | Statut |
+|-----------|--------|
+| ✅ Services Docker | |
+| ✅ Accès Web | |
+| ✅ Connexion Admin | |
+| ✅ Drivers DB | |
+| ✅ Connexions DB | |
+| ✅ Premier Breakout | |
+| ✅ Volumes Persistants | |
+| ✅ Logs et Monitoring | |
+| ✅ Ressources Système | |
+| ✅ Sécurité | |
+| ✅ Performance | |
+| ✅ Backup/Restore | |
+
+<Callout type="success">
+  Si toutes les cases sont cochées, votre installation est **production-ready** ! 🎉
+</Callout>
+
+---
+
+## Troubleshooting
+
+Si certains tests échouent, consultez :
+
+- [Common Issues](/reference/troubleshooting/common-issues) - 50+ problèmes courants
+- [FAQ](/reference/troubleshooting/faq) - Questions fréquentes
+- [Error Codes](/reference/troubleshooting/errors) - Référence des codes d'erreur
+
+Ou rejoignez notre [Discord](https://discord.gg/csweb-community) pour obtenir de l'aide.
+
+---
+
+## Prochaines Étapes
+
+Votre installation est vérifiée, voici ce que vous pouvez faire :
+
+1. **[Prochaines Étapes](/getting-started/next-steps)** - Aller plus loin avec CSWeb
+2. **[Guides Breakout](/guides/breakout/selective)** - Automatiser les breakouts
+3. **[Admin Panel](/guides/admin/scheduler)** - Configurer des jobs cron
+4. **[Déploiement Production](/guides/deployment/docker-prod)** - Best practices production

@@ -1,0 +1,279 @@
+---
+title: CSWeb Community Platform - Documentation
+description: Architecture flexible, Multi-DB, Docker - Setup en 5 minutes
+---
+
+import { Callout } from '../components/Callout'
+
+# CSWeb Community Platform
+
+<div className="text-center my-8">
+  <h2 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+    Démocratiser CSWeb pour l'Afrique
+  </h2>
+  <p className="text-xl text-gray-600 dark:text-gray-400 mt-4">
+    Setup en 5 minutes au lieu de 2-3 jours 🚀
+  </p>
+</div>
+
+---
+
+## 🎯 Vision
+
+**CSWeb Community Platform** transforme CSWeb en une plateforme moderne, facile à déployer et accessible à tous les instituts statistiques africains.
+
+### Problème résolu
+
+- ❌ Setup CSWeb : 2-3 jours de configuration manuelle
+- ❌ Breakout global : traite TOUS les dictionnaires (lent, risqué)
+- ❌ Configuration complexe : MySQL uniquement, pas de UI
+- ❌ Pas de monitoring temps réel
+- ❌ Documentation dispersée
+
+### Solution apportée
+
+- ✅ **Setup Docker : 5 minutes** (`docker-compose up -d`)
+- ✅ **Breakout sélectif** : Par dictionnaire (par Assietou Diagne, ANSD)
+- ✅ **Multi-SGBD** : PostgreSQL, MySQL, SQL Server
+- ✅ **Web Scheduler** : Jobs configurables sans crontab
+- ✅ **Monitoring** : Logs streaming temps réel
+- ✅ **Admin Panel** : Interface React moderne
+- ✅ **Documentation complète** : 255+ pages (FR)
+
+---
+
+## 🚀 Démarrage Rapide
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 my-8">
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <h3 className="text-2xl font-bold mb-4">📦 Installation</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      Déployez CSWeb en 5 minutes avec Docker
+    </p>
+    <a href="/getting-started/installation" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+      Commencer l'installation →
+    </a>
+  </div>
+
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <h3 className="text-2xl font-bold mb-4">🎓 Premier Breakout</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      Tutorial step-by-step pour votre premier breakout
+    </p>
+    <a href="/getting-started/first-breakout" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+      Suivre le tutorial →
+    </a>
+  </div>
+
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <h3 className="text-2xl font-bold mb-4">📚 Guides</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      Guides complets sur Breakout, Multi-DB, Admin
+    </p>
+    <a href="/guides/breakout/selective" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+      Voir les guides →
+    </a>
+  </div>
+
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 hover:shadow-lg transition-shadow">
+    <h3 className="text-2xl font-bold mb-4">📖 API Reference</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      OAuth2, Breakout API, Webhooks
+    </p>
+    <a href="/reference/api/oauth" className="text-blue-600 dark:text-blue-400 font-medium hover:underline">
+      Voir l'API →
+    </a>
+  </div>
+</div>
+
+---
+
+## 🌟 Fonctionnalités Principales
+
+### Architecture Flexible
+
+Deux modes de déploiement adaptés à vos besoins :
+
+- **Mode Local** : Tout sur une machine (dev, tests, petits projets)
+- **Mode Remote** : Base metadata séparée de la base breakout (production, RGPH)
+
+[En savoir plus sur l'architecture →](/guides/architecture/flexible)
+
+### Breakout Sélectif
+
+Lancez le breakout pour un dictionnaire spécifique au lieu de tous :
+
+```bash
+# Via CLI
+php bin/console csweb:process-cases-by-dict VOTRE_DICTIONNAIRE
+
+# Via API
+curl -X POST http://localhost:8080/api/breakout/VOTRE_DICTIONNAIRE/trigger
+```
+
+[Guide complet du breakout sélectif →](/guides/breakout/selective)
+
+### Support Multi-SGBD
+
+Choisissez votre base de données pour le breakout :
+
+- **PostgreSQL** (recommandé pour analytics)
+- **MySQL** (compatible, legacy)
+- **SQL Server** (écosystème Microsoft)
+
+[Configuration Multi-DB →](/guides/database/multi-db)
+
+---
+
+## 📊 Par les Chiffres
+
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 my-8 text-center">
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="text-3xl font-bold text-blue-600">255+</div>
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Pages docs</div>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="text-3xl font-bold text-purple-600">3</div>
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">SGBD supportés</div>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="text-3xl font-bold text-green-600">5 min</div>
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Setup Docker</div>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <div className="text-3xl font-bold text-orange-600">2</div>
+    <div className="text-sm text-gray-600 dark:text-gray-400 mt-2">Modes déploiement</div>
+  </div>
+</div>
+
+---
+
+## 🎯 Cas d'Usage
+
+### Développeur Local
+Testez CSWeb sur votre laptop avec Docker. Breakout sur PostgreSQL local.
+
+### Institut National de Statistique (INS)
+Production RGPH5 avec base metadata MySQL (CSWeb vanilla) + breakout PostgreSQL remote (analytics).
+
+### Projet de Recherche
+Déploiement rapide pour collecte de données avec monitoring temps réel.
+
+---
+
+## 🤝 Communauté
+
+<Callout type="info">
+  Rejoignez notre communauté pour obtenir de l'aide, partager vos expériences et contribuer au projet !
+</Callout>
+
+- **GitHub** : [Issues & Discussions](https://github.com/BOUNADRAME/pg_csweb8_latest_2026)
+- **Discord** : [Rejoindre le serveur](https://discord.gg/csweb-community)
+- **Email** : support@csweb-community.org
+
+---
+
+## 📚 Prochaines Étapes
+
+1. [**Installation**](/getting-started/installation) - Déployer CSWeb en 5 minutes
+2. [**Premier Breakout**](/getting-started/first-breakout) - Tutorial step-by-step
+3. [**Vérification**](/getting-started/verify) - Checklist de vérification
+4. [**Prochaines Étapes**](/getting-started/next-steps) - Aller plus loin
+
+---
+
+## 👨‍💻 About the Author
+
+<div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 my-8 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
+  <div className="flex flex-col md:flex-row gap-6 items-center">
+    <div className="flex-shrink-0">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+        BD
+      </div>
+    </div>
+    <div className="flex-1 text-center md:text-left">
+      <h3 className="text-2xl font-bold mb-2">Bouna DRAME</h3>
+      <p className="text-lg text-gray-600 dark:text-gray-400 mb-3">
+        🚀 Full-Stack Developer | Open Source Contributor | CSPro & Statistical Systems Expert
+      </p>
+      <p className="text-gray-700 dark:text-gray-300 mb-4">
+        Passionné par la démocratisation des outils statistiques en Afrique. Spécialisé en architecture de systèmes de collecte de données (CSPro, CSWeb) et développement d'applications modernes (Spring Boot, React, Next.js).
+      </p>
+      <div className="flex flex-wrap gap-3 justify-center md:justify-start">
+        <a
+          href="https://bounadrame.github.io/portfolio/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          🌐 Portfolio
+        </a>
+        <a
+          href="https://github.com/BOUNADRAME"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium"
+        >
+          💼 GitHub
+        </a>
+        <a
+          href="https://www.linkedin.com/in/bouna-drame"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors font-medium"
+        >
+          🔗 LinkedIn
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+### 🎯 Projets & Contributions
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <h4 className="font-bold mb-2">🌍 CSWeb Community Platform</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      Documentation moderne Nextra, architecture flexible multi-DB, breakout sélectif
+    </p>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <h4 className="font-bold mb-2">📊 KATS (Kairos Analytics)</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      API d'analyse de sentiment avec IA (Claude, OpenAI), Spring Boot + PostgreSQL
+    </p>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <h4 className="font-bold mb-2">🔗 CSPro Webhooks Integration</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      Pont entre CSWeb et systèmes tiers (breakout auto, log monitoring, schema sync)
+    </p>
+  </div>
+  <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-4">
+    <h4 className="font-bold mb-2">🚀 Open Source Contributions</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      Contributions actives sur GitHub, documentation technique, mentoring
+    </p>
+  </div>
+</div>
+
+### 💼 Besoin d'un Développeur Full-Stack ?
+
+Vous cherchez un développeur expérimenté pour :
+- 🏗️ Architecture de systèmes statistiques (CSPro, ODK, KoboToolbox)
+- 🔧 Développement backend (Spring Boot, Node.js, API REST)
+- ⚛️ Applications frontend modernes (React, Next.js, TypeScript)
+- 🐳 DevOps & Infrastructure (Docker, CI/CD, PostgreSQL, MongoDB)
+- 📊 Analytics & BI (Power BI, Metabase, Tableau)
+
+**Contactez-moi :**
+- 📧 Email: bouna.drame@example.com
+- 💼 LinkedIn: [linkedin.com/in/bouna-drame](https://www.linkedin.com/in/bouna-drame)
+- 🌐 Portfolio: [bounadrame.github.io/portfolio](https://bounadrame.github.io/portfolio/)
+
+---
+
+<div className="text-center text-sm text-gray-500 dark:text-gray-600 my-8">
+  Made with ❤️ by <a href="https://bounadrame.github.io/portfolio/" target="_blank" rel="noopener noreferrer" className="font-bold hover:underline">Bouna DRAME</a> © 2026
+</div>

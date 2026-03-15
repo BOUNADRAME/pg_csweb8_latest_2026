@@ -1,0 +1,7 @@
+{
+  "multi-db": "Vue d'ensemble Multi-DB",
+  "postgresql": "PostgreSQL",
+  "mysql": "MySQL",
+  "sqlserver": "SQL Server",
+  "migration": "Migration entre SGBD"
+}

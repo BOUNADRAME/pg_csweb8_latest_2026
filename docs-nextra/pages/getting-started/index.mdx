@@ -1,0 +1,231 @@
+---
+title: Bienvenue - Getting Started
+description: Introduction à CSWeb Community Platform
+---
+
+import { Callout } from '../../components/Callout'
+
+# Bienvenue sur CSWeb Community Platform
+
+## Qu'est-ce que CSWeb Community Platform ?
+
+**CSWeb Community Platform** est une version améliorée et modernisée de CSWeb (CSPro Web), conçue pour simplifier le déploiement, la configuration et l'utilisation de CSWeb pour les instituts statistiques africains.
+
+### CSWeb vs CSWeb Community Platform
+
+| Fonctionnalité | CSWeb Vanilla | CSWeb Community |
+|----------------|---------------|-----------------|
+| **Installation** | 2-3 jours (Apache, MySQL, PHP) | 5 minutes (Docker) |
+| **Breakout** | Global (tous les dictionnaires) | Sélectif (par dictionnaire) |
+| **Base de données** | MySQL uniquement | PostgreSQL, MySQL, SQL Server |
+| **Scheduler** | Crontab manuel | Web UI avec builder visuel |
+| **Monitoring** | Logs SSH requis | Streaming temps réel |
+| **Admin UI** | Basique | React moderne + Tailwind |
+| **Documentation** | Limitée | 255+ pages (FR) |
+
+<Callout type="success">
+  CSWeb Community est 100% compatible avec CSWeb vanilla. Vous pouvez migrer vos données existantes sans perte.
+</Callout>
+
+---
+
+## Architecture Overview
+
+CSWeb Community Platform utilise une **architecture à deux bases de données** :
+
+### 1. Base Metadata (MySQL)
+Stocke les métadonnées CSWeb :
+- Utilisateurs et permissions
+- Dictionnaires uploadés
+- Applications CSPro
+- Configuration des jobs
+
+**Localisation :** Sur le serveur CSWeb (Docker container `csweb_mysql`)
+
+### 2. Base Breakout (Multi-SGBD)
+Stocke les données breakées des questionnaires :
+- Tables créées automatiquement par dictionnaire
+- Données tabulaires pour analytics
+- Support PostgreSQL, MySQL, SQL Server
+
+**Localisation :** Locale OU remote (flexible)
+
+<Callout type="info">
+  Cette architecture permet de séparer les données métier (breakout) de la configuration (metadata), idéal pour la production.
+</Callout>
+
+---
+
+## Deux Modes de Déploiement
+
+### Mode Local (Développement)
+
+```
+┌─────────────────────────────────┐
+│      Machine Développeur         │
+├─────────────────────────────────┤
+│  CSWeb (Docker)                  │
+│    ├─ MySQL (metadata)           │
+│    └─ App PHP                    │
+│                                  │
+│  PostgreSQL (Docker)             │
+│    └─ Breakout DB                │
+└─────────────────────────────────┘
+```
+
+**Cas d'usage :**
+- Tests locaux
+- Développement
+- Petits projets
+
+### Mode Remote (Production)
+
+```
+┌─────────────────┐         ┌─────────────────┐
+│  CSWeb Serveur  │         │  Serveur Remote │
+├─────────────────┤         ├─────────────────┤
+│ MySQL (metadata)│─────────▶ PostgreSQL       │
+│ App PHP         │         │ (analytics DB)  │
+└─────────────────┘         └─────────────────┘
+```
+
+**Cas d'usage :**
+- RGPH5 Sénégal
+- Production INS
+- Séparation analytics/metadata
+
+[En savoir plus sur l'architecture flexible →](/guides/architecture/flexible)
+
+---
+
+## Cas d'Usage
+
+### 🧑‍💻 Développeur Local
+
+**Objectif :** Tester CSWeb sur votre laptop
+
+**Setup :**
+```bash
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+docker-compose up -d
+```
+
+**Base breakout :** PostgreSQL local (port 5432)
+
+[Guide installation →](/getting-started/installation)
+
+---
+
+### 🏢 Institut National de Statistique (INS)
+
+**Objectif :** Production RGPH5 avec séparation metadata/analytics
+
+**Setup :**
+- Base metadata : MySQL vanilla CSWeb (existante)
+- Base breakout : PostgreSQL remote (nouvelle)
+
+**Avantages :**
+- Pas de migration de la base metadata existante
+- Analytics sur PostgreSQL optimisé
+- Breakout sélectif pour gérer la charge
+
+[Guide déploiement remote →](/guides/deployment/remote)
+
+---
+
+### 📊 Projet de Recherche
+
+**Objectif :** Collecte de données avec monitoring temps réel
+
+**Setup :**
+- Docker local ou serveur cloud
+- Breakout automatique via scheduler
+- Dashboard analytics en temps réel
+
+**Avantages :**
+- Déploiement rapide
+- Monitoring logs streaming
+- Exports automatiques
+
+[Guide scheduler →](/guides/admin/scheduler)
+
+---
+
+## Différences Clés vs CSWeb Vanilla
+
+### 1. Breakout Sélectif (par Assietou Diagne, ANSD)
+
+**CSWeb Vanilla :**
+```bash
+# Breake TOUS les dictionnaires (lent, risqué)
+php bin/console csweb:breakout
+```
+
+**CSWeb Community :**
+```bash
+# Breake UN dictionnaire spécifique
+php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS
+```
+
+<Callout type="warning">
+  Le breakout global peut prendre des heures sur des bases volumineuses. Le breakout sélectif permet de cibler uniquement les dictionnaires nécessaires.
+</Callout>
+
+### 2. Support Multi-SGBD
+
+**CSWeb Vanilla :**
+- MySQL uniquement
+
+**CSWeb Community :**
+- PostgreSQL (recommandé pour analytics)
+- MySQL (compatible legacy)
+- SQL Server (écosystème Microsoft)
+
+Configuration via UI ou fichier `.env`.
+
+### 3. Docker Production-Ready
+
+**CSWeb Vanilla :**
+- Installation manuelle Apache + MySQL + PHP
+- Configuration permissions complexe
+
+**CSWeb Community :**
+```bash
+docker-compose up -d  # C'est tout!
+```
+
+### 4. Monitoring Temps Réel
+
+**CSWeb Vanilla :**
+- SSH requis pour voir les logs
+- Pas de métriques
+
+**CSWeb Community :**
+- Logs streaming dans Admin Panel
+- Métriques CPU, RAM, DB
+- Alertes configurables
+
+---
+
+## Prochaines Étapes
+
+Maintenant que vous comprenez les concepts, voici comment démarrer :
+
+1. **[Installation](/getting-started/installation)** - Déployer CSWeb en 5 minutes avec Docker
+2. **[Premier Breakout](/getting-started/first-breakout)** - Tutorial step-by-step
+3. **[Vérification](/getting-started/verify)** - Checklist de vérification
+4. **[Prochaines Étapes](/getting-started/next-steps)** - Aller plus loin
+
+<Callout type="info">
+  **Temps estimé :** 15 minutes pour installer et faire votre premier breakout.
+</Callout>
+
+---
+
+## Besoin d'Aide ?
+
+- **Documentation** : Consultez les guides détaillés
+- **GitHub Issues** : [Poser une question](https://github.com/BOUNADRAME/pg_csweb8_latest_2026/issues)
+- **Discord** : [Rejoindre la communauté](https://discord.gg/csweb-community)
+- **Email** : support@csweb-community.org
