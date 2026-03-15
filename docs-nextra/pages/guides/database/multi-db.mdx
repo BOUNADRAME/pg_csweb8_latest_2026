@@ -1,0 +1,712 @@
+---
+title: Configuration Multi-Database
+description: Support PostgreSQL, MySQL et SQL Server - Architecture flexible CSWeb Community
+---
+
+import { Callout } from '../../../components/Callout'
+import { Tabs } from '../../../components/Tabs'
+
+# Configuration Multi-Database
+
+<div className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950 p-6 my-8 rounded-r-lg">
+  <h2 className="text-2xl font-bold mb-4 text-blue-900 dark:text-blue-100">
+    🏗️ Architecture Flexible Multi-SGBD
+  </h2>
+
+  <p className="text-lg mb-4 text-blue-900 dark:text-blue-100">
+    CSWeb Community Platform v2.0 introduit une <strong>architecture flexible multi-database</strong> permettant de choisir dynamiquement PostgreSQL, MySQL ou SQL Server pour le breakout, sans modifier le code.
+  </p>
+
+  <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-blue-300 dark:border-blue-700 mb-4">
+    <p className="font-bold mb-2">🎯 Architecte & Développement :</p>
+    <ul className="space-y-1 text-sm text-blue-900 dark:text-blue-100">
+      <li>• <strong>Lead Developer</strong> : <a href="https://bounadrame.github.io/portfolio/" className="text-blue-600 hover:underline font-bold">Bouna DRAME</a></li>
+      <li>• <strong>Projet</strong> : CSWeb Community Platform v2.0</li>
+      <li>• <strong>Innovation</strong> : Support 3 SGBD avec changement à chaud (zero downtime)</li>
+      <li>• <strong>Drivers</strong> : pdo_pgsql, pdo_mysql, pdo_sqlsrv (tous installés)</li>
+    </ul>
+  </div>
+
+  <p className="text-sm text-blue-800 dark:text-blue-200">
+    💼 <strong>Besoin d'expertise PostgreSQL/Multi-DB ?</strong> Consultez mon <a href="https://bounadrame.github.io/portfolio/" className="font-bold hover:underline">portfolio</a> : KATS Analytics (Spring Boot + PostgreSQL), CSPro Webhooks, etc.
+  </p>
+</div>
+
+---
+
+## 📋 Table des Matières
+
+1. [Concept Clé : 2 Bases Distinctes](#concept-clé--2-bases-distinctes)
+2. [SGBD Supportés](#sgbd-supportés)
+3. [Tableau Comparatif](#tableau-comparatif)
+4. [Quand Choisir Quel SGBD](#quand-choisir-quel-sgbd)
+5. [Configuration](#configuration)
+6. [Migration Entre SGBD](#migration-entre-sgbd)
+7. [Drivers PHP](#drivers-php)
+8. [Troubleshooting](#troubleshooting)
+
+---
+
+## Concept Clé : 2 Bases Distinctes
+
+<Callout type="warning">
+  **IMPORTANT :** CSWeb utilise **TOUJOURS 2 bases de données** avec responsabilités différentes. Ne jamais les confondre !
+</Callout>
+
+### Base 1 : MySQL Métadonnées (FIXE)
+
+```
+┌─────────────────────────────────────────────┐
+│   MySQL Metadata (OBLIGATOIRE - LOCAL)     │
+├─────────────────────────────────────────────┤
+│  Créé par      : setup.php (installation)   │
+│  Fichier config: src/AppBundle/config.php   │
+│  Port          : 3306                       │
+│  Database      : csweb                      │
+│                                              │
+│  Tables:                                     │
+│  ├─ cspro_dictionaries                      │
+│  ├─ cspro_users                             │
+│  ├─ cspro_oauth_clients                     │
+│  ├─ cspro_applications                      │
+│  ├─ cspro_files                             │
+│  └─ ... (métadonnées CSWeb)                 │
+│                                              │
+│  ⚠️ NE JAMAIS MODIFIER                      │
+└─────────────────────────────────────────────┘
+```
+
+**Responsabilité :**
+- Synchronisation devices (tablets, smartphones)
+- Gestion utilisateurs et OAuth2
+- Métadonnées dictionnaires CSPro
+- Files upload/download
+
+---
+
+### Base 2 : Breakout Database (CONFIGURABLE)
+
+```
+┌─────────────────────────────────────────────┐
+│  PostgreSQL / MySQL / SQL Server            │
+│  (CHOIX LIBRE - LOCAL ou REMOTE)           │
+├─────────────────────────────────────────────┤
+│  Configuré par: .env                        │
+│  Service      : BreakoutDatabaseConfig      │
+│  Type         : BREAKOUT_DB_TYPE            │
+│                                              │
+│  Tables (exemple EVAL_PRODUCTEURS):         │
+│  ├─ eval_producteurs_cases                  │
+│  ├─ eval_producteurs_notes                  │
+│  ├─ eval_producteurs_producteurs (level 1)  │
+│  ├─ eval_producteurs_observations (level 2) │
+│  ├─ eval_producteurs_photos (level 3)       │
+│  └─ ... (données analytics)                 │
+│                                              │
+│  ✅ 100% CONFIGURABLE                       │
+└─────────────────────────────────────────────┘
+```
+
+**Responsabilité :**
+- Données breakées (analytics)
+- Tables relationnelles structurées
+- Connexion Power BI / Tableau / Metabase
+- Queries SQL pour analyses
+
+<Callout type="info">
+  **Cette documentation concerne UNIQUEMENT la Base 2 (Breakout).** La Base 1 (MySQL metadata) ne doit jamais être modifiée.
+</Callout>
+
+---
+
+## SGBD Supportés
+
+### 1. PostgreSQL (Recommandé)
+
+<div className="border-2 border-green-300 dark:border-green-800 rounded-lg p-6 bg-green-50 dark:bg-green-950 my-6">
+  <h3 className="text-xl font-bold mb-3 text-green-700 dark:text-green-400">✅ PostgreSQL - Meilleur Choix Analytics</h3>
+
+  <p className="mb-4 text-green-900 dark:text-green-100">
+    <strong>Recommandé pour :</strong> Production, Analytics, Gros volumes (> 500k questionnaires)
+  </p>
+
+  <div className="grid md:grid-cols-2 gap-4">
+    <div>
+      <h4 className="font-bold mb-2 text-green-900 dark:text-green-100">Avantages</h4>
+      <ul className="text-sm space-y-1 text-green-900 dark:text-green-200">
+        <li>✅ <strong>Performance</strong> : Excellent pour analytics</li>
+        <li>✅ <strong>JSON natif</strong> : JSONB pour données semi-structurées</li>
+        <li>✅ <strong>Window functions</strong> : Analyses complexes (OVER, PARTITION BY)</li>
+        <li>✅ <strong>Full-text search</strong> : Recherche textuelle native</li>
+        <li>✅ <strong>GIS</strong> : PostGIS pour données géographiques</li>
+        <li>✅ <strong>Open source</strong> : Gratuit, aucune licence</li>
+        <li>✅ <strong>ACID strict</strong> : Intégrité garantie</li>
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-bold mb-2 text-green-900 dark:text-green-100">Inconvénients</h4>
+      <ul className="text-sm space-y-1 text-green-900 dark:text-green-200">
+        <li>⚠️ Moins familier que MySQL</li>
+        <li>⚠️ Courbe d'apprentissage (tuning)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div className="mt-4 bg-white dark:bg-gray-900 p-3 rounded font-mono text-xs">
+    BREAKOUT_DB_TYPE=postgresql<br/>
+    POSTGRES_HOST=localhost<br/>
+    POSTGRES_PORT=5432
+  </div>
+</div>
+
+**Use Cases :**
+- RGPH (Recensements nationaux > 3M questionnaires)
+- Enquêtes complexes avec analyses statistiques
+- Data Science / Machine Learning
+- Power BI / Tableau dashboards temps réel
+
+---
+
+### 2. MySQL
+
+<div className="border-2 border-yellow-300 dark:border-yellow-800 rounded-lg p-6 bg-yellow-50 dark:bg-yellow-950 my-6">
+  <h3 className="text-xl font-bold mb-3 text-yellow-700 dark:text-yellow-400">🟡 MySQL - Compatible & Familier</h3>
+
+  <p className="mb-4 text-yellow-900 dark:text-yellow-100">
+    <strong>Recommandé pour :</strong> Compatibilité legacy, Infrastructure existante
+  </p>
+
+  <div className="grid md:grid-cols-2 gap-4">
+    <div>
+      <h4 className="font-bold mb-2 text-yellow-900 dark:text-yellow-100">Avantages</h4>
+      <ul className="text-sm space-y-1 text-yellow-900 dark:text-yellow-200">
+        <li>✅ <strong>Familiarité</strong> : Très répandu, facile à trouver expertise</li>
+        <li>✅ <strong>Performance</strong> : Bon pour OLTP (transactions)</li>
+        <li>✅ <strong>Outils matures</strong> : phpMyAdmin, MySQL Workbench</li>
+        <li>✅ <strong>Infrastructure</strong> : Souvent déjà en place</li>
+        <li>✅ <strong>Compatible</strong> : CSWeb vanilla utilise MySQL</li>
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-bold mb-2 text-yellow-900 dark:text-yellow-100">Inconvénients</h4>
+      <ul className="text-sm space-y-1 text-yellow-900 dark:text-yellow-200">
+        <li>⚠️ Moins performant que PostgreSQL (analytics)</li>
+        <li>⚠️ Pas de window functions (< MySQL 8.0)</li>
+        <li>⚠️ JSON moins performant que JSONB PostgreSQL</li>
+      </ul>
+    </div>
+  </div>
+
+  <div className="mt-4 bg-white dark:bg-gray-900 p-3 rounded font-mono text-xs">
+    BREAKOUT_DB_TYPE=mysql<br/>
+    MYSQL_BREAKOUT_HOST=localhost<br/>
+    MYSQL_BREAKOUT_PORT=3307
+  </div>
+</div>
+
+**Use Cases :**
+- Migration depuis CSWeb vanilla (déjà MySQL)
+- Infrastructure existante MySQL
+- Équipe familière avec MySQL uniquement
+- Volumes modérés (< 500k questionnaires)
+
+---
+
+### 3. SQL Server
+
+<div className="border-2 border-blue-300 dark:border-blue-800 rounded-lg p-6 bg-blue-50 dark:bg-blue-950 my-6">
+  <h3 className="text-xl font-bold mb-3 text-blue-700 dark:text-blue-400">🔷 SQL Server - Enterprise Microsoft</h3>
+
+  <p className="mb-4 text-blue-900 dark:text-blue-100">
+    <strong>Recommandé pour :</strong> Écosystème Microsoft, Enterprise, RGPH gouvernementaux
+  </p>
+
+  <div className="grid md:grid-cols-2 gap-4">
+    <div>
+      <h4 className="font-bold mb-2 text-blue-900 dark:text-blue-100">Avantages</h4>
+      <ul className="text-sm space-y-1 text-blue-900 dark:text-blue-200">
+        <li>✅ <strong>Enterprise</strong> : Robuste, haute disponibilité (Always On)</li>
+        <li>✅ <strong>Microsoft Stack</strong> : Intégration parfaite (SSIS, SSRS, Azure)</li>
+        <li>✅ <strong>Performance</strong> : Excellent sur gros serveurs (128GB+ RAM)</li>
+        <li>✅ <strong>Outils</strong> : SQL Server Management Studio (SSMS)</li>
+        <li>✅ <strong>Support</strong> : Microsoft support professionnel</li>
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-bold mb-2 text-blue-900 dark:text-blue-100">Inconvénients</h4>
+      <ul className="text-sm space-y-1 text-blue-900 dark:text-blue-200">
+        <li>⚠️ <strong>Coût</strong> : Licences payantes (sauf Express)</li>
+        <li>⚠️ <strong>Complexité</strong> : Installation/configuration plus lourde</li>
+        <li>⚠️ <strong>Windows</strong> : Historiquement Windows-only (Linux depuis 2017)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div className="mt-4 bg-white dark:bg-gray-900 p-3 rounded font-mono text-xs">
+    BREAKOUT_DB_TYPE=sqlserver<br/>
+    SQLSERVER_HOST=172.16.0.50<br/>
+    SQLSERVER_PORT=1433
+  </div>
+</div>
+
+**Use Cases :**
+- RGPH5 Sénégal (ANSD - SQL Server 2022 Enterprise)
+- Gouvernements avec infrastructure Microsoft
+- Projets avec budget enterprise
+- Azure cloud (SQL Database)
+
+---
+
+## Tableau Comparatif
+
+| Critère | PostgreSQL | MySQL | SQL Server |
+|---------|------------|-------|------------|
+| **Licence** | 🟢 Open Source (gratuit) | 🟢 Open Source (gratuit) | 🔴 Payant (Express gratuit) |
+| **Performance Analytics** | 🟢 Excellente | 🟡 Bonne | 🟢 Excellente |
+| **JSON Support** | 🟢 JSONB natif | 🟡 JSON basique | 🟡 JSON basique |
+| **Window Functions** | 🟢 Oui | 🟡 MySQL 8.0+ | 🟢 Oui |
+| **Full-Text Search** | 🟢 Natif | 🟡 Basique | 🟢 Avancé |
+| **GIS** | 🟢 PostGIS | 🟡 Spatial | 🟢 Geography |
+| **Familiarité** | 🟡 Moyenne | 🟢 Très haute | 🟡 Moyenne |
+| **Outils Graphiques** | 🟢 pgAdmin, DBeaver | 🟢 phpMyAdmin, Workbench | 🟢 SSMS |
+| **Cloud** | 🟢 AWS RDS, Azure, GCP | 🟢 AWS RDS, Azure, GCP | 🟢 Azure SQL Database |
+| **Driver PHP** | `pdo_pgsql` | `pdo_mysql` | `pdo_sqlsrv` |
+| **Port Défaut** | 5432 | 3306 | 1433 |
+| **Recommandé Pour** | Analytics, RGPH, ML | Legacy, Familiarité | Microsoft Stack, Enterprise |
+
+---
+
+## Quand Choisir Quel SGBD
+
+### Matrice de Décision
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  CHOISIR LE BON SGBD                         │
+├─────────────────────────────────────────────────────────────┤
+│                                                               │
+│  Volume < 50k questionnaires          → MySQL (simple)       │
+│  Volume 50k - 500k                    → PostgreSQL           │
+│  Volume > 500k (RGPH)                 → PostgreSQL / SQL Srv │
+│                                                               │
+│  Budget limité                        → PostgreSQL / MySQL   │
+│  Budget enterprise                    → SQL Server           │
+│                                                               │
+│  Expertise équipe = MySQL             → MySQL                │
+│  Expertise équipe = Microsoft         → SQL Server           │
+│  Expertise équipe = Polyvalente       → PostgreSQL           │
+│                                                               │
+│  Analytics complexes                  → PostgreSQL           │
+│  Transactions simples                 → MySQL                │
+│                                                               │
+│  Cloud = Azure                        → SQL Server           │
+│  Cloud = AWS / GCP                    → PostgreSQL / MySQL   │
+│                                                               │
+│  Infrastructure existante = MySQL     → MySQL                │
+│  Infrastructure existante = SQL Srv   → SQL Server           │
+│  Nouvelle infrastructure              → PostgreSQL           │
+│                                                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Exemples Concrets
+
+**Cas 1 : Développeur Local (Test)**
+```
+BREAKOUT_DB_TYPE=postgresql  # Recommandé
+Raison: Gratuit, performant, learn best practices
+```
+
+**Cas 2 : INS avec Infrastructure MySQL Existante**
+```
+BREAKOUT_DB_TYPE=mysql
+Raison: DBA MySQL déjà en place, pas besoin de former
+```
+
+**Cas 3 : RGPH National (3M+ questionnaires)**
+```
+BREAKOUT_DB_TYPE=postgresql  # ou sqlserver
+Raison: Performance analytics, window functions, JSONB
+```
+
+**Cas 4 : Gouvernement Microsoft-Only**
+```
+BREAKOUT_DB_TYPE=sqlserver
+Raison: Politique IT, licences déjà achetées, support Microsoft
+```
+
+---
+
+## Configuration
+
+### Variables .env par SGBD
+
+<Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
+<div>
+
+```bash
+#####################################
+# POSTGRESQL (Recommandé)
+#####################################
+
+# Type de DB breakout
+BREAKOUT_DB_TYPE=postgresql
+
+# Connexion PostgreSQL
+POSTGRES_HOST=localhost        # ou IP remote: 10.0.1.100
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=csweb_analytics
+POSTGRES_USER=csweb_user
+POSTGRES_PASSWORD=SecurePassword123!
+
+# Optionnel: Schema PostgreSQL
+POSTGRES_SCHEMA=public         # ou nom custom
+```
+
+**Services Docker démarrés :**
+```bash
+# Mode LOCAL
+docker-compose --profile local-postgres up -d
+
+# Mode REMOTE (ne démarre PAS postgres local)
+docker-compose up -d csweb mysql
+```
+
+</div>
+<div>
+
+```bash
+#####################################
+# MYSQL (Compatible Legacy)
+#####################################
+
+# Type de DB breakout
+BREAKOUT_DB_TYPE=mysql
+
+# Connexion MySQL Breakout
+MYSQL_BREAKOUT_HOST=localhost  # ou IP remote
+MYSQL_BREAKOUT_PORT=3307       # 3307 pour éviter conflit avec metadata MySQL (3306)
+MYSQL_BREAKOUT_DATABASE=csweb_breakout
+MYSQL_BREAKOUT_USER=breakout_user
+MYSQL_BREAKOUT_PASSWORD=SecurePassword123!
+
+# Note: MySQL metadata reste sur port 3306 (NE PAS MODIFIER)
+```
+
+**Services Docker démarrés :**
+```bash
+# Mode LOCAL
+docker-compose --profile local-mysql up -d
+
+# Mode REMOTE
+docker-compose up -d csweb mysql
+```
+
+</div>
+<div>
+
+```bash
+#####################################
+# SQL SERVER (Enterprise Microsoft)
+#####################################
+
+# Type de DB breakout
+BREAKOUT_DB_TYPE=sqlserver
+
+# Connexion SQL Server
+SQLSERVER_HOST=localhost       # ou IP remote: 172.16.0.50
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=CSWeb_Analytics
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=YourStrong!Passw0rd  # Minimum 8 chars, majuscule, chiffre, symbole
+
+# Optionnel: Instance nommée
+SQLSERVER_INSTANCE=MSSQLSERVER # ou nom instance custom
+```
+
+**Services Docker démarrés :**
+```bash
+# Mode LOCAL
+docker-compose --profile local-sqlserver up -d
+
+# Mode REMOTE
+docker-compose up -d csweb mysql
+```
+
+</div>
+</Tabs>
+
+---
+
+## Migration Entre SGBD
+
+### Scénario 1 : MySQL → PostgreSQL
+
+**Raison :** Améliorer performance analytics, utiliser JSON natif.
+
+**Étapes :**
+
+```bash
+# 1. Export données MySQL
+docker-compose exec mysql-breakout mysqldump \
+  -u breakout_user -p csweb_breakout > mysql_backup.sql
+
+# 2. Installer pgloader (outil conversion)
+sudo apt-get install pgloader
+
+# 3. Convertir MySQL → PostgreSQL
+pgloader mysql://breakout_user:password@localhost/csweb_breakout \
+  postgresql://csweb_user:password@localhost/csweb_analytics
+
+# 4. Modifier .env
+# AVANT
+# BREAKOUT_DB_TYPE=mysql
+
+# APRÈS
+BREAKOUT_DB_TYPE=postgresql
+POSTGRES_HOST=localhost
+POSTGRES_DATABASE=csweb_analytics
+
+# 5. Redémarrer services
+docker-compose down
+docker-compose --profile local-postgres up -d
+
+# 6. Vérifier données
+psql -h localhost -U csweb_user -d csweb_analytics
+\dt
+SELECT COUNT(*) FROM eval_producteurs_cases;
+```
+
+---
+
+### Scénario 2 : PostgreSQL → SQL Server
+
+**Raison :** Politique IT gouvernementale impose Microsoft.
+
+**Étapes :**
+
+```bash
+# 1. Export PostgreSQL
+docker-compose exec postgres pg_dump \
+  -U csweb_user -F c csweb_analytics > postgres_backup.dump
+
+# 2. Conversion manuelle (ou outil tiers)
+# Installer SQL Server Migration Assistant (SSMA)
+# https://learn.microsoft.com/en-us/sql/ssma/
+
+# 3. Créer DB sur SQL Server
+sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd'
+CREATE DATABASE CSWeb_Analytics;
+GO
+
+# 4. Importer via SSMA ou scripts T-SQL convertis
+
+# 5. Modifier .env
+BREAKOUT_DB_TYPE=sqlserver
+SQLSERVER_HOST=localhost
+SQLSERVER_DATABASE=CSWeb_Analytics
+
+# 6. Redémarrer
+docker-compose down
+docker-compose --profile local-sqlserver up -d
+```
+
+<Callout type="warning">
+  **Attention :** Migration entre SGBD nécessite conversion des types de données (TEXT → NVARCHAR, SERIAL → IDENTITY, etc.). Testez en dev avant production.
+</Callout>
+
+---
+
+## Drivers PHP
+
+### Vérifier Drivers Disponibles
+
+```bash
+# Commande CSWeb intégrée
+docker-compose exec csweb php bin/console csweb:check-database-drivers
+
+# Sortie attendue:
+# ✅ pdo_mysql: Available (MySQL metadata + breakout)
+# ✅ pdo_pgsql: Available (PostgreSQL breakout)
+# ✅ pdo_sqlsrv: Available (SQL Server breakout)
+
+# Commande PHP standard
+docker-compose exec csweb php -m | grep pdo
+
+# Sortie:
+# pdo_mysql
+# pdo_pgsql
+# pdo_sqlsrv
+```
+
+### Installation Drivers (si manquants)
+
+<Tabs items={['Ubuntu/Debian', 'CentOS/RHEL', 'Docker']}>
+<div>
+
+```bash
+# PostgreSQL
+sudo apt-get update
+sudo apt-get install -y php-pgsql php-pdo
+
+# MySQL
+sudo apt-get install -y php-mysql php-pdo
+
+# SQL Server (via PECL)
+sudo apt-get install -y php-dev php-pear unixodbc-dev
+sudo pecl install sqlsrv pdo_sqlsrv
+
+# Activer extensions
+echo "extension=sqlsrv.so" | sudo tee /etc/php/8.1/mods-available/sqlsrv.ini
+echo "extension=pdo_sqlsrv.so" | sudo tee /etc/php/8.1/mods-available/pdo_sqlsrv.ini
+sudo phpenmod sqlsrv pdo_sqlsrv
+
+# Redémarrer Apache/PHP-FPM
+sudo systemctl restart apache2
+```
+
+</div>
+<div>
+
+```bash
+# PostgreSQL
+sudo yum install -y php-pgsql php-pdo
+
+# MySQL
+sudo yum install -y php-mysql php-pdo
+
+# SQL Server
+sudo yum install -y php-devel php-pear unixODBC-devel
+sudo pecl install sqlsrv pdo_sqlsrv
+
+# Activer
+echo "extension=sqlsrv.so" > /etc/php.d/20-sqlsrv.ini
+echo "extension=pdo_sqlsrv.so" > /etc/php.d/20-pdo_sqlsrv.ini
+
+# Redémarrer
+sudo systemctl restart httpd
+```
+
+</div>
+<div>
+
+**Dockerfile (déjà inclus dans CSWeb Community) :**
+
+```dockerfile
+FROM php:8.1-apache
+
+# PostgreSQL
+RUN apt-get update && apt-get install -y libpq-dev \\
+    && docker-php-ext-install pdo_pgsql pgsql
+
+# MySQL
+RUN docker-php-ext-install pdo_mysql mysqli
+
+# SQL Server (complexe)
+RUN apt-get install -y gnupg unixodbc-dev \\
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \\
+    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \\
+    && apt-get update \\
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql18 \\
+    && pecl install sqlsrv pdo_sqlsrv \\
+    && docker-php-ext-enable sqlsrv pdo_sqlsrv
+```
+
+**Note :** CSWeb Community Platform inclut déjà tous les drivers.
+
+</div>
+</Tabs>
+
+---
+
+## Troubleshooting
+
+### Erreur : Driver Not Found
+
+**Symptôme :**
+
+```
+[PDOException] could not find driver
+```
+
+**Solution :**
+
+```bash
+# Vérifier driver installé
+php -m | grep pdo_pgsql
+
+# Si absent, installer
+sudo apt-get install php-pgsql
+sudo systemctl restart apache2
+
+# Vérifier à nouveau
+docker-compose exec csweb php bin/console csweb:check-database-drivers
+```
+
+---
+
+### Erreur : Connection Refused (Remote)
+
+**Symptôme :**
+
+```
+SQLSTATE[HY000] [2002] Connection refused
+```
+
+**Solutions :**
+
+```bash
+# 1. Vérifier serveur distant accessible
+ping 10.0.1.100
+telnet 10.0.1.100 5432
+
+# 2. Vérifier firewall
+sudo ufw allow from 10.0.1.10 to any port 5432
+
+# 3. Vérifier pg_hba.conf (PostgreSQL)
+sudo vim /etc/postgresql/16/main/pg_hba.conf
+# Ajouter:
+# host csweb_analytics csweb_user 10.0.1.10/32 md5
+
+sudo systemctl restart postgresql
+```
+
+---
+
+## Conclusion
+
+<div className="border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950 p-6 my-8 rounded-r-lg">
+  <h3 className="text-xl font-bold mb-3 text-blue-900 dark:text-blue-100">
+    🎯 Récapitulatif Multi-Database
+  </h3>
+
+  <ul className="space-y-2 text-blue-900 dark:text-blue-100 mb-4">
+    <li>✅ <strong>3 SGBD supportés</strong> : PostgreSQL, MySQL, SQL Server</li>
+    <li>✅ <strong>Changement à chaud</strong> : Modifier .env sans code</li>
+    <li>✅ <strong>Drivers inclus</strong> : pdo_pgsql, pdo_mysql, pdo_sqlsrv</li>
+    <li>✅ <strong>Migration possible</strong> : MySQL ↔ PostgreSQL ↔ SQL Server</li>
+    <li>✅ <strong>Recommandation</strong> : PostgreSQL pour analytics</li>
+  </ul>
+
+  <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-blue-300 dark:border-blue-700">
+    <p className="font-bold mb-2">🏗️ Architecture par :</p>
+    <p className="text-sm">
+      <a href="https://bounadrame.github.io/portfolio/" className="text-blue-600 hover:underline font-bold">Bouna DRAME</a> - Lead Developer CSWeb Community Platform
+    </p>
+  </div>
+</div>
+
+---
+
+**Prochaines Étapes :**
+
+- [Configuration PostgreSQL →](/guides/database/postgresql)
+- [Configuration MySQL →](/guides/database/mysql)
+- [Configuration SQL Server →](/guides/database/sqlserver)
+- [Architecture Flexible →](/guides/architecture/flexible)
+
+---
+
+<div className="text-center text-sm text-gray-500 dark:text-gray-600 my-8">
+  Documentation par <a href="https://bounadrame.github.io/portfolio/" className="font-bold hover:underline">Bouna DRAME</a> © 2026
+</div>
