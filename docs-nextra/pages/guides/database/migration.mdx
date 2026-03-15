@@ -1,0 +1,257 @@
+# Migration entre SGBD
+
+Guide pour migrer les données breakout entre PostgreSQL, MySQL et SQL Server.
+
+## Stratégies de Migration
+
+### Option 1 : Re-Breakout (Recommandé)
+
+**Avantage** : Simple, pas de conversion SQL.
+
+```bash
+# 1. Changer SGBD dans .env
+BREAKOUT_DB_TYPE=postgresql  # ou mysql, sqlserver
+
+# 2. Supprimer anciennes tables (optionnel)
+# Dans l'ancienne DB
+
+# 3. Re-lancer breakout
+php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+**Durée** : Dépend du volume (ex: 100k cases = ~15 min).
+
+### Option 2 : Export/Import SQL
+
+**Avantage** : Conservation données exactes.
+
+Étapes :
+1. Export depuis source
+2. Conversion syntaxe SQL
+3. Import vers destination
+
+## MySQL → PostgreSQL
+
+### 1. Export MySQL
+
+```bash
+docker-compose exec mysql-breakout mysqldump \
+  -u breakout_user -p \
+  --no-create-info \
+  --complete-insert \
+  csweb_breakout > mysql_data.sql
+```
+
+### 2. Conversion Syntaxe
+
+```bash
+# Remplacer backticks par guillemets
+sed -i 's/`/"/g' mysql_data.sql
+
+# Remplacer AUTO_INCREMENT
+sed -i 's/AUTO_INCREMENT/SERIAL/g' mysql_data.sql
+
+# Booléens
+sed -i 's/ 1/ true/g' mysql_data.sql
+sed -i 's/ 0/ false/g' mysql_data.sql
+```
+
+### 3. Import PostgreSQL
+
+```bash
+cat mysql_data.sql | docker-compose exec -T postgres \
+  psql -U csweb_analytics -d csweb_analytics
+```
+
+## PostgreSQL → MySQL
+
+### 1. Export PostgreSQL
+
+```bash
+docker-compose exec postgres pg_dump \
+  -U csweb_analytics \
+  --data-only \
+  --inserts \
+  csweb_analytics > pg_data.sql
+```
+
+### 2. Conversion Syntaxe
+
+```bash
+# Remplacer séquences
+sed -i 's/SERIAL/INT AUTO_INCREMENT/g' pg_data.sql
+
+# Booléens
+sed -i 's/true/1/g' pg_data.sql
+sed -i 's/false/0/g' pg_data.sql
+
+# Guillemets
+sed -i 's/"/`/g' pg_data.sql
+```
+
+### 3. Import MySQL
+
+```bash
+cat pg_data.sql | docker-compose exec -T mysql-breakout \
+  mysql -u breakout_user -p csweb_breakout
+```
+
+## PostgreSQL → SQL Server
+
+### 1. Export PostgreSQL
+
+```bash
+docker-compose exec postgres pg_dump \
+  -U csweb_analytics \
+  --data-only \
+  --inserts \
+  csweb_analytics > pg_data.sql
+```
+
+### 2. Conversion Syntaxe
+
+```bash
+# Booléens
+sed -i 's/true/1/g' pg_data.sql
+sed -i 's/false/0/g' pg_data.sql
+
+# Guillemets simples pour valeurs
+sed -i "s/\"/'/g" pg_data.sql
+```
+
+### 3. Import SQL Server
+
+```bash
+cat pg_data.sql | docker-compose exec -T sqlserver \
+  /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P 'YourStrong!Passw0rd'
+```
+
+## Outils Tiers
+
+### pgLoader (PostgreSQL → Autre)
+
+```bash
+# Installation
+apt-get install pgloader
+
+# Migration MySQL → PostgreSQL
+pgloader mysql://user:pass@localhost/csweb_breakout \
+          postgresql://user:pass@localhost/csweb_analytics
+```
+
+### DBeaver (Interface Graphique)
+
+1. Installer DBeaver : https://dbeaver.io/
+2. Connecter les 2 bases
+3. Sélectionner tables source
+4. Export → SQL INSERT
+5. Import dans destination
+
+## Migration avec Downtime
+
+### Planification
+
+**Étape 1** : Maintenance Mode
+
+```bash
+# Désactiver CSWeb
+docker-compose stop csweb
+```
+
+**Étape 2** : Backup Source
+
+```bash
+# Backup complet
+pg_dump/mysqldump/sqlcmd backup
+```
+
+**Étape 3** : Migration
+
+```bash
+# Re-breakout ou import SQL
+php bin/console csweb:process-cases-by-dict ALL_DICTS
+```
+
+**Étape 4** : Vérification
+
+```sql
+-- Compter rows
+SELECT COUNT(*) FROM eval_cases;
+
+-- Comparer avec source
+```
+
+**Étape 5** : Redémarrage
+
+```bash
+docker-compose --profile local-postgres up -d
+```
+
+## Migration Sans Downtime
+
+**Approche** : Blue-Green Deployment
+
+1. **Préparer nouvelle DB** (PostgreSQL) en parallèle
+2. **Breakout vers nouvelle DB**
+3. **Tester nouvelle DB**
+4. **Basculer** `BREAKOUT_DB_TYPE`
+5. **Surveiller**
+
+## Vérification Post-Migration
+
+### Compter Rows
+
+```sql
+-- Source
+SELECT 'eval_cases' AS table_name, COUNT(*) AS row_count FROM eval_cases
+UNION ALL
+SELECT 'eval_producteurs', COUNT(*) FROM eval_producteurs;
+
+-- Destination (même query)
+-- Comparer résultats
+```
+
+### Vérifier Types Données
+
+```sql
+-- PostgreSQL
+\d+ eval_cases
+
+-- MySQL
+DESCRIBE eval_cases;
+
+-- SQL Server
+EXEC sp_columns eval_cases;
+```
+
+### Test Query
+
+```sql
+-- Query fonctionnelle
+SELECT verified, COUNT(*)
+FROM eval_cases
+GROUP BY verified;
+```
+
+## Rollback
+
+Si migration échoue :
+
+```bash
+# 1. Restaurer backup source
+cat backup.sql | psql/mysql/sqlcmd
+
+# 2. Revenir ancien SGBD dans .env
+BREAKOUT_DB_TYPE=mysql  # (ancien)
+
+# 3. Redémarrer
+docker-compose restart csweb
+```
+
+## Ressources
+
+- [PostgreSQL Guide](/guides/database/postgresql)
+- [MySQL Guide](/guides/database/mysql)
+- [SQL Server Guide](/guides/database/sqlserver)
+- [Multi-DB Configuration](/guides/database/multi-db)
+- [Backup & Restore](/guides/deployment/backup)

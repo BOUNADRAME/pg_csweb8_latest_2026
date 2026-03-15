@@ -1,6 +1,6 @@
 # FAQ (Foire Aux Questions)
 
-import { Callout } from 'nextra/components'
+
 
 Réponses aux **30+ questions les plus fréquentes** sur CSWeb Community Platform v2.0.
 
@@ -12,21 +12,13 @@ Réponses aux **30+ questions les plus fréquentes** sur CSWeb Community Platfor
 
 CSWeb Community Platform v2.0 est une **extension open-source** de CSWeb (Census and Survey Processing System) développée par **Bouna DRAME**.
 
-<Callout type="info">
-**Base officielle :** Basé sur CSWeb 8 téléchargé depuis le site officiel [csprousers.org/downloads](https://csprousers.org/downloads/)
-</Callout>
-
 **Améliorations par rapport à CSWeb vanilla :**
-- ✅ **Architecture flexible** : Support PostgreSQL, MySQL, SQL Server
-- ✅ **Breakout sélectif** : Par dictionnaire (innovation **Assietou DIAGNE**)
-- ✅ **Déploiement Docker** : Installation en 5 minutes
-- ✅ **Multi-database** : 2 bases distinctes (metadata + analytics)
-- ✅ **Local & Remote** : Développement local ou serveurs distants
-- ✅ **Production-ready** : Validé sur RGPH5 Sénégal (3.2M questionnaires)
-
-<Callout>
-**Compatibilité :** 100% compatible avec CSWeb vanilla (bidirectionnel).
-</Callout>
+- **Architecture flexible** : Support PostgreSQL, MySQL, SQL Server
+- **Breakout sélectif** : Par dictionnaire (innovation **Assietou DIAGNE**)
+- **Déploiement Docker** : Installation en 5 minutes
+- **Multi-database** : 2 bases distinctes (metadata + analytics)
+- **Local & Remote** : Développement local ou serveurs distants
+- **Production-ready** : Validé sur RGPH5 Sénégal (3.2M questionnaires)
 
 ---
 
@@ -72,12 +64,8 @@ CSWeb Community Platform v2.0 est une **extension open-source** de CSWeb (Census
 
 **De Community vers vanilla :**
 - Base MySQL metadata compatible 100%
-- Backup metadata → restaurer sur CSWeb vanilla
+- Backup metadata restaurer sur CSWeb vanilla
 - Perte du breakout sélectif (revenir au breakout global)
-
-<Callout type="warning">
-**Attention :** Tester d'abord migration sur environnement de développement.
-</Callout>
 
 ---
 
@@ -139,7 +127,7 @@ CSWeb Community Platform v2.0 est une **extension open-source** de CSWeb (Census
 
 ```bash
 # Arrêter et supprimer containers
-docker-compose down -v  # -v = supprimer volumes
+docker-compose down -v # -v = supprimer volumes
 
 # Supprimer images
 docker rmi $(docker images 'pg_csweb8*' -q)
@@ -152,10 +140,6 @@ rm -rf pg_csweb8_latest_2026
 docker system prune -a
 ```
 
-<Callout type="error">
-**Attention :** `-v` supprime **toutes les données** (volumes). Faire backup avant !
-</Callout>
-
 ---
 
 ## Base de Données
@@ -165,16 +149,16 @@ docker system prune -a
 **Raisons techniques :**
 
 1. **Base MySQL Metadata (FIXE)**
-   - Schéma imposé par CSWeb vanilla
-   - Compatibilité bidirectionnelle garantie
-   - Petit volume (< 100 MB)
-   - Performances suffisantes
+ - Schéma imposé par CSWeb vanilla
+ - Compatibilité bidirectionnelle garantie
+ - Petit volume (< 100 MB)
+ - Performances suffisantes
 
 2. **Base Breakout (FLEXIBLE)**
-   - Structure dynamique (définie par dictionnaires CSPro)
-   - Gros volumes (millions de lignes)
-   - Besoin performances analytics (PostgreSQL)
-   - Indépendance des releases CSWeb vanilla
+ - Structure dynamique (définie par dictionnaires CSPro)
+ - Gros volumes (millions de lignes)
+ - Besoin performances analytics (PostgreSQL)
+ - Indépendance des releases CSWeb vanilla
 
 **Avantage :** Choisir le meilleur SGBD pour chaque usage.
 
@@ -207,7 +191,7 @@ docker system prune -a
 **Oui, migration à chaud possible.**
 
 **Procédure :**
-1. Modifier `.env` : `BREAKOUT_DB_TYPE=mysql` → `postgresql`
+1. Modifier `.env` : `BREAKOUT_DB_TYPE=mysql` `postgresql`
 2. Arrêter container ancien SGBD
 3. Démarrer container nouveau SGBD
 4. Re-breakout des dictionnaires
@@ -242,18 +226,18 @@ Processus de transformation de questionnaires CSPro en tables SQL **par dictionn
 **Innovation :** Développé par **Assietou DIAGNE** (ANSD, Sénégal).
 
 **Avantages :**
-- ✅ **Isolation** : Tables séparées par dictionnaire (`eval_cases`, `kairos_cases`)
-- ✅ **Performance** : Traitement parallèle, pas de contention
-- ✅ **Flexibilité** : Breakout uniquement les dictionnaires nécessaires
-- ✅ **Scalabilité** : RGPH5 Sénégal = 3.2M cas en 6h (vs 48h en global)
+- **Isolation** : Tables séparées par dictionnaire (`eval_cases`, `kairos_cases`)
+- **Performance** : Traitement parallèle, pas de contention
+- **Flexibilité** : Breakout uniquement les dictionnaires nécessaires
+- **Scalabilité** : RGPH5 Sénégal = 3.2M cas en 6h (vs 48h en global)
 
 **Pattern de nommage :**
 ```
 {label}_{table_name}
 
 Exemples:
-- EVAL_DICT → eval_cases, eval_producteurs
-- KAIROS_DICT → kairos_cases, kairos_observations
+- EVAL_DICT eval_cases, eval_producteurs
+- KAIROS_DICT kairos_cases, kairos_observations
 ```
 
 ---
@@ -290,7 +274,7 @@ Exemples:
 
 **Formule approximative :**
 ```
-Temps (min) ≈ (Nb_cas × 0.005) / Nb_threads
+Temps (min) (Nb_cas × 0.005) / Nb_threads
 ```
 
 ---
@@ -315,8 +299,8 @@ docker-compose exec csweb kill -9 <PID>
 ```bash
 # Relancer avec --overwrite pour écraser
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT \
-  --overwrite
+ dictionnaires=EVAL_DICT \
+ --overwrite
 ```
 
 ---
@@ -328,9 +312,9 @@ docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
 **Oui, production-ready.**
 
 **Validations :**
-- ✅ **RGPH5 Sénégal** : 3.2M questionnaires (ANSD, 2025)
-- ✅ **Gambie, Guinée** : Recensements nationaux
-- ✅ **Autres INS africains** : En cours de déploiement
+- **RGPH5 Sénégal** : 3.2M questionnaires (ANSD, 2025)
+- **Gambie, Guinée** : Recensements nationaux
+- **Autres INS africains** : En cours de déploiement
 
 **Recommandations production :**
 - Serveur dédié (4+ CPU, 16+ GB RAM)
@@ -361,7 +345,7 @@ cd pg_csweb8_latest_2026
 2. **Configurer .env (remote mode) :**
 ```bash
 BREAKOUT_MODE=remote
-BREAKOUT_DB_TYPE=sqlserver  # Exemple RGPH5
+BREAKOUT_DB_TYPE=sqlserver # Exemple RGPH5
 
 # SQL Server distant
 SQLSERVER_HOST=172.16.0.50
@@ -388,17 +372,17 @@ http://<IP_SERVEUR>:8080
 **1. Reverse Proxy (Nginx + SSL) :**
 ```nginx
 server {
-    listen 443 ssl;
-    server_name csweb.example.org;
+ listen 443 ssl;
+ server_name csweb.example.org;
 
-    ssl_certificate /etc/letsencrypt/live/csweb.example.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/csweb.example.org/privkey.pem;
+ ssl_certificate /etc/letsencrypt/live/csweb.example.org/fullchain.pem;
+ ssl_certificate_key /etc/letsencrypt/live/csweb.example.org/privkey.pem;
 
-    location / {
-        proxy_pass http://localhost:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
+ location / {
+ proxy_pass http://localhost:8080;
+ proxy_set_header Host $host;
+ proxy_set_header X-Real-IP $remote_addr;
+ }
 }
 ```
 
@@ -429,7 +413,7 @@ sudo ufw allow 443/tcp
 **1. Augmenter les threads :**
 ```bash
 # Optimal : Nb_CPU - 1
---threads=7  # Si serveur 8 CPU
+--threads=7 # Si serveur 8 CPU
 ```
 
 **2. Augmenter mémoire PHP :**
@@ -453,8 +437,8 @@ CREATE INDEX idx_eval_prod_parent ON eval_producteurs(parent_guid);
 ```sql
 -- PostgreSQL 12+ : Partition par range (date)
 CREATE TABLE eval_cases (
-    guid VARCHAR(255),
-    modified_date TIMESTAMP
+ guid VARCHAR(255),
+ modified_date TIMESTAMP
 ) PARTITION BY RANGE (modified_date);
 
 CREATE TABLE eval_cases_2025 PARTITION OF eval_cases
@@ -510,7 +494,7 @@ $2y$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
 
 **Via Interface Web :**
 1. Login CSWeb (`admin / admin123` par défaut)
-2. Administration → Users → Edit admin
+2. Administration Users Edit admin
 3. Changer password
 4. Sauvegarder
 
@@ -529,10 +513,6 @@ SET password = '$2y$10$NEW_HASH_HERE'
 WHERE username = 'admin';
 ```
 
-<Callout type="warning">
-**IMPORTANT :** Changer `admin123` en production (risque sécurité).
-</Callout>
-
 ---
 
 ## Support & Contributions
@@ -547,9 +527,9 @@ WHERE username = 'admin';
 **2. GitHub Issues :**
 - [https://github.com/BOUNADRAME/pg_csweb8_latest_2026/issues](https://github.com/BOUNADRAME/pg_csweb8_latest_2026/issues)
 - Créer issue avec :
-  - Description problème
-  - Logs (`docker-compose logs > debug.log`)
-  - Configuration (`.env` **sans mots de passe**)
+ - Description problème
+ - Logs (`docker-compose logs > debug.log`)
+ - Configuration (`.env` **sans mots de passe**)
 
 **3. Community :**
 - Discord (lien dans README)
@@ -562,11 +542,11 @@ WHERE username = 'admin';
 **Contributions bienvenues !**
 
 **Types de contributions :**
-- 🐛 Bug fixes
-- ✨ Nouvelles fonctionnalités
-- 📝 Documentation
-- 🌍 Traductions (EN, FR, ES, PT)
-- 🧪 Tests
+- Bug fixes
+- Nouvelles fonctionnalités
+- Documentation
+- Traductions (EN, FR, ES, PT)
+- Tests
 
 **Procédure :**
 1. Fork repository
@@ -582,11 +562,11 @@ WHERE username = 'admin';
 ### Qui maintient le projet ?
 
 **Lead Developer :** [Bouna DRAME](https://bounadrame.github.io)
-- 🔗 GitHub : [@BOUNADRAME](https://github.com/BOUNADRAME)
-- 🌐 Portfolio : [bounadrame.github.io](https://bounadrame.github.io)
+- GitHub : [@BOUNADRAME](https://github.com/BOUNADRAME)
+- Portfolio : [bounadrame.github.io](https://bounadrame.github.io)
 
 **Contributeurs clés :**
-- **Assietou DIAGNE** (ANSD, Sénégal) : Breakout sélectif, Transformation CSWeb → PostgreSQL
+- **Assietou DIAGNE** (ANSD, Sénégal) : Breakout sélectif, Transformation CSWeb PostgreSQL
 - **Community contributors** : Voir [Contributors](/reference/resources/contributors)
 
 ---
@@ -598,14 +578,14 @@ WHERE username = 'admin';
 **MIT License** (permissive).
 
 **Vous pouvez :**
-- ✅ Utiliser commercialement
-- ✅ Modifier le code
-- ✅ Distribuer
-- ✅ Sublicencier
+- Utiliser commercialement
+- Modifier le code
+- Distribuer
+- Sublicencier
 
 **Conditions :**
-- ✅ Inclure copyright notice
-- ✅ Inclure copie de la licence
+- Inclure copyright notice
+- Inclure copie de la licence
 
 **Garantie :** AUCUNE (AS IS).
 
@@ -636,18 +616,18 @@ WHERE username = 'admin';
 **Validations production :**
 
 1. **ANSD Sénégal** (Agence Nationale de la Statistique et de la Démographie)
-   - RGPH5 (Recensement Général de la Population et de l'Habitat)
-   - 3.2M questionnaires
-   - SQL Server breakout
-   - Temps : 6h (vs 48h CSWeb vanilla)
+ - RGPH5 (Recensement Général de la Population et de l'Habitat)
+ - 3.2M questionnaires
+ - SQL Server breakout
+ - Temps : 6h (vs 48h CSWeb vanilla)
 
 2. **Gambie**
-   - Census national
-   - PostgreSQL breakout
+ - Census national
+ - PostgreSQL breakout
 
 3. **Guinée**
-   - Recensement national
-   - SQL Server breakout
+ - Recensement national
+ - SQL Server breakout
 
 4. **Autres INS africains** (en cours)
 
@@ -709,9 +689,7 @@ pg_dump -h old_server -U user source_db | psql -h localhost -U csweb_analytics c
 
 ```bash
 #!/bin/bash
-# backup.sh - Backup quotidien
-
-DATE=$(date +%Y%m%d_%H%M%S)
+# backup.sh - Backup quotidien DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/backups/csweb/$DATE"
 mkdir -p $BACKUP_DIR
 
@@ -725,9 +703,7 @@ docker-compose exec postgres pg_dump -U csweb_analytics csweb_analytics > $BACKU
 tar -czf $BACKUP_DIR/files.tar.gz ./files
 
 # 4. Backup .env
-cp .env $BACKUP_DIR/.env.backup
-
-echo "Backup completed: $BACKUP_DIR"
+cp .env $BACKUP_DIR/.env.backup echo "Backup completed: $BACKUP_DIR"
 ```
 
 **Cron daily :**

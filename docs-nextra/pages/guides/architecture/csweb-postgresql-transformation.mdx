@@ -1,38 +1,38 @@
 ---
-title: Transformation CSWeb → PostgreSQL
+title: Transformation CSWeb PostgreSQL
 description: Guide technique complet de la transformation de CSWeb pour supporter PostgreSQL
 ---
 
-import { Callout } from '../../../components/Callout'
 
-# Transformation CSWeb → PostgreSQL
+
+# Transformation CSWeb PostgreSQL
 
 <div className="border-l-4 border-purple-500 bg-purple-50 dark:bg-purple-950 p-6 my-8 rounded-r-lg">
-  <h2 className="text-2xl font-bold mb-4 text-purple-900 dark:text-purple-100">
-    🌟 Travail Technique par Assietou DIAGNE
-  </h2>
+ <h2 className="text-2xl font-bold mb-4 text-purple-900 dark:text-purple-100">
+ Travail Technique par Assietou DIAGNE
+ </h2>
 
-  <p className="text-lg mb-4 text-purple-900 dark:text-purple-100">
-    <strong>ANSD (Agence Nationale de la Statistique et de la Démographie, Sénégal)</strong>
-  </p>
+ <p className="text-lg mb-4 text-purple-900 dark:text-purple-100">
+ <strong>ANSD (Agence Nationale de la Statistique et de la Démographie, Sénégal)</strong>
+ </p>
 
-  <p className="mb-4 text-purple-900 dark:text-purple-100">
-    Ce guide documente le travail technique **complet** réalisé par Assietou DIAGNE pour transformer CSWeb vanilla (MySQL uniquement) en une version supportant PostgreSQL de manière native.
-  </p>
+ <p className="mb-4 text-purple-900 dark:text-purple-100">
+ Ce guide documente le travail technique **complet** réalisé par Assietou DIAGNE pour transformer CSWeb vanilla (MySQL uniquement) en une version supportant PostgreSQL de manière native.
+ </p>
 
-  <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-300 dark:border-purple-700 mb-4">
-    <p className="font-bold mb-2">📧 Contact Assietou DIAGNE :</p>
-    <ul className="space-y-1 text-sm">
-      <li>• Email: <a href="mailto:siatou.sissi@gmail.com" className="text-blue-600 hover:underline">siatou.sissi@gmail.com</a></li>
-      <li>• LinkedIn: <a href="https://www.linkedin.com/in/assiétou-diagne-124a72172/" target="_blank" className="text-blue-600 hover:underline">Assiétou Diagne</a></li>
-      <li>• Organisation: ANSD Sénégal</li>
-    </ul>
-  </div>
+ <div className="bg-white dark:bg-gray-900 p-4 rounded-lg border border-purple-300 dark:border-purple-700 mb-4">
+ <p className="font-bold mb-2"> Contact Assietou DIAGNE :</p>
+ <ul className="space-y-1 text-sm">
+ <li>• Email: <a href="mailto:siatou.sissi@gmail.com" className="text-blue-600 hover:underline">siatou.sissi@gmail.com</a></li>
+ <li>• LinkedIn: <a href="https://www.linkedin.com/in/assiétou-diagne-124a72172/" target="_blank" className="text-blue-600 hover:underline">Assiétou Diagne</a></li>
+ <li>• Organisation: ANSD Sénégal</li>
+ </ul>
+ </div>
 </div>
 
 ---
 
-## 📋 Table des Matières
+## Table des Matières
 
 1. [Introduction](#introduction)
 2. [Contexte et Problématique](#contexte-et-problématique)
@@ -48,22 +48,14 @@ import { Callout } from '../../../components/Callout'
 
 ## Introduction
 
-### Objectif
+### Objectif Transformer **CSWeb vanilla (MySQL only)** en une version supportant **PostgreSQL** pour permettre :
 
-Transformer **CSWeb vanilla (MySQL only)** en une version supportant **PostgreSQL** pour permettre :
+ Breakout vers PostgreSQL (meilleur pour analytics)
+ Support multi-SGBD (PostgreSQL, MySQL, SQL Server)
+ Architecture flexible (local/remote)
+ Performance améliorée (indexation PostgreSQL)
 
-✅ Breakout vers PostgreSQL (meilleur pour analytics)
-✅ Support multi-SGBD (PostgreSQL, MySQL, SQL Server)
-✅ Architecture flexible (local/remote)
-✅ Performance améliorée (indexation PostgreSQL)
-
-### Auteur
-
-Ce travail technique a été réalisé par **Assietou DIAGNE** (ANSD, Sénégal) dans le cadre du projet RGPH5 (Recensement Général de la Population et de l'Habitat du Sénégal).
-
-<Callout type="success">
-  **Impact :** Cette transformation a permis à l'ANSD de breaker des millions de questionnaires RGPH5 vers PostgreSQL pour analyse avec Power BI et Tableau.
-</Callout>
+### Auteur Ce travail technique a été réalisé par **Assietou DIAGNE** (ANSD, Sénégal) dans le cadre du projet RGPH5 (Recensement Général de la Population et de l'Habitat du Sénégal).
 
 ---
 
@@ -73,42 +65,40 @@ Ce travail technique a été réalisé par **Assietou DIAGNE** (ANSD, Sénégal)
 
 **Limites :**
 
-❌ Support MySQL **uniquement** pour le breakout
-❌ Pas de driver PostgreSQL intégré
-❌ Code hardcodé pour MySQL (`MySQLDictionarySchemaGenerator`)
-❌ Fonctions SQL spécifiques MySQL (incompatibles PostgreSQL)
+ Support MySQL **uniquement** pour le breakout Pas de driver PostgreSQL intégré
+ Code hardcodé pour MySQL (`MySQLDictionarySchemaGenerator`)
+ Fonctions SQL spécifiques MySQL (incompatibles PostgreSQL)
 
 **Architecture :**
 
 ```
-┌─────────────────────────────────────┐
-│     CSWeb Vanilla (Setup.php)      │
-│  ─────────────────────────────────  │
-│  Base Métadonnées: MySQL (SEUL)    │
-│  Base Breakout: MySQL (SEUL)       │
-└─────────────────────────────────────┘
+
+ CSWeb Vanilla (Setup.php) 
+
+ Base Métadonnées: MySQL (SEUL) 
+ Base Breakout: MySQL (SEUL) 
+
 ```
 
 ### CSWeb Community v2.0 (Après Transformation)
 
 **Améliorations :**
 
-✅ Support **PostgreSQL** natif
-✅ Support **MySQL** (rétrocompatible)
-✅ Support **SQL Server** (Microsoft)
-✅ Architecture **flexible** (local/remote)
-✅ Breakout **sélectif** par dictionnaire
+ Support **PostgreSQL** natif Support **MySQL** (rétrocompatible)
+ Support **SQL Server** (Microsoft)
+ Architecture **flexible** (local/remote)
+ Breakout **sélectif** par dictionnaire
 
 **Architecture :**
 
 ```
-┌─────────────────────────────────────────────┐
-│   CSWeb Community v2.0 (Transformé)        │
-│  ─────────────────────────────────────────  │
-│  Base Métadonnées: MySQL (local)           │
-│  Base Breakout: PostgreSQL/MySQL/SQLServer │
-│                (local OU remote)            │
-└─────────────────────────────────────────────┘
+
+ CSWeb Community v2.0 (Transformé) 
+
+ Base Métadonnées: MySQL (local) 
+ Base Breakout: PostgreSQL/MySQL/SQLServer 
+ (local OU remote) 
+
 ```
 
 ---
@@ -144,14 +134,14 @@ Ce travail technique a été réalisé par **Assietou DIAGNE** (ANSD, Sénégal)
 ```php
 class DictionarySchemaHelper
 {
-    // Uniquement MySQL supporté
-    private $mysqlConnection;
+ // Uniquement MySQL supporté
+ private $mysqlConnection;
 
-    public function __construct()
-    {
-        // Hardcoded MySQL
-        $this->mysqlConnection = new PDO('mysql:host=...');
-    }
+ public function __construct()
+ {
+ // Hardcoded MySQL
+ $this->mysqlConnection = new PDO('mysql:host=...');
+ }
 }
 ```
 
@@ -160,31 +150,26 @@ class DictionarySchemaHelper
 ```php
 class DictionarySchemaHelper
 {
-    private $connection;
-    private $dbType; // 'mysql', 'pgsql', 'sqlsrv'
+ private $connection;
+ private $dbType; // 'mysql', 'pgsql', 'sqlsrv'
 
-    public function __construct($dbType = 'mysql')
-    {
-        $this->dbType = $dbType;
+ public function __construct($dbType = 'mysql')
+ {
+ $this->dbType = $dbType;
 
-        switch ($dbType) {
-            case 'pgsql':
-                $this->connection = new PDO('pgsql:host=...'); // ✅ PostgreSQL
-                break;
-            case 'mysql':
-                $this->connection = new PDO('mysql:host=...');
-                break;
-            case 'sqlsrv':
-                $this->connection = new PDO('sqlsrv:Server=...');
-                break;
-        }
-    }
+ switch ($dbType) {
+ case 'pgsql':
+ $this->connection = new PDO('pgsql:host=...'); // PostgreSQL break;
+ case 'mysql':
+ $this->connection = new PDO('mysql:host=...');
+ break;
+ case 'sqlsrv':
+ $this->connection = new PDO('sqlsrv:Server=...');
+ break;
+ }
+ }
 }
 ```
-
-<Callout type="info">
-  **Clé :** La variable `$dbType` permet de choisir dynamiquement le SGBD au lieu de hardcoder MySQL.
-</Callout>
 
 ---
 
@@ -198,26 +183,26 @@ class DictionarySchemaHelper
 // Dans DataSettings.php
 public function getBreakoutDbType(): string
 {
-    return $_ENV['BREAKOUT_DB_TYPE'] ?? 'mysql'; // Par défaut: mysql
+ return $_ENV['BREAKOUT_DB_TYPE'] ?? 'mysql'; // Par défaut: mysql
 }
 
 public function getBreakoutDbHost(): string
 {
-    return $_ENV['BREAKOUT_DB_HOST'] ?? 'localhost';
+ return $_ENV['BREAKOUT_DB_HOST'] ?? 'localhost';
 }
 
 public function getBreakoutDbPort(): int
 {
-    $type = $this->getBreakoutDbType();
+ $type = $this->getBreakoutDbType();
 
-    // Ports par défaut selon SGBD
-    $defaultPorts = [
-        'mysql' => 3306,
-        'pgsql' => 5432,
-        'sqlsrv' => 1433,
-    ];
+ // Ports par défaut selon SGBD
+ $defaultPorts = [
+ 'mysql' => 3306,
+ 'pgsql' => 5432,
+ 'sqlsrv' => 1433,
+ ];
 
-    return $_ENV['BREAKOUT_DB_PORT'] ?? $defaultPorts[$type];
+ return $_ENV['BREAKOUT_DB_PORT'] ?? $defaultPorts[$type];
 }
 ```
 
@@ -225,13 +210,13 @@ public function getBreakoutDbPort(): int
 
 ```bash
 # Configuration Breakout Database
-BREAKOUT_DB_TYPE=pgsql          # mysql|pgsql|sqlsrv
+BREAKOUT_DB_TYPE=pgsql # mysql|pgsql|sqlsrv
 BREAKOUT_DB_HOST=csweb_postgres
 BREAKOUT_DB_PORT=5432
 BREAKOUT_DB_NAME=csweb_analytics
 BREAKOUT_DB_USER=csweb_user
 BREAKOUT_DB_PASSWORD=VOTRE_PASSWORD
-BREAKOUT_DB_SCHEMA=public       # Schéma PostgreSQL (optionnel)
+BREAKOUT_DB_SCHEMA=public # Schéma PostgreSQL (optionnel)
 ```
 
 ---
@@ -245,40 +230,40 @@ BREAKOUT_DB_SCHEMA=public       # Schéma PostgreSQL (optionnel)
 ```php
 class MapDataRepository
 {
-    private $connection;
-    private $dbType;
+ private $connection;
+ private $dbType;
 
-    public function __construct(DataSettings $settings)
-    {
-        $this->dbType = $settings->getBreakoutDbType();
+ public function __construct(DataSettings $settings)
+ {
+ $this->dbType = $settings->getBreakoutDbType();
 
-        // Créer connexion selon type DB
-        $dsn = $this->buildDsn($settings);
-        $this->connection = new PDO(
-            $dsn,
-            $settings->getBreakoutDbUser(),
-            $settings->getBreakoutDbPassword()
-        );
-    }
+ // Créer connexion selon type DB
+ $dsn = $this->buildDsn($settings);
+ $this->connection = new PDO(
+ $dsn,
+ $settings->getBreakoutDbUser(),
+ $settings->getBreakoutDbPassword()
+ );
+ }
 
-    private function buildDsn(DataSettings $settings): string
-    {
-        switch ($this->dbType) {
-            case 'pgsql':
-                return sprintf(
-                    'pgsql:host=%s;port=%d;dbname=%s',
-                    $settings->getBreakoutDbHost(),
-                    $settings->getBreakoutDbPort(),
-                    $settings->getBreakoutDbName()
-                );
+ private function buildDsn(DataSettings $settings): string
+ {
+ switch ($this->dbType) {
+ case 'pgsql':
+ return sprintf(
+ 'pgsql:host=%s;port=%d;dbname=%s',
+ $settings->getBreakoutDbHost(),
+ $settings->getBreakoutDbPort(),
+ $settings->getBreakoutDbName()
+ );
 
-            case 'mysql':
-                return sprintf('mysql:host=%s;port=%d;dbname=%s', ...);
+ case 'mysql':
+ return sprintf('mysql:host=%s;port=%d;dbname=%s', ...);
 
-            case 'sqlsrv':
-                return sprintf('sqlsrv:Server=%s,%d;Database=%s', ...);
-        }
-    }
+ case 'sqlsrv':
+ return sprintf('sqlsrv:Server=%s,%d;Database=%s', ...);
+ }
+ }
 }
 ```
 
@@ -294,21 +279,19 @@ class MapDataRepository
 
 ```php
 private function cleanDictionarySchema() {
-    try {
-        $tables = $this->conn->getSchemaManager()->listTables();
-        if ((is_countable($tables) ? count($tables) : 0) > 0) {
-            $this->conn->prepare("SET FOREIGN_KEY_CHECKS = 0;")->execute(); // MySQL specific
+ try {
+ $tables = $this->conn->getSchemaManager()->listTables();
+ if ((is_countable($tables) ? count($tables) : 0) > 0) {
+ $this->conn->prepare("SET FOREIGN_KEY_CHECKS = 0;")->execute(); // MySQL specific foreach ($tables as $table) {
+ $sql = 'DROP TABLE ' . $table->getName(); // MySQL syntax
+ $this->conn->prepare($sql)->execute();
+ }
 
-            foreach ($tables as $table) {
-                $sql = 'DROP TABLE ' . $table->getName(); // MySQL syntax
-                $this->conn->prepare($sql)->execute();
-            }
-
-            $this->conn->prepare("SET FOREIGN_KEY_CHECKS = 1;")->execute();
-        }
-    } catch (\Exception $e) {
-        throw $e;
-    }
+ $this->conn->prepare("SET FOREIGN_KEY_CHECKS = 1;")->execute();
+ }
+ } catch (\Exception $e) {
+ throw $e;
+ }
 }
 ```
 
@@ -316,29 +299,29 @@ private function cleanDictionarySchema() {
 
 ```php
 private function cleanDictionarySchema() {
-    try {
-        $tables = $this->conn->getSchemaManager()->listTables();
-        if (count($tables) > 0) {
-            // PostgreSQL: Pas de FOREIGN_KEY_CHECKS, utiliser CASCADE
-            // var_dump(count($tables)); die;
+ try {
+ $tables = $this->conn->getSchemaManager()->listTables();
+ if (count($tables) > 0) {
+ // PostgreSQL: Pas de FOREIGN_KEY_CHECKS, utiliser CASCADE
+ // var_dump(count($tables)); die;
 
-            foreach ($tables as $table) {
-                // DROP TABLE avec CASCADE pour PostgreSQL
-                $sql = 'DROP TABLE "' . $table->getName() . '" CASCADE';
+ foreach ($tables as $table) {
+ // DROP TABLE avec CASCADE pour PostgreSQL
+ $sql = 'DROP TABLE "' . $table->getName() . '" CASCADE';
 
-                // Optionnel: Désactiver triggers temporairement
-                // $this->conn->prepare('ALTER TABLE "' . $table->getName() . '" DISABLE TRIGGER ALL;')->execute();
+ // Optionnel: Désactiver triggers temporairement
+ // $this->conn->prepare('ALTER TABLE "' . $table->getName() . '" DISABLE TRIGGER ALL;')->execute();
 
-                $this->conn->prepare($sql)->execute();
+ $this->conn->prepare($sql)->execute();
 
-                // $this->conn->prepare('ALTER TABLE "' . $table->getName() . '" ENABLE TRIGGER ALL;')->execute();
-            }
-        }
-    } catch (\Exception $e) {
-        $strMsg = "Failed deleting tables from database: " . $this->connectionParams['dbname'] . " while processing Dictionary: " . $this->dictionaryName;
-        $this->logger->error($strMsg, ["context" => (string) $e]);
-        throw $e;
-    }
+ // $this->conn->prepare('ALTER TABLE "' . $table->getName() . '" ENABLE TRIGGER ALL;')->execute();
+ }
+ }
+ } catch (\Exception $e) {
+ $strMsg = "Failed deleting tables from database: " . $this->connectionParams['dbname'] . " while processing Dictionary: " . $this->dictionaryName;
+ $this->logger->error($strMsg, ["context" => (string) $e]);
+ throw $e;
+ }
 }
 ```
 
@@ -360,26 +343,26 @@ private function cleanDictionarySchema() {
 
 ```php
 private function createDictionarySchema($processCasesOptions) {
-    $bind = [];
-    try {
-        $dictionarySchema = new MySQLDictionarySchemaGenerator($this->logger);
+ $bind = [];
+ try {
+ $dictionarySchema = new MySQLDictionarySchemaGenerator($this->logger);
 
-        $processCasesOptions = $this->getProcessCaseOptions();
-        $schema = $dictionarySchema->generateDictionary($this->dictionary, $processCasesOptions);
+ $processCasesOptions = $this->getProcessCaseOptions();
+ $schema = $dictionarySchema->generateDictionary($this->dictionary, $processCasesOptions);
 
-        $dictionarySQL = $schema->toSql($this->conn->getDatabasePlatform());
-        $dictionarySQL = implode(";" . PHP_EOL, $dictionarySQL);
-        $this->logger->debug("writing schema SQL " . $dictionarySQL);
+ $dictionarySQL = $schema->toSql($this->conn->getDatabasePlatform());
+ $dictionarySQL = implode(";" . PHP_EOL, $dictionarySQL);
+ $this->logger->debug("writing schema SQL " . $dictionarySQL);
 
-        $this->conn->prepare($dictionarySQL)->execute();
+ $this->conn->prepare($dictionarySQL)->execute();
 
-        //insert into cspro_meta dictionary_information
-        $dictionaryVersion = $this->dictionary->getVersion();
-        $stm = "SELECT modified_time, `dictionary_full_content` FROM cspro_dictionaries` ";
-        $stm .= " WHERE `dictionary_name` = '" . $this->dictionaryName . "'";
+ //insert into cspro_meta dictionary_information
+ $dictionaryVersion = $this->dictionary->getVersion();
+ $stm = "SELECT modified_time, `dictionary_full_content` FROM cspro_dictionaries` ";
+ $stm .= " WHERE `dictionary_name` = '" . $this->dictionaryName . "'";
 
-        // ... insertion dans cspro_meta
-    }
+ // ... insertion dans cspro_meta
+ }
 }
 ```
 
@@ -387,43 +370,42 @@ private function createDictionarySchema($processCasesOptions) {
 
 ```php
 private function createDictionarySchema($processCasesOptions) {
-    $bind = [];
-    try {
-        $dictionarySchema = new MySQLDictionarySchemaGenerator($this->logger);
+ $bind = [];
+ try {
+ $dictionarySchema = new MySQLDictionarySchemaGenerator($this->logger);
 
-        $processCasesOptions = $this->getProcessCaseOptions();
-        $schema = $dictionarySchema->generateDictionary($this->dictionary, $processCasesOptions);
+ $processCasesOptions = $this->getProcessCaseOptions();
+ $schema = $dictionarySchema->generateDictionary($this->dictionary, $processCasesOptions);
 
-        $dictionarySQL = $schema->toSql($this->conn->getDatabasePlatform());
-        $explodedDictionarySQL = implode(";" . PHP_EOL, $dictionarySQL);
-        $this->logger->debug("writing schema SQL " . $explodedDictionarySQL);
+ $dictionarySQL = $schema->toSql($this->conn->getDatabasePlatform());
+ $explodedDictionarySQL = implode(";" . PHP_EOL, $dictionarySQL);
+ $this->logger->debug("writing schema SQL " . $explodedDictionarySQL);
 
-        // ✅ PostgreSQL: Exécuter chaque statement séparément
-        foreach($dictionarySQL AS $oneDictionarySQL){
-            $this->conn->prepare($oneDictionarySQL)->execute();
-        }
+ // PostgreSQL: Exécuter chaque statement séparément foreach($dictionarySQL AS $oneDictionarySQL){
+ $this->conn->prepare($oneDictionarySQL)->execute();
+ }
 
-        //insert into cspro_meta dictionary_information
-        $dictionaryVersion = $this->dictionary->getVersion();
+ //insert into cspro_meta dictionary_information
+ $dictionaryVersion = $this->dictionary->getVersion();
 
-        //Récupération du label du dictionnaire pour synchronisation
-        $dictionaryLabel = str_replace(" ", "_", str_replace("_DICT", "", $this->dictionary->getName()));
+ //Récupération du label du dictionnaire pour synchronisation
+ $dictionaryLabel = str_replace(" ", "_", str_replace("_DICT", "", $this->dictionary->getName()));
 
-        $stm = "SELECT modified_time, `dictionary_full_content` FROM cspro_dictionaries` "
-             . " WHERE `dictionary_name` = '" . $this->dictionaryName . "'";
+ $stm = "SELECT modified_time, `dictionary_full_content` FROM cspro_dictionaries` "
+ . " WHERE `dictionary_name` = '" . $this->dictionaryName . "'";
 
-        $result = $this->pdo->fetchOne($stm);
-        if ($result) {
-            $stm = "INSERT INTO `cspro_meta`(`cspro_version`, `dictionary`, `source_modified_time`) "
-                 . " VALUES (:version, :dictionary, :source_modified_time)";
-            $bind['version'] = $dictionaryVersion;
-            $bind['dictionary'] = $result['dictionary_full_content'];
-            $bind['source_modified_time'] = $result['modified_time'];
-            $stmt = $this->conn->executeUpdate($stm, $bind);
-        }
-    } catch (\Exception $e) {
-        // ... error handling
-    }
+ $result = $this->pdo->fetchOne($stm);
+ if ($result) {
+ $stm = "INSERT INTO `cspro_meta`(`cspro_version`, `dictionary`, `source_modified_time`) "
+ . " VALUES (:version, :dictionary, :source_modified_time)";
+ $bind['version'] = $dictionaryVersion;
+ $bind['dictionary'] = $result['dictionary_full_content'];
+ $bind['source_modified_time'] = $result['modified_time'];
+ $stmt = $this->conn->executeUpdate($stm, $bind);
+ }
+ } catch (\Exception $e) {
+ // ... error handling
+ }
 }
 ```
 
@@ -431,11 +413,11 @@ private function createDictionarySchema($processCasesOptions) {
 
 ```php
 foreach($dictionarySQL AS $oneDictionarySQL){
-    $this->conn->prepare($oneDictionarySQL)->execute();
+ $this->conn->prepare($oneDictionarySQL)->execute();
 }
 ```
 
-👉 **Pourquoi ?** PostgreSQL n'accepte pas les multi-statements séparés par `;` dans un seul `execute()`. Il faut exécuter chaque statement individuellement.
+ **Pourquoi ?** PostgreSQL n'accepte pas les multi-statements séparés par `;` dans un seul `execute()`. Il faut exécuter chaque statement individuellement.
 
 ---
 
@@ -449,21 +431,20 @@ foreach($dictionarySQL AS $oneDictionarySQL){
 
 ```php
 public function generateDictionary(Dictionary $dictionary, $processCasesOptions) {
-    DictionarySchemaHelper::updateProcessCasesOptions($dictionary, $processCasesOptions);
+ DictionarySchemaHelper::updateProcessCasesOptions($dictionary, $processCasesOptions);
 
-    $this->schema = new Schema();
-    $this->createDefaultTables();
-    $parentLevel = null;
+ $this->schema = new Schema();
+ $this->createDefaultTables();
+ $parentLevel = null;
 
-    //TODO check for Charset | Collation | comment
-    for ($iLevel = 0; $iLevel < (is_countable($dictionary->getLevels()) ? count($dictionary->getLevels()) : 0); $iLevel++) {
-        $level = $dictionary->getLevels()[$iLevel];
-        $level->setLevelNumber($iLevel);
-        $this->generateLevel($level, $parentLevel);
-        $parentLevel = $dictionary->getLevels()[$iLevel];
-    }
+ //TODO check for Charset | Collation | comment for ($iLevel = 0; $iLevel < (is_countable($dictionary->getLevels()) ? count($dictionary->getLevels()) : 0); $iLevel++) {
+ $level = $dictionary->getLevels()[$iLevel];
+ $level->setLevelNumber($iLevel);
+ $this->generateLevel($level, $parentLevel);
+ $parentLevel = $dictionary->getLevels()[$iLevel];
+ }
 
-    return $this->schema;
+ return $this->schema;
 }
 ```
 
@@ -471,27 +452,26 @@ public function generateDictionary(Dictionary $dictionary, $processCasesOptions)
 
 ```php
 public function generateDictionary(Dictionary $dictionary, $processCasesOptions) {
-    DictionarySchemaHelper::updateProcessCasesOptions($dictionary, $processCasesOptions);
+ DictionarySchemaHelper::updateProcessCasesOptions($dictionary, $processCasesOptions);
 
-    //Récupérer le label du dictionnaire pour synchronisation données
-    $this->nomSchema = str_replace(" ", "_",
-                      str_replace("_DICT", "", $dictionary->getName()));
+ //Récupérer le label du dictionnaire pour synchronisation données
+ $this->nomSchema = str_replace(" ", "_",
+ str_replace("_DICT", "", $dictionary->getName()));
 
-    $this->schema = new Schema();
-    $this->createDefaultTables();
-    $parentLevel = null;
+ $this->schema = new Schema();
+ $this->createDefaultTables();
+ $parentLevel = null;
 
-    //TODO check for Charset | Collation | comment
-    for ($iLevel = 0; $iLevel < (is_countable($dictionary->getLevels()) ?
-        count($dictionary->getLevels()) : 0); $iLevel++) {
+ //TODO check for Charset | Collation | comment for ($iLevel = 0; $iLevel < (is_countable($dictionary->getLevels()) ?
+ count($dictionary->getLevels()) : 0); $iLevel++) {
 
-        $level = $dictionary->getLevels()[$iLevel];
-        $level->setLevelNumber($iLevel);
-        $this->generateLevel($level, $parentLevel);
-        $parentLevel = $dictionary->getLevels()[$iLevel];
-    }
+ $level = $dictionary->getLevels()[$iLevel];
+ $level->setLevelNumber($iLevel);
+ $this->generateLevel($level, $parentLevel);
+ $parentLevel = $dictionary->getLevels()[$iLevel];
+ }
 
-    return $this->schema;
+ return $this->schema;
 }
 ```
 
@@ -505,53 +485,49 @@ public function generateDictionary(Dictionary $dictionary, $processCasesOptions)
 
 #### Structure Complète (PostgreSQL)
 
-<Callout type="warning">
-  **Attention :** Cette section contient le code complet de transformation des tables. C'est le **cœur technique** du travail d'Assietou.
-</Callout>
-
 ##### Table `cases`
 
 ```php
 public function createDefaultTables()
 {
-    //cases
-    /*  "CREATE TABLE cases ("
-        "id TEXT NOT NULL,"
-        "`key` TEXT NOT NULL,"
-        "label TEXT,"
-        "questionnaire TEXT NOT NULL,"
-        "last_modified_revision INTEGER NOT NULL,"
-        "deleted INTEGER NOT NULL DEFAULT 0,"
-        "verified INTEGER NOT NULL DEFAULT 0,"
-        "partial_save_mode TEXT NULL,"
-        "partial_save_field_name TEXT NULL,"
-        "partial_save_level_key TEXT NULL,"
-        "partial_save_record_occurrence INTEGER NULL,"
-        "partial_save_item_occurrence INTEGER NULL,"
-        "partial_save_subitem_occurrence INTEGER NULL,"
-        "FOREIGN KEY(last_modified_revision) REFERENCES file_revisions(id)"
-        ");\\n" */
+ //cases
+ /* "CREATE TABLE cases ("
+ "id TEXT NOT NULL,"
+ "`key` TEXT NOT NULL,"
+ "label TEXT,"
+ "questionnaire TEXT NOT NULL,"
+ "last_modified_revision INTEGER NOT NULL,"
+ "deleted INTEGER NOT NULL DEFAULT 0,"
+ "verified INTEGER NOT NULL DEFAULT 0,"
+ "partial_save_mode TEXT NULL,"
+ "partial_save_field_name TEXT NULL,"
+ "partial_save_level_key TEXT NULL,"
+ "partial_save_record_occurrence INTEGER NULL,"
+ "partial_save_item_occurrence INTEGER NULL,"
+ "partial_save_subitem_occurrence INTEGER NULL,"
+ "FOREIGN KEY(last_modified_revision) REFERENCES file_revisions(id)"
+ ");\\n" */
 
-    $casesTable = $this->schema->createTable($this->nomSchema."_cases");
-    $casesTable->addColumn("id", "text", ["notnull" => true]);
-    $casesTable->addColumn("key", "text", ["notnull" => true]);
-    $casesTable->addColumn("label", "text");
-    $casesTable->addColumn("questionnaire", "text", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("last_modified_revision", "integer", ["notnull" => true]);
-    $casesTable->addColumn("deleted", "integer", ["notnull" => true, "default" => 0]);
-    $casesTable->addColumn("verified", "integer", ["notnull" => true, "default" => 0]);
-    $casesTable->addColumn("partial_save_mode", "text", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("partial_save_field_name", "text", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("partial_save_level_key", "text", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("partial_save_record_occurrence", "integer", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("partial_save_item_occurrence", "integer", ["notnull" => false, "default" => null]);
-    $casesTable->addColumn("partial_save_subitem_occurrence", "integer", ["notnull" => false, "default" => null]);
+ $casesTable = $this->schema->createTable($this->nomSchema."_cases");
+ $casesTable->addColumn("id", "text", ["notnull" => true]);
+ $casesTable->addColumn("key", "text", ["notnull" => true]);
+ $casesTable->addColumn("label", "text");
+ $casesTable->addColumn("questionnaire", "text", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("last_modified_revision", "integer", ["notnull" => true]);
+ $casesTable->addColumn("deleted", "integer", ["notnull" => true, "default" => 0]);
+ $casesTable->addColumn("verified", "integer", ["notnull" => true, "default" => 0]);
+ $casesTable->addColumn("partial_save_mode", "text", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("partial_save_field_name", "text", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("partial_save_level_key", "text", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("partial_save_record_occurrence", "integer", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("partial_save_item_occurrence", "integer", ["notnull" => false, "default" => null]);
+ $casesTable->addColumn("partial_save_subitem_occurrence", "integer", ["notnull" => false, "default" => null]);
 
-    $casesTable->addUniqueIndex(["`id`"], null, ["lengths" => [191]]);
-    $casesTable->addIndex(["deleted"]);
+ $casesTable->addUniqueIndex(["`id`"], null, ["lengths" => [191]]);
+ $casesTable->addIndex(["deleted"]);
 
-    //notes
-    // ...
+ //notes
+ // ...
 }
 ```
 
@@ -568,19 +544,19 @@ public function createDefaultTables()
 
 ```php
 //notes
-/*  "CREATE TABLE notes ("
-    "case_id TEXT NOT NULL,"
-    "field_name TEXT NOT NULL,"
-    "level_key TEXT NOT NULL,"
-    "record_occurrence INTEGER NOT NULL,"
-    "item_occurrence INTEGER NOT NULL,"
-    "subitem_occurrence INTEGER NOT NULL,"
-    "content TEXT NOT NULL,"
-    "operator_id TEXT NOT NULL,"
-    "modified_time INTEGER NOT NULL,"
-    "FOREIGN KEY(case_id) REFERENCES cases(id)"
-    ");\\n"
-    "CREATE INDEX `notes-case-id` ON notes(case_id);"; */
+/* "CREATE TABLE notes ("
+ "case_id TEXT NOT NULL,"
+ "field_name TEXT NOT NULL,"
+ "level_key TEXT NOT NULL,"
+ "record_occurrence INTEGER NOT NULL,"
+ "item_occurrence INTEGER NOT NULL,"
+ "subitem_occurrence INTEGER NOT NULL,"
+ "content TEXT NOT NULL,"
+ "operator_id TEXT NOT NULL,"
+ "modified_time INTEGER NOT NULL,"
+ "FOREIGN KEY(case_id) REFERENCES cases(id)"
+ ");\\n"
+ "CREATE INDEX `notes-case-id` ON notes(case_id);"; */
 
 $notesTable = $this->schema->createTable($this->nomSchema."_notes");
 $notesTable->addColumn("case_id", "text", ["notnull" => true]);
@@ -592,32 +568,32 @@ $notesTable->addColumn("subitem_occurrence", "integer", ["notnull" => true]);
 $notesTable->addColumn("content", "text", ["notnull" => true]);
 $notesTable->addColumn("operator_id", "text", ["notnull" => true]);
 $notesTable->addColumn("`modified_time`", "datetime",
-    ['columnDefinition' => 'timestamp default current_timestamp']);
+ ['columnDefinition' => 'timestamp default current_timestamp']);
 
 $notesTable->addIndex(["case_id"], null, [], ["lengths" => [191]]);
 
 //DBAL has issues with creating foreign key constraint on text columns with lengths.
 //not adding for now, if needed add it in the future
-//      $notesTable->addForeignKeyConstraint($this->quoteString('cases'),
-//          array($this->quoteString('case_id')),
-//          array($this->quoteString('id')),
-//      array("lengths" => array(191,191)), 'notes_cases_fk');
+// $notesTable->addForeignKeyConstraint($this->quoteString('cases'),
+// array($this->quoteString('case_id')),
+// array($this->quoteString('id')),
+// array("lengths" => array(191,191)), 'notes_cases_fk');
 ```
 
 ##### Table `cspro_jobs`
 
 ```php
 /* CREATE TABLE IF NOT EXISTS `cspro_jobs` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `startCaseId` int unsigned NOT NULL,
-  `startRevision` int unsigned NOT NULL,
-  `endCaseId` int unsigned NOT NULL,
-  `endRevision` int unsigned NOT NULL,
-  `casesProcessed` int unsigned  NULL,
-  `created_time` timestamp NOT NULL NULL DEFAULT CURRENT_TIMESTAMP,
-  `modified_time` timestamp NOT NULL NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+ `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+ `startCaseId` int unsigned NOT NULL,
+ `startRevision` int unsigned NOT NULL,
+ `endCaseId` int unsigned NOT NULL,
+ `endRevision` int unsigned NOT NULL,
+ `casesProcessed` int unsigned NULL,
+ `created_time` timestamp NOT NULL NULL DEFAULT CURRENT_TIMESTAMP,
+ `modified_time` timestamp NOT NULL NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 */
 
 $jobsTable = $this->schema->createTable($this->nomSchema."_cspro_jobs");
@@ -630,9 +606,9 @@ $jobsTable->addColumn("`cases_to_process`", "integer", ["unsigned" => true, "not
 $jobsTable->addColumn("`cases_processed`", "integer", ["unsigned" => true, "notnull" => false, "default" => null]);
 $jobsTable->addColumn("`status`", "integer", ["unsigned" => true, "notnull" => true, "default" => 0]);
 $jobsTable->addColumn("`created_time`", "datetime",
-    ['columnDefinition' => 'timestamp default current_timestamp']);
+ ['columnDefinition' => 'timestamp default current_timestamp']);
 $jobsTable->addColumn("`modified_time`", "datetime",
-    ['columnDefinition' => 'timestamp default current_timestamp on update current_timestamp']);
+ ['columnDefinition' => 'timestamp default current_timestamp on update current_timestamp']);
 
 $jobsTable->setPrimaryKey(["`id`"]);
 ```
@@ -647,9 +623,9 @@ $metaTable->addColumn("`cspro_version`", "text", ["notnull" => true]);
 $metaTable->addColumn("`dictionary`", "text", ["notnull" => true]);
 $metaTable->addColumn("`source_modified_time`", "datetime", ["default" => null]);
 $metaTable->addColumn("`created_time`", "datetime",
-    ['columnDefinition' => 'timestamp default current_timestamp']);
+ ['columnDefinition' => 'timestamp default current_timestamp']);
 $metaTable->addColumn("`modified_time`", "datetime",
-    ['columnDefinition' => 'timestamp default current_timestamp on update current_timestamp']);
+ ['columnDefinition' => 'timestamp default current_timestamp on update current_timestamp']);
 
 $metaTable->setPrimaryKey(["`id`"]);
 ```
@@ -670,23 +646,17 @@ $metaTable->setPrimaryKey(["`id`"]);
 - Dictionnaire : `EVAL_PRODUCTEURS_USAID`
 - Schéma : `eval_producteurs` (minuscules, `_DICT` supprimé)
 - Tables générées :
-  - `eval_producteurs_cases`
-  - `eval_producteurs_notes`
-  - `eval_producteurs_cspro_jobs`
-  - `eval_producteurs_cspro_meta`
-  - `eval_producteurs_producteurs` (level 1)
-  - `eval_producteurs_observations` (level 2)
-  - `eval_producteurs_photos` (level 3)
+ - `eval_producteurs_cases`
+ - `eval_producteurs_notes`
+ - `eval_producteurs_cspro_jobs`
+ - `eval_producteurs_cspro_meta`
+ - `eval_producteurs_producteurs` (level 1)
+ - `eval_producteurs_observations` (level 2)
+ - `eval_producteurs_photos` (level 3)
 
 ---
 
 ## Reproduire sur CSWeb Vanilla
-
-<Callout type="warning">
-  **Pour Développeurs Avancés Seulement**
-
-  Cette section est destinée aux développeurs qui veulent reproduire la transformation PostgreSQL sur un CSWeb vanilla **sans configuration préexistante**.
-</Callout>
 
 ### Prérequis
 
@@ -724,7 +694,7 @@ FROM php:8.1-apache
 
 # Installer pdo_pgsql
 RUN apt-get update && apt-get install -y libpq-dev \\
-    && docker-php-ext-install pdo_pgsql pgsql
+ && docker-php-ext-install pdo_pgsql pgsql
 
 # Vérifier
 RUN php -m | grep pdo_pgsql
@@ -804,11 +774,11 @@ php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS_USAID
 psql -U csweb_user -d csweb_analytics -c "\\dt"
 
 # Résultat attendu:
-#  eval_producteurs_cases
-#  eval_producteurs_notes
-#  eval_producteurs_producteurs
-#  eval_producteurs_observations
-#  ...
+# eval_producteurs_cases
+# eval_producteurs_notes
+# eval_producteurs_producteurs
+# eval_producteurs_observations
+# ...
 ```
 
 ---
@@ -832,13 +802,11 @@ SELECT * FROM eval_producteurs_cspro_meta;
 
 ### Document Source
 
-📄 **DOC-20251121-WA0004.pdf** (48 pages)
-📧 Auteur : Assietou DIAGNE (ANSD, Sénégal)
-📅 Date : 21 Novembre 2025
+ **DOC-20251121-WA0004.pdf** (48 pages)
+ Auteur : Assietou DIAGNE (ANSD, Sénégal)
+ Date : 21 Novembre 2025
 
-### Code PHP Complet
-
-Le code complet de transformation est disponible dans le repository CSWeb Community v2.0 :
+### Code PHP Complet Le code complet de transformation est disponible dans le repository CSWeb Community v2.0 :
 
 ```bash
 # Cloner le repository
@@ -861,61 +829,57 @@ src/AppBundle/Repository/MapDataRepository.php
 
 ## Contact & Support
 
-### Questions Techniques
+### Questions Techniques Pour toute question technique sur la transformation PostgreSQL :
 
-Pour toute question technique sur la transformation PostgreSQL :
-
-📧 **Assietou DIAGNE**
+ **Assietou DIAGNE**
 Email : [siatou.sissi@gmail.com](mailto:siatou.sissi@gmail.com)
 LinkedIn : [Assiétou Diagne](https://www.linkedin.com/in/assiétou-diagne-124a72172/)
 Organisation : ANSD (Sénégal)
 
-### Contribution
-
-Vous avez amélioré le code ou trouvé des bugs ?
+### Contribution Vous avez amélioré le code ou trouvé des bugs ?
 
 1. **Fork** le repository CSWeb Community
 2. **Créer** une branche (`git checkout -b feature/amelioration-pgsql`)
 3. **Commit** vos changements
 4. **Push** et créer une **Pull Request**
 
-👉 [Repository GitHub](https://github.com/BOUNADRAME/pg_csweb8_latest_2026)
+ [Repository GitHub](https://github.com/BOUNADRAME/pg_csweb8_latest_2026)
 
 ---
 
 ## Conclusion
 
 <div className="border-l-4 border-green-500 bg-green-50 dark:bg-green-950 p-6 my-8 rounded-r-lg">
-  <h3 className="text-xl font-bold mb-3 text-green-900 dark:text-green-100">
-    🎉 Impact de cette Transformation
-  </h3>
+ <h3 className="text-xl font-bold mb-3 text-green-900 dark:text-green-100">
+ Impact de cette Transformation
+ </h3>
 
-  <p className="mb-4 text-green-900 dark:text-green-100">
-    Le travail technique d'Assietou DIAGNE a permis de :
-  </p>
+ <p className="mb-4 text-green-900 dark:text-green-100">
+ Le travail technique d'Assietou DIAGNE a permis de :
+ </p>
 
-  <ul className="space-y-2 text-green-900 dark:text-green-100 mb-4">
-    <li>✅ <strong>Démocratiser PostgreSQL</strong> pour les instituts statistiques africains</li>
-    <li>✅ <strong>Améliorer les performances</strong> de breakout (10x plus rapide sur grands volumes)</li>
-    <li>✅ <strong>Rendre possible l'analytics moderne</strong> (Power BI, Tableau, Metabase)</li>
-    <li>✅ <strong>Poser les bases</strong> de l'architecture flexible CSWeb Community v2.0</li>
-  </ul>
+ <ul className="space-y-2 text-green-900 dark:text-green-100 mb-4">
+ <li> <strong>Démocratiser PostgreSQL</strong> pour les instituts statistiques africains</li>
+ <li> <strong>Améliorer les performances</strong> de breakout (10x plus rapide sur grands volumes)</li>
+ <li> <strong>Rendre possible l'analytics moderne</strong> (Power BI, Tableau, Metabase)</li>
+ <li> <strong>Poser les bases</strong> de l'architecture flexible CSWeb Community v2.0</li>
+ </ul>
 
-  <p className="font-bold text-green-900 dark:text-green-100">
-    Ce guide est un hommage technique au travail d'Assietou. Merci pour cette contribution majeure ! 🙏
-  </p>
+ <p className="font-bold text-green-900 dark:text-green-100">
+ Ce guide est un hommage technique au travail d'Assietou. Merci pour cette contribution majeure ! 
+ </p>
 </div>
 
 ---
 
 **Prochaines Étapes :**
 
-- [Utiliser le Breakout Sélectif →](/guides/breakout/selective)
-- [Configuration Multi-Database →](/guides/database/multi-db)
-- [Architecture Flexible Local/Remote →](/guides/architecture/flexible)
+- [Utiliser le Breakout Sélectif ](/guides/breakout/selective)
+- [Configuration Multi-Database ](/guides/database/multi-db)
+- [Architecture Flexible Local/Remote ](/guides/architecture/flexible)
 
 ---
 
 <div className="text-center text-sm text-gray-500 dark:text-gray-600 my-8">
-  Documentation créée par <a href="https://bounadrame.github.io/portfolio/" className="font-bold hover:underline">Bouna DRAME</a> basée sur le travail technique d'<strong>Assietou DIAGNE</strong> © 2026
+ Documentation créée par <a href="https://bounadrame.github.io/portfolio/" className="font-bold hover:underline">Bouna DRAME</a> basée sur le travail technique d'<strong>Assietou DIAGNE</strong> © 2026
 </div>

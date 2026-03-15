@@ -1,10 +1,6 @@
-# check-database-drivers
+# check-database-drivers Commande CLI pour vérifier les drivers de base de données disponibles.
 
-Commande CLI pour vérifier les drivers de base de données disponibles.
-
-## Description
-
-La commande `csweb:check-database-drivers` vérifie quels drivers PDO sont installés et disponibles pour CSWeb Community Platform.
+## Description La commande `csweb:check-database-drivers` vérifie quels drivers PDO sont installés et disponibles pour CSWeb Community Platform.
 
 ## Syntax
 
@@ -14,9 +10,7 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers [--test-c
 
 ## Options
 
-### --test-connections
-
-Tester les connexions aux bases de données configurées.
+### --test-connections Tester les connexions aux bases de données configurées.
 
 **Sans option :**
 ```bash
@@ -35,11 +29,7 @@ php bin/console csweb:check-database-drivers --test-connections
 ```
 Checking available database drivers...
 
-✅ pdo_mysql    : Available
-✅ pdo_pgsql    : Available
-✅ pdo_sqlsrv   : Available
-
-All required drivers are installed.
+ pdo_mysql : Available pdo_pgsql : Available pdo_sqlsrv : Available All required drivers are installed.
 ```
 
 ### Avec --test-connections
@@ -47,16 +37,9 @@ All required drivers are installed.
 ```
 Checking available database drivers...
 
-✅ pdo_mysql    : Available
-✅ pdo_pgsql    : Available
-✅ pdo_sqlsrv   : Available
+ pdo_mysql : Available pdo_pgsql : Available pdo_sqlsrv : Available Testing database connections...
 
-Testing database connections...
-
-✅ MySQL Metadata    : Connected to mysql:3306/csweb_metadata
-✅ PostgreSQL Breakout : Connected to postgres:5432/csweb_analytics
-
-All connections successful!
+ MySQL Metadata : Connected to mysql:3306/csweb_metadata PostgreSQL Breakout : Connected to postgres:5432/csweb_analytics All connections successful!
 ```
 
 ### Si Driver Manquant
@@ -64,16 +47,11 @@ All connections successful!
 ```
 Checking available database drivers...
 
-✅ pdo_mysql    : Available
-❌ pdo_pgsql    : NOT FOUND
-✅ pdo_sqlsrv   : Available
+ pdo_mysql : Available pdo_pgsql : NOT FOUND pdo_sqlsrv : Available WARNING: pdo_pgsql driver is not installed.
+ PostgreSQL breakout will not work.
 
-⚠️  WARNING: pdo_pgsql driver is not installed.
-   PostgreSQL breakout will not work.
-
-   To install:
-   docker-compose exec csweb apt-get install php8.1-pgsql
-   docker-compose restart csweb
+ To install:
+ docker-compose exec csweb apt-get install php8.1-pgsql docker-compose restart csweb
 ```
 
 ### Si Connexion Échoue
@@ -81,22 +59,17 @@ Checking available database drivers...
 ```
 Testing database connections...
 
-✅ MySQL Metadata    : Connected to mysql:3306/csweb_metadata
-❌ PostgreSQL Breakout : Connection FAILED
-   Error: SQLSTATE[08006] Connection refused
-   Host: postgres, Port: 5432
+ MySQL Metadata : Connected to mysql:3306/csweb_metadata PostgreSQL Breakout : Connection FAILED Error: SQLSTATE[08006] Connection refused Host: postgres, Port: 5432
 
-   Solutions:
-   1. Verify PostgreSQL container is running: docker-compose ps
-   2. Check POSTGRES_HOST in .env
-   3. Verify credentials in .env
+ Solutions:
+ 1. Verify PostgreSQL container is running: docker-compose ps
+ 2. Check POSTGRES_HOST in .env
+ 3. Verify credentials in .env
 ```
 
 ## Use Cases
 
-### 1. Vérification Post-Installation
-
-Après installation de CSWeb Community Platform :
+### 1. Vérification Post-Installation Après installation de CSWeb Community Platform :
 
 ```bash
 docker-compose exec csweb php bin/console csweb:check-database-drivers
@@ -104,9 +77,7 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers
 
 **Attendu :** Les 3 drivers (mysql, pgsql, sqlsrv) doivent être disponibles.
 
-### 2. Debug Problème de Connexion
-
-Si breakout échoue avec erreur driver :
+### 2. Debug Problème de Connexion Si breakout échoue avec erreur driver :
 
 ```bash
 docker-compose exec csweb php bin/console csweb:check-database-drivers --test-connections
@@ -117,13 +88,11 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers --test-co
 - Connexion MySQL metadata
 - Connexion DB breakout (selon `BREAKOUT_DB_TYPE`)
 
-### 3. Changement de SGBD
-
-Après changement de `BREAKOUT_DB_TYPE` dans `.env` :
+### 3. Changement de SGBD Après changement de `BREAKOUT_DB_TYPE` dans `.env` :
 
 ```bash
 # Modifier .env
-# BREAKOUT_DB_TYPE=postgresql → mysql
+# BREAKOUT_DB_TYPE=postgresql mysql
 
 # Redémarrer
 docker-compose restart csweb
@@ -132,9 +101,7 @@ docker-compose restart csweb
 docker-compose exec csweb php bin/console csweb:check-database-drivers --test-connections
 ```
 
-### 4. Installation Driver Manquant
-
-Si driver manquant détecté :
+### 4. Installation Driver Manquant Si driver manquant détecté :
 
 ```bash
 # Accéder au container
@@ -142,8 +109,8 @@ docker-compose exec csweb bash
 
 # Installer driver manquant
 apt-get update
-apt-get install -y php8.1-pgsql  # PostgreSQL
-apt-get install -y php8.1-mysql  # MySQL
+apt-get install -y php8.1-pgsql # PostgreSQL
+apt-get install -y php8.1-mysql # MySQL
 
 # Exit container
 exit
@@ -196,9 +163,7 @@ pecl install sqlsrv pdo_sqlsrv
 echo "extension=pdo_sqlsrv.so" > /etc/php/8.1/cli/conf.d/30-pdo_sqlsrv.ini
 ```
 
-## Variables d'Environnement Utilisées
-
-La commande lit les variables suivantes depuis `.env` :
+## Variables d'Environnement Utilisées La commande lit les variables suivantes depuis `.env` :
 
 ```bash
 # Type de DB pour breakout
@@ -229,9 +194,7 @@ SQLSERVER_PORT=1433
 SQLSERVER_DATABASE=CSWeb_Analytics
 ```
 
-## Code Source
-
-La commande se trouve dans :
+## Code Source La commande se trouve dans :
 ```
 src/Command/CheckDatabaseDriversCommand.php
 ```
@@ -242,9 +205,7 @@ src/Command/CheckDatabaseDriversCommand.php
 
 **Symptôme :**
 ```
-❌ pdo_mysql    : NOT FOUND
-❌ pdo_pgsql    : NOT FOUND
-❌ pdo_sqlsrv   : NOT FOUND
+ pdo_mysql : NOT FOUND pdo_pgsql : NOT FOUND pdo_sqlsrv : NOT FOUND
 ```
 
 **Cause :** Extensions PHP pas installées.
@@ -260,7 +221,7 @@ docker-compose up -d
 
 **Symptôme :**
 ```
-❌ pdo_pgsql    : NOT FOUND
+ pdo_pgsql : NOT FOUND
 ```
 
 **Mais extension installée :**
@@ -284,8 +245,7 @@ service php8.1-fpm restart
 
 **Symptôme :**
 ```
-✅ pdo_pgsql    : Available
-❌ PostgreSQL Breakout : Connection FAILED
+ pdo_pgsql : Available PostgreSQL Breakout : Connection FAILED
 ```
 
 **Causes possibles :**

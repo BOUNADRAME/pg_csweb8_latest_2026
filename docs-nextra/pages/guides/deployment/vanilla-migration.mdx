@@ -1,20 +1,14 @@
-# Migration depuis CSWeb Vanilla
-
-Guide de migration de **CSWeb vanilla** vers **CSWeb Community Platform v2.0**.
+# Migration depuis CSWeb Vanilla Guide de migration de **CSWeb vanilla** vers **CSWeb Community Platform v2.0**.
 
 ## Compatibilité
 
 <div className="border-l-4 border-green-500 bg-green-50 dark:bg-green-950 p-6 my-8 rounded-r-lg">
-  <h3>✅ Migration 100% Compatible</h3>
-  <p>CSWeb Community Platform est <strong>100% rétrocompatible</strong> avec CSWeb vanilla.</p>
-  <p><strong>Garantie :</strong> Aucune perte de données. Migration bidirectionnelle possible.</p>
+ <h3>Migration 100% Compatible</h3>
+ <p>CSWeb Community Platform est <strong>100% rétrocompatible</strong> avec CSWeb vanilla.</p>
+ <p><strong>Garantie :</strong> Aucune perte de données. Migration bidirectionnelle possible.</p>
 </div>
 
-import { Callout } from 'nextra/components'
 
-<Callout type="info">
-**Base officielle :** CSWeb Community Platform est basé sur **CSWeb 8** téléchargé depuis [csprousers.org/downloads](https://csprousers.org/downloads/). Migration depuis CSWeb vanilla (toutes versions) est supportée.
-</Callout>
 
 ## Avant de Commencer
 
@@ -30,10 +24,10 @@ import { Callout } from 'nextra/components'
 
 ### Prérequis
 
-- ✅ Accès root serveur CSWeb vanilla
-- ✅ Backup complet de la base MySQL
-- ✅ Serveur destination avec Docker installé
-- ✅ Temps de downtime accepté (1-4h selon volume)
+- Accès root serveur CSWeb vanilla
+- Backup complet de la base MySQL
+- Serveur destination avec Docker installé
+- Temps de downtime accepté (1-4h selon volume)
 
 ## Procédure de Migration
 
@@ -75,14 +69,10 @@ docker-compose down
 
 # Restore MySQL metadata
 docker-compose up -d mysql
-sleep 10  # Attendre démarrage MySQL
-
-docker-compose exec -T mysql mysql -u root -p csweb_metadata < /tmp/backup_vanilla_metadata.sql
+sleep 10 # Attendre démarrage MySQL docker-compose exec -T mysql mysql -u root -p csweb_metadata < /tmp/backup_vanilla_metadata.sql
 
 # Vérifier
-docker-compose exec mysql mysql -u root -p csweb_metadata
-
-SHOW TABLES;  # Doit afficher tables CSPro
+docker-compose exec mysql mysql -u root -p csweb_metadata SHOW TABLES; # Doit afficher tables CSPro
 SELECT COUNT(*) FROM cspro_dictionaries;
 ```
 
@@ -113,23 +103,21 @@ docker-compose logs csweb
 
 **Vérifier :**
 - [ ] Login admin fonctionne (même credentials vanilla)
-- [ ] Dictionnaires visibles (Administration → Dictionaries)
-- [ ] Utilisateurs visibles (Administration → Users)
+- [ ] Dictionnaires visibles (Administration Dictionaries)
+- [ ] Utilisateurs visibles (Administration Users)
 - [ ] Fichiers accessibles
 
 ### Étape 7: Breakout Sélectif (Nouveau)
 
 ```bash
 # Lister dictionnaires
-docker-compose exec mysql mysql -u csweb_user -p csweb_metadata
-
-SELECT name, label FROM cspro_dictionaries;
+docker-compose exec mysql mysql -u csweb_user -p csweb_metadata SELECT name, label FROM cspro_dictionaries;
 
 # Breakout vers PostgreSQL
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=SURVEY_DICT,CENSUS_DICT \
-  --threads=5 \
-  -vvv
+ dictionnaires=SURVEY_DICT,CENSUS_DICT \
+ --threads=5 \
+ -vvv
 ```
 
 **Résultat :** Tables PostgreSQL créées (`survey_cases`, `census_cases`, etc.)
@@ -198,19 +186,19 @@ service apache2 restart
 
 **Perte de données :** Uniquement données créées **après** backup (avant migration).
 
-## Migration Inverse (Community → Vanilla)
+## Migration Inverse (Community Vanilla)
 
 **Possible mais déconseillé.**
 
 **Que garder :**
-- ✅ Base MySQL metadata (100% compatible)
-- ✅ Fichiers uploadés
-- ✅ Utilisateurs, dictionnaires, OAuth clients
+- Base MySQL metadata (100% compatible)
+- Fichiers uploadés
+- Utilisateurs, dictionnaires, OAuth clients
 
 **Que perdre :**
-- ❌ Tables breakout PostgreSQL/SQL Server
-- ❌ Breakout sélectif (revenir au global)
-- ❌ Architecture flexible
+- Tables breakout PostgreSQL/SQL Server
+- Breakout sélectif (revenir au global)
+- Architecture flexible
 
 **Procédure :**
 1. Backup MySQL metadata depuis Community

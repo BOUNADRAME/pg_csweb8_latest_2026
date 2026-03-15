@@ -1,7 +1,7 @@
 {
-  "breakout": "Opérations Breakout",
-  "database": "Gestion Base de Données",
-  "admin": "Administration",
-  "architecture": "Architecture",
-  "deployment": "Déploiement"
+  "architecture": "Architecture & Déploiement",
+  "breakout": "Breakout Sélectif",
+  "database": "Multi-Database",
+  "deployment": "Production",
+  "admin": "Administration"
 }

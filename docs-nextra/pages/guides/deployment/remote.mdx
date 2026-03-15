@@ -1,10 +1,6 @@
-# Déploiement Remote
+# Déploiement Remote Guide de déploiement avec **serveurs de bases de données distants**.
 
-Guide de déploiement avec **serveurs de bases de données distants**.
-
-## Concept
-
-Mode **Remote** = Container CSWeb local + Bases de données sur serveurs distants.
+## Concept Mode **Remote** = Container CSWeb local + Bases de données sur serveurs distants.
 
 **Use Case :** RGPH5 Sénégal
 - CSWeb : Container Docker local
@@ -23,7 +19,7 @@ BREAKOUT_MODE=remote
 BREAKOUT_DB_TYPE=sqlserver
 
 # SQL Server DISTANT
-SQLSERVER_HOST=172.16.0.50      # IP serveur distant
+SQLSERVER_HOST=172.16.0.50 # IP serveur distant
 SQLSERVER_PORT=1433
 SQLSERVER_DATABASE=RGPH5_Analytics
 SQLSERVER_USER=sa
@@ -49,7 +45,7 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers --test-co
 
 **Output attendu :**
 ```
-✅ SQL Server Breakout : Connected to 172.16.0.50:1433/RGPH5_Analytics
+ SQL Server Breakout : Connected to 172.16.0.50:1433/RGPH5_Analytics
 ```
 
 ## Prérequis Réseau
@@ -97,7 +93,7 @@ bind-address = 0.0.0.0
 
 **SQL Server :**
 - SQL Server Configuration Manager
-- TCP/IP → Enabled
+- TCP/IP Enabled
 - Redémarrer service
 
 ## Exemples
@@ -106,9 +102,7 @@ bind-address = 0.0.0.0
 
 ```bash
 BREAKOUT_MODE=remote
-BREAKOUT_DB_TYPE=sqlserver
-
-SQLSERVER_HOST=172.16.0.50
+BREAKOUT_DB_TYPE=sqlserver SQLSERVER_HOST=172.16.0.50
 SQLSERVER_PORT=1433
 SQLSERVER_DATABASE=RGPH5_Analytics
 SQLSERVER_USER=sa
@@ -121,9 +115,7 @@ SQLSERVER_PASSWORD=<CONFIDENTIEL>
 
 ```bash
 BREAKOUT_MODE=remote
-BREAKOUT_DB_TYPE=postgresql
-
-POSTGRES_HOST=192.168.1.100
+BREAKOUT_DB_TYPE=postgresql POSTGRES_HOST=192.168.1.100
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=census_analytics
 POSTGRES_USER=analytics_user

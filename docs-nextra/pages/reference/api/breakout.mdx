@@ -1,10 +1,6 @@
-# Breakout API
+# Breakout API API pour gérer le breakout sélectif des questionnaires CSPro.
 
-API pour gérer le breakout sélectif des questionnaires CSPro.
-
-## Authentification Requise
-
-Toutes les requêtes nécessitent un **Bearer token OAuth2**.
+## Authentification Requise Toutes les requêtes nécessitent un **Bearer token OAuth2**.
 
 ```http
 Authorization: Bearer YOUR_ACCESS_TOKEN
@@ -14,16 +10,14 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ## Endpoints
 
-### POST /api/breakout/start
-
-Démarre un breakout sélectif pour un ou plusieurs dictionnaires.
+### POST /api/breakout/start Démarre un breakout sélectif pour un ou plusieurs dictionnaires.
 
 **Request Body:**
 ```json
 {
-  "dictionaries": ["EVAL_DICT", "KAIROS_DICT"],
-  "threads": 5,
-  "overwrite": false
+ "dictionaries": ["EVAL_DICT", "KAIROS_DICT"],
+ "threads": 5,
+ "overwrite": false
 }
 ```
 
@@ -35,33 +29,33 @@ Démarre un breakout sélectif pour un ou plusieurs dictionnaires.
 **Request:**
 ```bash
 curl -X POST http://localhost:8080/api/breakout/start \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dictionaries": ["EVAL_DICT"],
-    "threads": 3,
-    "overwrite": false
-  }'
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{
+ "dictionaries": ["EVAL_DICT"],
+ "threads": 3,
+ "overwrite": false
+ }'
 ```
 
 **Response (202 Accepted):**
 ```json
 {
-  "status": "started",
-  "job_id": "breakout-20260315-120000",
-  "dictionaries": ["EVAL_DICT"],
-  "threads": 3,
-  "estimated_time": "45 minutes",
-  "message": "Breakout started in background"
+ "status": "started",
+ "job_id": "breakout-20260315-120000",
+ "dictionaries": ["EVAL_DICT"],
+ "threads": 3,
+ "estimated_time": "45 minutes",
+ "message": "Breakout started in background"
 }
 ```
 
 **Response (409 Conflict):**
 ```json
 {
-  "error": "Tables already exist",
-  "message": "Tables for dictionary 'EVAL_DICT' already exist. Use overwrite=true to replace.",
-  "existing_tables": ["eval_cases", "eval_producteurs"]
+ "error": "Tables already exist",
+ "message": "Tables for dictionary 'EVAL_DICT' already exist. Use overwrite=true to replace.",
+ "existing_tables": ["eval_cases", "eval_producteurs"]
 }
 ```
 
@@ -77,53 +71,53 @@ Récupère le statut d'un job de breakout.
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/breakout/status/breakout-20260315-120000 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK) - En cours:**
 ```json
 {
-  "job_id": "breakout-20260315-120000",
-  "status": "running",
-  "progress": {
-    "dictionary": "EVAL_DICT",
-    "processed": 12500,
-    "total": 50000,
-    "percentage": 25,
-    "elapsed_time": "00:11:32",
-    "estimated_remaining": "00:34:28"
-  },
-  "threads": 3,
-  "started_at": "2026-03-15T12:00:00Z"
+ "job_id": "breakout-20260315-120000",
+ "status": "running",
+ "progress": {
+ "dictionary": "EVAL_DICT",
+ "processed": 12500,
+ "total": 50000,
+ "percentage": 25,
+ "elapsed_time": "00:11:32",
+ "estimated_remaining": "00:34:28"
+ },
+ "threads": 3,
+ "started_at": "2026-03-15T12:00:00Z"
 }
 ```
 
 **Response (200 OK) - Terminé:**
 ```json
 {
-  "job_id": "breakout-20260315-120000",
-  "status": "completed",
-  "result": {
-    "dictionaries_processed": ["EVAL_DICT"],
-    "total_cases": 50000,
-    "tables_created": ["eval_cases", "eval_producteurs", "eval_observations"],
-    "execution_time": "00:45:12"
-  },
-  "completed_at": "2026-03-15T12:45:12Z"
+ "job_id": "breakout-20260315-120000",
+ "status": "completed",
+ "result": {
+ "dictionaries_processed": ["EVAL_DICT"],
+ "total_cases": 50000,
+ "tables_created": ["eval_cases", "eval_producteurs", "eval_observations"],
+ "execution_time": "00:45:12"
+ },
+ "completed_at": "2026-03-15T12:45:12Z"
 }
 ```
 
 **Response (200 OK) - Erreur:**
 ```json
 {
-  "job_id": "breakout-20260315-120000",
-  "status": "failed",
-  "error": {
-    "code": "DB_CONNECTION_ERROR",
-    "message": "Cannot connect to PostgreSQL server: Connection refused",
-    "details": "Host: postgres, Port: 5432"
-  },
-  "failed_at": "2026-03-15T12:05:30Z"
+ "job_id": "breakout-20260315-120000",
+ "status": "failed",
+ "error": {
+ "code": "DB_CONNECTION_ERROR",
+ "message": "Cannot connect to PostgreSQL server: Connection refused",
+ "details": "Host: postgres, Port: 5432"
+ },
+ "failed_at": "2026-03-15T12:05:30Z"
 }
 ```
 
@@ -139,46 +133,46 @@ Liste les tables créées pour un dictionnaire.
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/breakout/tables/EVAL_DICT \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "dictionary": "EVAL_DICT",
-  "label": "eval",
-  "database": "csweb_analytics",
-  "tables": [
-    {
-      "name": "eval_cases",
-      "type": "main",
-      "row_count": 50000,
-      "size": "12.5 MB"
-    },
-    {
-      "name": "eval_producteurs",
-      "type": "record",
-      "row_count": 75000,
-      "size": "18.2 MB"
-    },
-    {
-      "name": "eval_observations",
-      "type": "record",
-      "row_count": 150000,
-      "size": "35.8 MB"
-    }
-  ],
-  "total_size": "66.5 MB",
-  "created_at": "2026-03-15T12:45:12Z"
+ "dictionary": "EVAL_DICT",
+ "label": "eval",
+ "database": "csweb_analytics",
+ "tables": [
+ {
+ "name": "eval_cases",
+ "type": "main",
+ "row_count": 50000,
+ "size": "12.5 MB"
+ },
+ {
+ "name": "eval_producteurs",
+ "type": "record",
+ "row_count": 75000,
+ "size": "18.2 MB"
+ },
+ {
+ "name": "eval_observations",
+ "type": "record",
+ "row_count": 150000,
+ "size": "35.8 MB"
+ }
+ ],
+ "total_size": "66.5 MB",
+ "created_at": "2026-03-15T12:45:12Z"
 }
 ```
 
 **Response (404 Not Found):**
 ```json
 {
-  "error": "No tables found",
-  "message": "No breakout tables found for dictionary 'EVAL_DICT'",
-  "suggestion": "Run breakout first using POST /api/breakout/start"
+ "error": "No tables found",
+ "message": "No breakout tables found for dictionary 'EVAL_DICT'",
+ "suggestion": "Run breakout first using POST /api/breakout/start"
 }
 ```
 
@@ -191,24 +185,22 @@ Supprime les tables d'un dictionnaire.
 **Request:**
 ```bash
 curl -X DELETE http://localhost:8080/api/breakout/tables/EVAL_DICT \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "message": "Tables deleted successfully",
-  "dictionary": "EVAL_DICT",
-  "deleted_tables": ["eval_cases", "eval_producteurs", "eval_observations"],
-  "freed_space": "66.5 MB"
+ "message": "Tables deleted successfully",
+ "dictionary": "EVAL_DICT",
+ "deleted_tables": ["eval_cases", "eval_producteurs", "eval_observations"],
+ "freed_space": "66.5 MB"
 }
 ```
 
 ---
 
-### GET /api/breakout/jobs
-
-Liste tous les jobs de breakout (actifs et terminés).
+### GET /api/breakout/jobs Liste tous les jobs de breakout (actifs et terminés).
 
 **Query Parameters:**
 - `status` (optional): Filtrer par statut (`running`, `completed`, `failed`)
@@ -217,34 +209,34 @@ Liste tous les jobs de breakout (actifs et terminés).
 **Request:**
 ```bash
 curl -X GET "http://localhost:8080/api/breakout/jobs?status=completed&limit=10" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "total": 25,
-  "limit": 10,
-  "data": [
-    {
-      "job_id": "breakout-20260315-120000",
-      "status": "completed",
-      "dictionaries": ["EVAL_DICT"],
-      "cases_processed": 50000,
-      "execution_time": "00:45:12",
-      "started_at": "2026-03-15T12:00:00Z",
-      "completed_at": "2026-03-15T12:45:12Z"
-    },
-    {
-      "job_id": "breakout-20260314-100000",
-      "status": "completed",
-      "dictionaries": ["KAIROS_DICT"],
-      "cases_processed": 12000,
-      "execution_time": "00:18:30",
-      "started_at": "2026-03-14T10:00:00Z",
-      "completed_at": "2026-03-14T10:18:30Z"
-    }
-  ]
+ "total": 25,
+ "limit": 10,
+ "data": [
+ {
+ "job_id": "breakout-20260315-120000",
+ "status": "completed",
+ "dictionaries": ["EVAL_DICT"],
+ "cases_processed": 50000,
+ "execution_time": "00:45:12",
+ "started_at": "2026-03-15T12:00:00Z",
+ "completed_at": "2026-03-15T12:45:12Z"
+ },
+ {
+ "job_id": "breakout-20260314-100000",
+ "status": "completed",
+ "dictionaries": ["KAIROS_DICT"],
+ "cases_processed": 12000,
+ "execution_time": "00:18:30",
+ "started_at": "2026-03-14T10:00:00Z",
+ "completed_at": "2026-03-14T10:18:30Z"
+ }
+ ]
 }
 ```
 
@@ -259,32 +251,32 @@ curl -X GET "http://localhost:8080/api/breakout/jobs?status=completed&limit=10" 
 @RequiredArgsConstructor
 public class BreakoutService {
 
-    private final CSWebApiService cswebApi;
+ private final CSWebApiService cswebApi;
 
-    public String startBreakout(List<String> dictionaries, int threads) {
-        Map<String, Object> request = Map.of(
-            "dictionaries", dictionaries,
-            "threads", threads,
-            "overwrite", false
-        );
+ public String startBreakout(List<String> dictionaries, int threads) {
+ Map<String, Object> request = Map.of(
+ "dictionaries", dictionaries,
+ "threads", threads,
+ "overwrite", false
+ );
 
-        ResponseEntity<BreakoutJobResponse> response = cswebApi.post(
-            "/breakout/start",
-            request,
-            BreakoutJobResponse.class
-        );
+ ResponseEntity<BreakoutJobResponse> response = cswebApi.post(
+ "/breakout/start",
+ request,
+ BreakoutJobResponse.class
+ );
 
-        return response.getBody().getJobId();
-    }
+ return response.getBody().getJobId();
+ }
 
-    public BreakoutStatus getStatus(String jobId) {
-        ResponseEntity<BreakoutStatus> response = cswebApi.get(
-            "/breakout/status/" + jobId,
-            BreakoutStatus.class
-        );
+ public BreakoutStatus getStatus(String jobId) {
+ ResponseEntity<BreakoutStatus> response = cswebApi.get(
+ "/breakout/status/" + jobId,
+ BreakoutStatus.class
+ );
 
-        return response.getBody();
-    }
+ return response.getBody();
+ }
 }
 ```
 
@@ -295,25 +287,25 @@ use App\Services\CSWebApiService;
 
 class BreakoutController extends Controller
 {
-    public function start(Request $request, CSWebApiService $cswebApi)
-    {
-        $data = [
-            'dictionaries' => $request->input('dictionaries'),
-            'threads' => $request->input('threads', 3),
-            'overwrite' => $request->input('overwrite', false),
-        ];
+ public function start(Request $request, CSWebApiService $cswebApi)
+ {
+ $data = [
+ 'dictionaries' => $request->input('dictionaries'),
+ 'threads' => $request->input('threads', 3),
+ 'overwrite' => $request->input('overwrite', false),
+ ];
 
-        $response = $cswebApi->post('/breakout/start', $data);
+ $response = $cswebApi->post('/breakout/start', $data);
 
-        return response()->json($response);
-    }
+ return response()->json($response);
+ }
 
-    public function status(string $jobId, CSWebApiService $cswebApi)
-    {
-        $status = $cswebApi->get("/breakout/status/{$jobId}");
+ public function status(string $jobId, CSWebApiService $cswebApi)
+ {
+ $status = $cswebApi->get("/breakout/status/{$jobId}");
 
-        return response()->json($status);
-    }
+ return response()->json($status);
+ }
 }
 ```
 
@@ -322,44 +314,44 @@ class BreakoutController extends Controller
 ```javascript
 // Démarrer breakout
 async function startBreakout(dictionaries, threads = 3) {
-  const response = await fetch('http://localhost:8080/api/breakout/start', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      dictionaries,
-      threads,
-      overwrite: false
-    })
-  });
+ const response = await fetch('http://localhost:8080/api/breakout/start', {
+ method: 'POST',
+ headers: {
+ 'Authorization': `Bearer ${accessToken}`,
+ 'Content-Type': 'application/json'
+ },
+ body: JSON.stringify({
+ dictionaries,
+ threads,
+ overwrite: false
+ })
+ });
 
-  const data = await response.json();
-  return data.job_id;
+ const data = await response.json();
+ return data.job_id;
 }
 
 // Polling status
 async function pollStatus(jobId) {
-  const interval = setInterval(async () => {
-    const response = await fetch(`http://localhost:8080/api/breakout/status/${jobId}`, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
+ const interval = setInterval(async () => {
+ const response = await fetch(`http://localhost:8080/api/breakout/status/${jobId}`, {
+ headers: {
+ 'Authorization': `Bearer ${accessToken}`
+ }
+ });
 
-    const status = await response.json();
+ const status = await response.json();
 
-    if (status.status === 'completed') {
-      clearInterval(interval);
-      console.log('Breakout completed!', status.result);
-    } else if (status.status === 'failed') {
-      clearInterval(interval);
-      console.error('Breakout failed:', status.error);
-    } else {
-      console.log(`Progress: ${status.progress.percentage}%`);
-    }
-  }, 5000); // Poll toutes les 5 secondes
+ if (status.status === 'completed') {
+ clearInterval(interval);
+ console.log('Breakout completed!', status.result);
+ } else if (status.status === 'failed') {
+ clearInterval(interval);
+ console.error('Breakout failed:', status.error);
+ } else {
+ console.log(`Progress: ${status.progress.percentage}%`);
+ }
+ }, 5000); // Poll toutes les 5 secondes
 }
 
 // Utilisation

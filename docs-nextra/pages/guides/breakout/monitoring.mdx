@@ -1,0 +1,266 @@
+# Monitoring Breakout
+
+Surveiller et diagnostiquer les jobs de breakout en temps réel.
+
+## Logs en Temps Réel
+
+### Tail Logs
+
+```bash
+# Logs Docker
+docker-compose logs -f csweb
+
+# Logs fichier
+tail -f /var/www/html/var/logs/breakout.log
+```
+
+### Filtrer par Dictionnaire
+
+```bash
+# Grep pour dictionnaire spécifique
+docker-compose logs csweb | grep "EVAL_DICT"
+
+# Grep erreurs
+docker-compose logs csweb | grep ERROR
+```
+
+## Progress Tracking
+
+### Commande avec Verbose
+
+```bash
+php bin/console csweb:process-cases-by-dict EVAL_DICT -vvv
+```
+
+Output exemple :
+
+```
+[INFO] Processing dictionary: EVAL_DICT
+[INFO] Found 50,000 cases
+[INFO] Progress: 10,000 / 50,000 (20%)
+[INFO] Progress: 25,000 / 50,000 (50%)
+[INFO] Progress: 50,000 / 50,000 (100%)
+[INFO] Completed in 00:45:12
+```
+
+### Watch Progress
+
+```bash
+# Compter rows pendant breakout
+watch -n 5 'docker-compose exec postgres psql -U csweb_analytics -d csweb_analytics -c "SELECT COUNT(*) FROM eval_cases;"'
+```
+
+## Métriques Performance
+
+### Temps d'Exécution
+
+Mesurer durée :
+
+```bash
+time php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+Output :
+
+```
+real    45m12s
+user    30m5s
+sys     2m15s
+```
+
+### Cases par Seconde
+
+Calculer débit :
+
+```bash
+# 50,000 cases en 45 min = ~18 cases/sec
+```
+
+### Ressources Système
+
+```bash
+# CPU/Memory usage
+docker stats csweb
+
+# Top processes
+docker-compose exec csweb top
+```
+
+## Détection Erreurs
+
+### Codes d'Erreur Courants
+
+| Erreur | Cause | Solution |
+|--------|-------|----------|
+| `Connection refused` | DB non accessible | Vérifier docker-compose ps |
+| `Driver not found` | pdo_pgsql manquant | Installer driver |
+| `Table already exists` | Breakout déjà fait | Utiliser --overwrite |
+| `Out of memory` | Trop de cases | Augmenter memory_limit |
+
+### Check Database Connection
+
+```bash
+php bin/console csweb:check-database-drivers
+```
+
+### Test Connection Avant Breakout
+
+```bash
+# PostgreSQL
+docker-compose exec postgres pg_isready
+
+# MySQL
+docker-compose exec mysql-breakout mysqladmin ping
+
+# SQL Server
+docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -Q "SELECT 1"
+```
+
+## Alertes
+
+### Email sur Erreur
+
+Script wrapper :
+
+```bash
+#!/bin/bash
+DICT=$1
+LOG=$(mktemp)
+
+php bin/console csweb:process-cases-by-dict $DICT > $LOG 2>&1
+
+if [ $? -ne 0 ]; then
+    mail -s "Breakout Failed: $DICT" admin@example.com < $LOG
+fi
+
+rm -f $LOG
+```
+
+### Slack Webhook
+
+```bash
+#!/bin/bash
+SLACK_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK"
+
+curl -X POST -H 'Content-type: application/json' \
+  --data '{"text":"❌ Breakout failed: Connection refused"}' \
+  $SLACK_WEBHOOK
+```
+
+### Health Check Endpoint
+
+Créer `health-check.php` :
+
+```php
+<?php
+// Vérifier dernière exécution breakout
+$lastRun = filemtime('/tmp/last-breakout.lock');
+$now = time();
+$diffHours = ($now - $lastRun) / 3600;
+
+if ($diffHours > 24) {
+    http_response_code(500);
+    echo json_encode(['status' => 'error', 'message' => 'No breakout in 24h']);
+} else {
+    echo json_encode(['status' => 'ok', 'last_run_hours_ago' => $diffHours]);
+}
+```
+
+Monitorer avec UptimeRobot ou similaire.
+
+## Tableaux de Bord
+
+### Requêtes SQL Monitoring
+
+```sql
+-- Nombre total de cases
+SELECT COUNT(*) as total_cases FROM eval_cases;
+
+-- Cases par jour
+SELECT DATE(modified_date) as date, COUNT(*) as count
+FROM eval_cases
+GROUP BY DATE(modified_date)
+ORDER BY date DESC
+LIMIT 7;
+
+-- Taille tables
+SELECT
+    table_name,
+    pg_size_pretty(pg_total_relation_size(table_name::regclass)) as size
+FROM information_schema.tables
+WHERE table_schema = 'public'
+ORDER BY pg_total_relation_size(table_name::regclass) DESC;
+```
+
+### Grafana Dashboard
+
+Connecter PostgreSQL à Grafana :
+
+**Datasource** :
+- Type: PostgreSQL
+- Host: `postgres:5432`
+- Database: `csweb_analytics`
+
+**Panels** :
+- Total cases (gauge)
+- Cases par jour (graph)
+- Taille DB (stat)
+
+## Cleanup & Maintenance
+
+### Supprimer Vieux Logs
+
+```bash
+# Logs > 30 jours
+find /var/log/csweb -name "*.log" -mtime +30 -delete
+```
+
+### Vacuum PostgreSQL
+
+```bash
+docker-compose exec postgres vacuumdb -U csweb_analytics -d csweb_analytics --analyze
+```
+
+### Optimize MySQL
+
+```bash
+docker-compose exec mysql-breakout mysqlcheck -u breakout_user -p --optimize --all-databases
+```
+
+## Troubleshooting
+
+### Breakout Bloqué
+
+Si processus bloqué :
+
+```bash
+# Trouver PID
+ps aux | grep process-cases
+
+# Kill process
+kill -9 <PID>
+
+# Supprimer lock file
+rm -f /tmp/breakout-*.lock
+```
+
+### Tables Corrompues
+
+PostgreSQL :
+
+```bash
+docker-compose exec postgres psql -U csweb_analytics -c "REINDEX DATABASE csweb_analytics;"
+```
+
+MySQL :
+
+```bash
+docker-compose exec mysql-breakout mysqlcheck -u breakout_user -p --repair csweb_breakout
+```
+
+## Ressources
+
+- [Breakout Sélectif](/guides/breakout/selective)
+- [Breakout Automatique](/guides/breakout/scheduled)
+- [CLI Reference](/reference/cli/process-cases)
+- [Troubleshooting](/reference/troubleshooting/common-issues)

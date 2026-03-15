@@ -1,12 +1,6 @@
-# Docker Production
-
-import { Callout } from 'nextra/components'
+# Docker Production 
 
 Guide de déploiement Docker pour **environnement de production**.
-
-<Callout type="warning">
-**Production-ready** : Validé sur RGPH5 Sénégal (3.2M questionnaires)
-</Callout>
 
 ## Différences Dev vs Prod
 
@@ -31,14 +25,14 @@ Guide de déploiement Docker pour **environnement de production**.
 ```bash
 # Application
 APP_ENV=prod
-APP_DEBUG=false                  # JAMAIS true en prod
+APP_DEBUG=false # JAMAIS true en prod
 APP_TIMEZONE=Africa/Dakar
 APP_SECRET=<GENERER_UNIQUE_64_CHARS>
 CSWEB_PORT=8080
 
 # Breakout
-BREAKOUT_MODE=remote             # Souvent remote en prod
-BREAKOUT_DB_TYPE=sqlserver       # Exemple RGPH5
+BREAKOUT_MODE=remote # Souvent remote en prod
+BREAKOUT_DB_TYPE=sqlserver # Exemple RGPH5
 
 # MySQL Metadata
 MYSQL_HOST=mysql
@@ -57,14 +51,14 @@ SQLSERVER_PASSWORD=<TRES_FORT>
 
 # Sécurité
 JWT_SECRET=<GENERER_UNIQUE_64_CHARS>
-JWT_EXPIRATION=3600000           # 1h (plus sécurisé que 24h)
+JWT_EXPIRATION=3600000 # 1h (plus sécurisé que 24h)
 FILES_FOLDER=/var/www/html/files
 API_URL=https://csweb.example.org/api/
 
 # Logs (minimal en prod)
 CSWEB_LOG_LEVEL=error
 CSWEB_PROCESS_CASES_LOG_LEVEL=error
-MAX_EXECUTION_TIME=0             # Illimité pour breakout RGPH
+MAX_EXECUTION_TIME=0 # Illimité pour breakout RGPH
 ```
 
 ### Générer Secrets Forts
@@ -92,10 +86,10 @@ curl -fsSL https://get.docker.com | sh
 
 # Configurer firewall
 sudo ufw enable
-sudo ufw allow 22/tcp   # SSH
-sudo ufw allow 80/tcp   # HTTP
-sudo ufw allow 443/tcp  # HTTPS
-sudo ufw deny 8080/tcp  # Bloquer accès direct CSWeb
+sudo ufw allow 22/tcp # SSH
+sudo ufw allow 80/tcp # HTTP
+sudo ufw allow 443/tcp # HTTPS
+sudo ufw deny 8080/tcp # Bloquer accès direct CSWeb
 
 # Créer user non-root
 sudo adduser csweb
@@ -116,7 +110,7 @@ cp .env.example .env
 # Éditer avec valeurs production
 nano .env
 
-# ⚠️ IMPORTANT: Vérifier secrets générés
+# IMPORTANT: Vérifier secrets générés
 ```
 
 ### Étape 3: Démarrer
@@ -141,59 +135,50 @@ docker-compose logs
 sudo apt install nginx certbot python3-certbot-nginx -y
 ```
 
-### Configuration Nginx
-
-Créer `/etc/nginx/sites-available/csweb` :
+### Configuration Nginx Créer `/etc/nginx/sites-available/csweb` :
 
 ```nginx
 server {
-    listen 80;
-    server_name csweb.example.org;
+ listen 80;
+ server_name csweb.example.org;
 
-    # Redirect HTTP → HTTPS
-    return 301 https://$server_name$request_uri;
+ # Redirect HTTP HTTPS return 301 https://$server_name$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    server_name csweb.example.org;
+ listen 443 ssl http2;
+ server_name csweb.example.org;
 
-    # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/csweb.example.org/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/csweb.example.org/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
+ # SSL Configuration ssl_certificate /etc/letsencrypt/live/csweb.example.org/fullchain.pem;
+ ssl_certificate_key /etc/letsencrypt/live/csweb.example.org/privkey.pem;
+ ssl_protocols TLSv1.2 TLSv1.3;
+ ssl_ciphers HIGH:!aNULL:!MD5;
 
-    # Security Headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
+ # Security Headers add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+ add_header X-Frame-Options "SAMEORIGIN" always;
+ add_header X-Content-Type-Options "nosniff" always;
+ add_header X-XSS-Protection "1; mode=block" always;
 
-    # Proxy to Docker
-    location / {
-        proxy_pass http://localhost:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+ # Proxy to Docker location / {
+ proxy_pass http://localhost:8080;
+ proxy_set_header Host $host;
+ proxy_set_header X-Real-IP $remote_addr;
+ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+ proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeouts
-        proxy_connect_timeout 600;
-        proxy_send_timeout 600;
-        proxy_read_timeout 600;
-        send_timeout 600;
+ # Timeouts proxy_connect_timeout 600;
+ proxy_send_timeout 600;
+ proxy_read_timeout 600;
+ send_timeout 600;
 
-        # File upload size
-        client_max_body_size 100M;
-    }
+ # File upload size client_max_body_size 100M;
+ }
 
-    # API rate limiting
-    location /api/ {
-        limit_req zone=api_limit burst=20;
-        proxy_pass http://localhost:8080;
-        # ... (même config proxy)
-    }
+ # API rate limiting location /api/ {
+ limit_req zone=api_limit burst=20;
+ proxy_pass http://localhost:8080;
+ # ... (même config proxy)
+ }
 }
 
 # Rate limiting zone
@@ -222,33 +207,25 @@ sudo systemctl restart nginx
 
 ## Backups Automatisés
 
-### Script Backup
-
-Créer `/home/csweb/backup.sh` :
+### Script Backup Créer `/home/csweb/backup.sh` :
 
 ```bash
 #!/bin/bash
-# Backup quotidien CSWeb
-
-DATE=$(date +%Y%m%d_%H%M%S)
+# Backup quotidien CSWeb DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/backups/csweb/$DATE"
 PROJECT_DIR="/home/csweb/pg_csweb8_latest_2026"
 
-mkdir -p $BACKUP_DIR
-
-cd $PROJECT_DIR
-
-echo "[$DATE] Starting backup..."
+mkdir -p $BACKUP_DIR cd $PROJECT_DIR echo "[$DATE] Starting backup..."
 
 # 1. Backup MySQL metadata
 docker-compose exec -T mysql mysqldump \
-  -u csweb_prod -p$MYSQL_PASSWORD csweb_prod \
-  > $BACKUP_DIR/metadata.sql
+ -u csweb_prod -p$MYSQL_PASSWORD csweb_prod \
+ > $BACKUP_DIR/metadata.sql
 
 # 2. Backup PostgreSQL analytics (si local)
 docker-compose exec -T postgres pg_dump \
-  -U csweb_analytics csweb_analytics \
-  > $BACKUP_DIR/analytics.sql
+ -U csweb_analytics csweb_analytics \
+ > $BACKUP_DIR/analytics.sql
 
 # 3. Backup fichiers
 tar -czf $BACKUP_DIR/files.tar.gz files/
@@ -293,24 +270,20 @@ Ajouter à `docker-compose.yml` :
 
 ```yaml
 services:
-  prometheus:
-    image: prom/prometheus:latest
-    ports:
-      - "9090:9090"
-    volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
+ prometheus:
+ image: prom/prometheus:latest ports:
+ - "9090:9090"
+ volumes:
+ - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+ - prometheus_data:/prometheus command:
+ - '--config.file=/etc/prometheus/prometheus.yml'
 
-  grafana:
-    image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=<FORT_PASSWORD>
+ grafana:
+ image: grafana/grafana:latest ports:
+ - "3000:3000"
+ volumes:
+ - grafana_data:/var/lib/grafana environment:
+ - GF_SECURITY_ADMIN_PASSWORD=<FORT_PASSWORD>
 ```
 
 **Accès Grafana :** http://SERVER_IP:3000

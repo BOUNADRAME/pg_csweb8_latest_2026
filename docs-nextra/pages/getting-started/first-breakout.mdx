@@ -3,17 +3,9 @@ title: Premier Breakout
 description: Tutorial step-by-step pour votre premier breakout CSWeb
 ---
 
-import { Callout } from '../../components/Callout'
 
-# Premier Breakout - Tutorial Step-by-Step
 
-Ce tutorial vous guide pas à pas pour réaliser votre **premier breakout** avec CSWeb Community Platform.
-
-<Callout type="info">
-  **Temps estimé :** 5-10 minutes
-
-  **Prérequis :** CSWeb doit être installé et fonctionnel. [Voir l'installation →](/getting-started/installation)
-</Callout>
+# Premier Breakout - Tutorial Step-by-Step Ce tutorial vous guide pas à pas pour réaliser votre **premier breakout** avec CSWeb Community Platform.
 
 ---
 
@@ -24,35 +16,31 @@ Le **breakout** est le processus de transformation des données CSPro (format bi
 ### Avant le Breakout
 
 ```
-┌────────────────────────┐
-│   Base CSWeb (MySQL)   │
-├────────────────────────┤
-│ cases.csdb (binaire)   │
-│   - Case 1             │
-│   - Case 2             │
-│   - Case 3             │
-│   ...                  │
-└────────────────────────┘
+
+ Base CSWeb (MySQL) 
+
+ cases.csdb (binaire) 
+ - Case 1 
+ - Case 2 
+ - Case 3 
+ ... 
+
 ```
 
 ### Après le Breakout
 
 ```
-┌─────────────────────────────┐
-│ Base Analytics (PostgreSQL) │
-├─────────────────────────────┤
-│ eval_producteurs (table)    │
-│   - id, nom, region, ...    │
-│ eval_observations (table)   │
-│   - id, producteur_id, ...  │
-│ eval_photos (table)         │
-│   - id, observation_id, ... │
-└─────────────────────────────┘
-```
 
-<Callout type="success">
-  Les données breakées peuvent être requêtées avec SQL standard et connectées à Power BI, Tableau, etc.
-</Callout>
+ Base Analytics (PostgreSQL) 
+
+ eval_producteurs (table) 
+ - id, nom, region, ... 
+ eval_observations (table) 
+ - id, producteur_id, ... 
+ eval_photos (table) 
+ - id, observation_id, ... 
+
+```
 
 ---
 
@@ -61,34 +49,30 @@ Le **breakout** est le processus de transformation des données CSPro (format bi
 ### Via l'Interface Web
 
 1. **Se connecter à CSWeb**
-   ```
-   http://localhost:8080
-   ```
+ ```
+ http://localhost:8080
+ ```
 
 2. **Aller dans "Dictionaries"**
-   - Menu : `Data` → `Dictionaries`
+ - Menu : `Data` `Dictionaries`
 
 3. **Upload d'un dictionnaire**
-   - Cliquer sur `Upload Dictionary`
-   - Sélectionner votre fichier `.dcf` (CSPro dictionary)
-   - Exemple : `EVAL_PRODUCTEURS_USAID.dcf`
-   - Cliquer sur `Upload`
+ - Cliquer sur `Upload Dictionary`
+ - Sélectionner votre fichier `.dcf` (CSPro dictionary)
+ - Exemple : `EVAL_PRODUCTEURS_USAID.dcf`
+ - Cliquer sur `Upload`
 
 4. **Vérifier l'upload**
-   - Le dictionnaire doit apparaître dans la liste
-   - Noter l'ID du dictionnaire (ex: `3`)
-
-<Callout type="info">
-  **Où trouver un dictionnaire de test ?** Utilisez les exemples CSPro fournis dans `cspro/examples/` ou créez-en un avec CSPro Designer.
-</Callout>
+ - Le dictionnaire doit apparaître dans la liste
+ - Noter l'ID du dictionnaire (ex: `3`)
 
 ### Via l'API
 
 ```bash
 # Upload via API (avancé)
 curl -X POST http://localhost:8080/api/dictionaries/upload \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "file=@EVAL_PRODUCTEURS_USAID.dcf"
+ -H "Authorization: Bearer YOUR_TOKEN" \
+ -F "file=@EVAL_PRODUCTEURS_USAID.dcf"
 ```
 
 ---
@@ -123,10 +107,6 @@ CREATE DATABASE IF NOT EXISTS eval_producteurs;
 SHOW DATABASES;
 ```
 
-<Callout type="warning">
-  **Important :** Le nom du schéma/database doit correspondre au nom de votre dictionnaire (en minuscules).
-</Callout>
-
 ### Configurer la Connexion Breakout
 
 **Option 1 : Via fichier `.env`**
@@ -146,17 +126,17 @@ BREAKOUT_DB_SCHEMA=eval_producteurs
 
 ```bash
 curl -X POST http://localhost:8080/api/dictionaries/3/breakout-config \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "dbType": "postgresql",
-    "host": "csweb_postgres",
-    "port": 5432,
-    "database": "csweb_analytics",
-    "schema": "eval_producteurs",
-    "user": "csweb_user",
-    "password": "VOTRE_MOT_DE_PASSE"
-  }'
+ -H "Authorization: Bearer YOUR_TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{
+ "dbType": "postgresql",
+ "host": "csweb_postgres",
+ "port": 5432,
+ "database": "csweb_analytics",
+ "schema": "eval_producteurs",
+ "user": "csweb_user",
+ "password": "VOTRE_MOT_DE_PASSE"
+ }'
 ```
 
 ---
@@ -186,30 +166,26 @@ Dictionnaire: EVAL_PRODUCTEURS_USAID (ID: 3)
 Base cible: PostgreSQL (csweb_postgres:5432)
 Schéma: eval_producteurs
 
-[1/5] Création des tables...         ✅
-[2/5] Extraction des cases...        ✅ (125 cases)
-[3/5] Transformation des données...  ✅
-[4/5] Insertion dans PostgreSQL...   ✅ (125 lignes)
-[5/5] Création des index...          ✅
+[1/5] Création des tables... 
+[2/5] Extraction des cases... (125 cases)
+[3/5] Transformation des données... 
+[4/5] Insertion dans PostgreSQL... (125 lignes)
+[5/5] Création des index... 
 
 Breakout terminé avec succès !
 Durée: 12.5 secondes
 ```
-
-<Callout type="success">
-  Si vous voyez "Breakout terminé avec succès", passez à l'étape 4 ! ✅
-</Callout>
 
 ### Via API
 
 ```bash
 # Déclencher le breakout via API
 curl -X POST http://localhost:8080/api/breakout/EVAL_PRODUCTEURS_USAID/trigger \
-  -H "Authorization: Bearer YOUR_TOKEN"
+ -H "Authorization: Bearer YOUR_TOKEN"
 
 # Vérifier le statut
 curl http://localhost:8080/api/breakout/EVAL_PRODUCTEURS_USAID/status \
-  -H "Authorization: Bearer YOUR_TOKEN"
+ -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### Via Admin Panel (À venir)
@@ -223,24 +199,24 @@ L'interface React Admin Panel permettra de déclencher les breakouts en 1 clic (
 ### Avec pgAdmin (PostgreSQL)
 
 1. **Ouvrir pgAdmin**
-   ```
-   http://localhost:8082
-   ```
+ ```
+ http://localhost:8082
+ ```
 
 2. **Se connecter au serveur**
-   - Host : `csweb_postgres`
-   - Port : `5432`
-   - Database : `csweb_analytics`
-   - Username : `csweb_user`
+ - Host : `csweb_postgres`
+ - Port : `5432`
+ - Database : `csweb_analytics`
+ - Username : `csweb_user`
 
 3. **Explorer le schéma**
-   - Naviguer vers : `Servers` → `csweb_postgres` → `Databases` → `csweb_analytics` → `Schemas` → `eval_producteurs` → `Tables`
+ - Naviguer vers : `Servers` `csweb_postgres` `Databases` `csweb_analytics` `Schemas` `eval_producteurs` `Tables`
 
 4. **Vérifier les tables créées**
-   - `producteurs` (table principale)
-   - `observations` (table enfant)
-   - `photos` (table enfant)
-   - etc.
+ - `producteurs` (table principale)
+ - `observations` (table enfant)
+ - `photos` (table enfant)
+ - etc.
 
 ### Avec SQL
 
@@ -272,24 +248,17 @@ SELECT COUNT(*) FROM eval_producteurs.producteurs;
 SELECT * FROM eval_producteurs.producteurs LIMIT 10;
 ```
 
-<Callout type="info">
-  **Structure des tables :** CSWeb crée automatiquement les tables basées sur la structure de votre dictionnaire CSPro.
-</Callout>
-
 ---
 
-## Étape 5 : Requêter les Données
-
-Maintenant que les données sont breakées, vous pouvez les requêter avec SQL :
+## Étape 5 : Requêter les Données Maintenant que les données sont breakées, vous pouvez les requêter avec SQL :
 
 ### Exemples de Requêtes
 
 **Compter les producteurs par région :**
 
 ```sql
-SELECT
-  region,
-  COUNT(*) as total_producteurs
+SELECT region,
+ COUNT(*) as total_producteurs
 FROM eval_producteurs.producteurs
 GROUP BY region
 ORDER BY total_producteurs DESC;
@@ -298,11 +267,10 @@ ORDER BY total_producteurs DESC;
 **Joindre producteurs et observations :**
 
 ```sql
-SELECT
-  p.nom_producteur,
-  p.region,
-  o.type_culture,
-  o.rendement
+SELECT p.nom_producteur,
+ p.region,
+ o.type_culture,
+ o.rendement
 FROM eval_producteurs.producteurs p
 JOIN eval_producteurs.observations o ON p.producteur_id = o.producteur_id
 WHERE p.region = 'Dakar';
@@ -311,9 +279,8 @@ WHERE p.region = 'Dakar';
 **Analyser les observations avec photos :**
 
 ```sql
-SELECT
-  p.nom_producteur,
-  COUNT(ph.photo_id) as nombre_photos
+SELECT p.nom_producteur,
+ COUNT(ph.photo_id) as nombre_photos
 FROM eval_producteurs.producteurs p
 LEFT JOIN eval_producteurs.photos ph ON p.producteur_id = ph.producteur_id
 GROUP BY p.nom_producteur
@@ -327,24 +294,24 @@ HAVING COUNT(ph.photo_id) > 0;
 ### Power BI
 
 1. **Ouvrir Power BI Desktop**
-2. **Get Data** → **PostgreSQL**
+2. **Get Data** **PostgreSQL**
 3. **Entrer les paramètres :**
-   - Server : `localhost:5432`
-   - Database : `csweb_analytics`
-   - Username : `csweb_user`
-   - Password : `[POSTGRES_PASSWORD]`
+ - Server : `localhost:5432`
+ - Database : `csweb_analytics`
+ - Username : `csweb_user`
+ - Password : `[POSTGRES_PASSWORD]`
 4. **Sélectionner les tables du schéma `eval_producteurs`**
 5. **Créer vos visualisations !**
 
 ### Tableau
 
 1. **Ouvrir Tableau Desktop**
-2. **Connect** → **PostgreSQL**
+2. **Connect** **PostgreSQL**
 3. **Entrer les paramètres :**
-   - Server : `localhost`
-   - Port : `5432`
-   - Database : `csweb_analytics`
-   - Schema : `eval_producteurs`
+ - Server : `localhost`
+ - Port : `5432`
+ - Database : `csweb_analytics`
+ - Schema : `eval_producteurs`
 4. **Drag & drop les tables pour créer vos dashboards**
 
 ### Metabase (Open Source)
@@ -428,9 +395,7 @@ CREATE INDEX idx_observation_producteur ON eval_producteurs.observations(product
 
 ---
 
-## Prochaines Étapes
-
-Félicitations ! Vous avez réalisé votre premier breakout. 🎉
+## Prochaines Étapes Félicitations ! Vous avez réalisé votre premier breakout. 
 
 Voici ce que vous pouvez faire ensuite :
 
@@ -439,18 +404,12 @@ Voici ce que vous pouvez faire ensuite :
 3. **[Configuration Multi-DB](/guides/database/multi-db)** - Basculer entre PostgreSQL, MySQL, SQL Server
 4. **[Scheduler](/guides/admin/scheduler)** - Automatiser les breakouts avec des jobs cron
 
-<Callout type="info">
-  **Besoin d'aide ?** Consultez la [FAQ](/reference/troubleshooting/faq) ou rejoignez notre [Discord](https://discord.gg/csweb-community).
-</Callout>
-
 ---
 
-## Crédits
-
-Le **breakout sélectif par dictionnaire** a été développé par **Assietou Diagne** (ANSD, Sénégal) et intégré dans CSWeb Community Platform.
+## Crédits Le **breakout sélectif par dictionnaire** a été développé par **Assietou Diagne** (ANSD, Sénégal) et intégré dans CSWeb Community Platform.
 
 **Contact :**
-- 📧 Email : [siatou.sissi@gmail.com](mailto:siatou.sissi@gmail.com)
-- 🔗 LinkedIn : [Assiétou Diagne](https://www.linkedin.com/in/assiétou-diagne-124a72172/)
+- Email : [siatou.sissi@gmail.com](mailto:siatou.sissi@gmail.com)
+- LinkedIn : [Assiétou Diagne](https://www.linkedin.com/in/assiétou-diagne-124a72172/)
 
-[En savoir plus sur l'architecture →](/guides/architecture/flexible)
+[En savoir plus sur l'architecture ](/guides/architecture/flexible)

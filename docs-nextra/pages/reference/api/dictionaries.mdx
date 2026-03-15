@@ -1,10 +1,6 @@
-# Dictionaries API
+# Dictionaries API API pour gérer les dictionnaires CSPro.
 
-API pour gérer les dictionnaires CSPro.
-
-## Authentification Requise
-
-Toutes les requêtes nécessitent un **Bearer token OAuth2**.
+## Authentification Requise Toutes les requêtes nécessitent un **Bearer token OAuth2**.
 
 Voir [OAuth2 Authentication](/reference/api/oauth) pour obtenir un token.
 
@@ -16,31 +12,29 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ## Endpoints
 
-### GET /api/dictionaries
-
-Liste tous les dictionnaires disponibles.
+### GET /api/dictionaries Liste tous les dictionnaires disponibles.
 
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/dictionaries \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 [
-  {
-    "name": "EVAL_DICT",
-    "label": "eval",
-    "version": "1.0",
-    "created_at": "2026-01-15T10:30:00Z"
-  },
-  {
-    "name": "KAIROS_DICT",
-    "label": "kairos",
-    "version": "2.0",
-    "created_at": "2026-02-20T14:00:00Z"
-  }
+ {
+ "name": "EVAL_DICT",
+ "label": "eval",
+ "version": "1.0",
+ "created_at": "2026-01-15T10:30:00Z"
+ },
+ {
+ "name": "KAIROS_DICT",
+ "label": "kairos",
+ "version": "2.0",
+ "created_at": "2026-02-20T14:00:00Z"
+ }
 ]
 ```
 
@@ -56,46 +50,44 @@ Récupère les détails d'un dictionnaire spécifique.
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/dictionaries/EVAL_DICT \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "name": "EVAL_DICT",
-  "label": "eval",
-  "version": "1.0",
-  "description": "Enquête d'évaluation",
-  "levels": [
-    {
-      "name": "level_1",
-      "label": "Ménages"
-    }
-  ],
-  "records": [
-    {
-      "name": "producteurs",
-      "label": "Producteurs"
-    }
-  ],
-  "created_at": "2026-01-15T10:30:00Z",
-  "updated_at": "2026-01-15T10:30:00Z"
+ "name": "EVAL_DICT",
+ "label": "eval",
+ "version": "1.0",
+ "description": "Enquête d'évaluation",
+ "levels": [
+ {
+ "name": "level_1",
+ "label": "Ménages"
+ }
+ ],
+ "records": [
+ {
+ "name": "producteurs",
+ "label": "Producteurs"
+ }
+ ],
+ "created_at": "2026-01-15T10:30:00Z",
+ "updated_at": "2026-01-15T10:30:00Z"
 }
 ```
 
 **Response (404 Not Found):**
 ```json
 {
-  "error": "Dictionary not found",
-  "message": "Dictionary 'UNKNOWN_DICT' does not exist"
+ "error": "Dictionary not found",
+ "message": "Dictionary 'UNKNOWN_DICT' does not exist"
 }
 ```
 
 ---
 
-### GET /api/dictionaries/\{name\}/cases
-
-Liste les questionnaires (cases) d'un dictionnaire.
+### GET /api/dictionaries/\{name\}/cases Liste les questionnaires (cases) d'un dictionnaire.
 
 **Parameters:**
 - `name` (path, required): Nom du dictionnaire
@@ -105,62 +97,60 @@ Liste les questionnaires (cases) d'un dictionnaire.
 **Request:**
 ```bash
 curl -X GET "http://localhost:8080/api/dictionaries/EVAL_DICT/cases?limit=10&offset=0" \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "total": 1250,
-  "limit": 10,
-  "offset": 0,
-  "data": [
-    {
-      "guid": "abc123-def456-ghi789",
-      "case_label": "001-2025-001",
-      "modified_date": "2026-01-15T12:00:00Z",
-      "verified": true,
-      "deleted": false
-    },
-    {
-      "guid": "xyz789-uvw456-rst123",
-      "case_label": "001-2025-002",
-      "modified_date": "2026-01-15T13:30:00Z",
-      "verified": false,
-      "deleted": false
-    }
-  ]
+ "total": 1250,
+ "limit": 10,
+ "offset": 0,
+ "data": [
+ {
+ "guid": "abc123-def456-ghi789",
+ "case_label": "001-2025-001",
+ "modified_date": "2026-01-15T12:00:00Z",
+ "verified": true,
+ "deleted": false
+ },
+ {
+ "guid": "xyz789-uvw456-rst123",
+ "case_label": "001-2025-002",
+ "modified_date": "2026-01-15T13:30:00Z",
+ "verified": false,
+ "deleted": false
+ }
+ ]
 }
 ```
 
 ---
 
-### POST /api/dictionaries
-
-Upload un nouveau dictionnaire CSPro (.dcf).
+### POST /api/dictionaries Upload un nouveau dictionnaire CSPro (.dcf).
 
 **Request:**
 ```bash
 curl -X POST http://localhost:8080/api/dictionaries \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -F "file=@survey.dcf" \
-  -F "label=survey"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+ -F "file=@survey.dcf" \
+ -F "label=survey"
 ```
 
 **Response (201 Created):**
 ```json
 {
-  "message": "Dictionary uploaded successfully",
-  "name": "SURVEY_DICT",
-  "label": "survey"
+ "message": "Dictionary uploaded successfully",
+ "name": "SURVEY_DICT",
+ "label": "survey"
 }
 ```
 
 **Response (400 Bad Request):**
 ```json
 {
-  "error": "Invalid file format",
-  "message": "File must be a valid CSPro .dcf file"
+ "error": "Invalid file format",
+ "message": "File must be a valid CSPro .dcf file"
 }
 ```
 
@@ -173,22 +163,22 @@ Supprime un dictionnaire.
 **Request:**
 ```bash
 curl -X DELETE http://localhost:8080/api/dictionaries/EVAL_DICT \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "message": "Dictionary deleted successfully",
-  "name": "EVAL_DICT"
+ "message": "Dictionary deleted successfully",
+ "name": "EVAL_DICT"
 }
 ```
 
 **Response (409 Conflict):**
 ```json
 {
-  "error": "Cannot delete dictionary",
-  "message": "Dictionary has associated cases. Delete cases first."
+ "error": "Cannot delete dictionary",
+ "message": "Dictionary has associated cases. Delete cases first."
 }
 ```
 
@@ -203,25 +193,25 @@ curl -X DELETE http://localhost:8080/api/dictionaries/EVAL_DICT \
 @RequiredArgsConstructor
 public class DictionaryService {
 
-    private final CSWebApiService cswebApi;
+ private final CSWebApiService cswebApi;
 
-    public List<Dictionary> getAllDictionaries() {
-        ResponseEntity<Dictionary[]> response = cswebApi.get(
-            "/dictionaries",
-            Dictionary[].class
-        );
+ public List<Dictionary> getAllDictionaries() {
+ ResponseEntity<Dictionary[]> response = cswebApi.get(
+ "/dictionaries",
+ Dictionary[].class
+ );
 
-        return Arrays.asList(response.getBody());
-    }
+ return Arrays.asList(response.getBody());
+ }
 
-    public Dictionary getDictionary(String name) {
-        ResponseEntity<Dictionary> response = cswebApi.get(
-            "/dictionaries/" + name,
-            Dictionary.class
-        );
+ public Dictionary getDictionary(String name) {
+ ResponseEntity<Dictionary> response = cswebApi.get(
+ "/dictionaries/" + name,
+ Dictionary.class
+ );
 
-        return response.getBody();
-    }
+ return response.getBody();
+ }
 }
 ```
 
@@ -232,19 +222,19 @@ use App\Services\CSWebApiService;
 
 class DictionaryController extends Controller
 {
-    public function index(CSWebApiService $cswebApi)
-    {
-        $dictionaries = $cswebApi->get('/dictionaries');
+ public function index(CSWebApiService $cswebApi)
+ {
+ $dictionaries = $cswebApi->get('/dictionaries');
 
-        return response()->json($dictionaries);
-    }
+ return response()->json($dictionaries);
+ }
 
-    public function show(string $name, CSWebApiService $cswebApi)
-    {
-        $dictionary = $cswebApi->get("/dictionaries/{$name}");
+ public function show(string $name, CSWebApiService $cswebApi)
+ {
+ $dictionary = $cswebApi->get("/dictionaries/{$name}");
 
-        return response()->json($dictionary);
-    }
+ return response()->json($dictionary);
+ }
 }
 ```
 

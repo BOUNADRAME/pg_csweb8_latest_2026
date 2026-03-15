@@ -1,0 +1,326 @@
+# Monitoring
+
+Surveiller l'état et les performances de CSWeb Community Platform.
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="warning">
+**v2.1 (Avril 2026)** : Dashboard monitoring temps réel à venir. Actuellement : monitoring via CLI et logs.
+</Callout>
+
+## Logs Docker
+
+### Tail Logs
+
+```bash
+# Tous les services
+docker-compose logs -f
+
+# Service spécifique
+docker-compose logs -f csweb
+docker-compose logs -f postgres
+```
+
+### Filtrer par Niveau
+
+```bash
+# Erreurs seulement
+docker-compose logs csweb | grep ERROR
+
+# Warnings
+docker-compose logs csweb | grep WARN
+```
+
+## Métriques Système
+
+### Docker Stats
+
+```bash
+# CPU/Memory usage en temps réel
+docker stats
+
+# Output exemple :
+# CONTAINER    CPU %    MEM USAGE / LIMIT     MEM %
+# csweb        2.5%     512MB / 4GB           12.8%
+# postgres     1.2%     256MB / 2GB           12.8%
+```
+
+### Disk Usage
+
+```bash
+# Taille volumes Docker
+docker system df -v
+
+# Taille base de données
+docker-compose exec postgres du -sh /var/lib/postgresql/data
+```
+
+## Health Checks
+
+### Services Running
+
+```bash
+docker-compose ps
+
+# Output :
+# csweb      running
+# postgres   running
+# mysql      running
+```
+
+### Database Connection
+
+```bash
+# PostgreSQL
+docker-compose exec postgres pg_isready
+
+# MySQL
+docker-compose exec mysql mysqladmin ping
+```
+
+### CSWeb Endpoint
+
+```bash
+curl -f http://localhost:8080/api/health || echo "CSWeb down"
+```
+
+## Monitoring Database
+
+### Nombre de Cases
+
+```sql
+-- PostgreSQL
+SELECT COUNT(*) as total_cases FROM eval_cases;
+
+-- Par statut
+SELECT verified, COUNT(*)
+FROM eval_cases
+GROUP BY verified;
+```
+
+### Taille Tables
+
+```sql
+-- PostgreSQL
+SELECT
+    schemaname,
+    tablename,
+    pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
+FROM pg_tables
+WHERE schemaname = 'public'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+```
+
+### Connexions Actives
+
+```sql
+-- PostgreSQL
+SELECT count(*) FROM pg_stat_activity;
+
+-- Détails
+SELECT usename, application_name, state
+FROM pg_stat_activity
+WHERE state = 'active';
+```
+
+## Logs Application
+
+### Fichiers Logs
+
+```bash
+# Logs CSWeb
+tail -f /var/www/html/var/logs/prod.log
+
+# Logs breakout
+tail -f /var/www/html/var/logs/breakout.log
+
+# Logs webhooks
+tail -f /var/www/html/var/logs/webhook.log
+```
+
+### Rotation Logs
+
+Configurer logrotate :
+
+```bash
+# /etc/logrotate.d/csweb
+/var/www/html/var/logs/*.log {
+    daily
+    rotate 30
+    compress
+    delaycompress
+    missingok
+    notifempty
+}
+```
+
+## Alertes
+
+### Email sur Erreur
+
+Script monitoring :
+
+```bash
+#!/bin/bash
+# /usr/local/bin/csweb-monitor.sh
+
+# Check service
+if ! docker-compose ps csweb | grep -q "Up"; then
+    echo "CSWeb service down" | mail -s "ALERT: CSWeb Down" admin@example.com
+fi
+
+# Check database
+if ! docker-compose exec postgres pg_isready > /dev/null 2>&1; then
+    echo "PostgreSQL down" | mail -s "ALERT: PostgreSQL Down" admin@example.com
+fi
+```
+
+Cron :
+
+```bash
+*/5 * * * * /usr/local/bin/csweb-monitor.sh
+```
+
+### Slack Webhook
+
+```bash
+#!/bin/bash
+SLACK_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK"
+
+STATUS=$(docker-compose ps csweb | grep -c "Up")
+
+if [ $STATUS -eq 0 ]; then
+    curl -X POST -H 'Content-type: application/json' \
+      --data '{"text":"🔴 CSWeb service DOWN"}' \
+      $SLACK_WEBHOOK
+fi
+```
+
+## Métriques Applicatives
+
+### Requêtes API
+
+Compter requêtes par endpoint :
+
+```bash
+# Logs Nginx
+awk '{print $7}' /var/log/nginx/access.log | sort | uniq -c | sort -nr | head -10
+```
+
+### Temps de Réponse
+
+```bash
+# Parse Nginx logs
+awk '{print $NF}' /var/log/nginx/access.log | \
+  awk '{sum+=$1; count++} END {print "Avg:", sum/count, "ms"}'
+```
+
+## Dashboard Monitoring (v2.1 Preview)
+
+### Fonctionnalités Prévues
+
+**Métriques Temps Réel** :
+- CPU/Memory usage
+- Database connections
+- API requests/sec
+- Response times
+
+**Alertes** :
+- Service down
+- High memory usage
+- Slow queries
+- Disk space low
+
+**Logs Streaming** :
+- Real-time logs
+- Filtres avancés
+- Export logs
+
+## Grafana + Prometheus
+
+### Stack Monitoring (Optionnel)
+
+```yaml
+# docker-compose.yml
+services:
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+```
+
+### Prometheus Config
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'csweb'
+    static_configs:
+      - targets: ['csweb:8080']
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+```
+
+### Grafana Dashboards
+
+Import dashboard PostgreSQL :
+- ID: `9628` (PostgreSQL Database)
+- ID: `455` (Docker Monitoring)
+
+## Troubleshooting
+
+### Service Ne Démarre Pas
+
+```bash
+# Vérifier logs
+docker-compose logs csweb
+
+# Vérifier config
+docker-compose config
+
+# Rebuild
+docker-compose build --no-cache csweb
+docker-compose up -d
+```
+
+### High Memory Usage
+
+```bash
+# Identifier processus
+docker-compose exec csweb top
+
+# Limite mémoire PHP
+echo "memory_limit = 512M" > /etc/php/8.1/cli/conf.d/99-memory.ini
+```
+
+### Slow Queries
+
+PostgreSQL :
+
+```sql
+-- Activer log slow queries
+ALTER SYSTEM SET log_min_duration_statement = 1000; -- 1 seconde
+
+-- Reload config
+SELECT pg_reload_conf();
+
+-- Voir slow queries
+SELECT * FROM pg_stat_statements
+ORDER BY mean_exec_time DESC
+LIMIT 10;
+```
+
+## Ressources
+
+- [Breakout Monitoring](/guides/breakout/monitoring)
+- [Troubleshooting](/reference/troubleshooting/common-issues)
+- [Docker Compose Config](/reference/config/docker-compose)

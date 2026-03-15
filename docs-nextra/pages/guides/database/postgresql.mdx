@@ -1,0 +1,199 @@
+# PostgreSQL pour CSWeb
+
+PostgreSQL est le SGBD recommandé pour le breakout analytics de CSWeb Community Platform.
+
+## Quick Start
+
+```bash
+# .env
+BREAKOUT_DB_TYPE=postgresql
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=csweb_analytics
+POSTGRES_USER=csweb_analytics
+POSTGRES_PASSWORD=your_secure_password
+```
+
+```bash
+docker-compose --profile local-postgres up -d
+```
+
+## Configuration
+
+### Variables d'Environnement
+
+| Variable | Description | Défaut |
+|----------|-------------|--------|
+| `POSTGRES_HOST` | Hostname PostgreSQL | `postgres` |
+| `POSTGRES_PORT` | Port | `5432` |
+| `POSTGRES_DATABASE` | Nom base de données | `csweb_analytics` |
+| `POSTGRES_USER` | Utilisateur | `csweb_analytics` |
+| `POSTGRES_PASSWORD` | Mot de passe | (requis) |
+
+### Docker Compose
+
+Service activé avec profil `local-postgres` :
+
+```yaml
+postgres:
+  image: postgres:16
+  profiles: ["local-postgres"]
+  environment:
+    - POSTGRES_DB=${POSTGRES_DATABASE}
+    - POSTGRES_USER=${POSTGRES_USER}
+    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  ports:
+    - "5432:5432"
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+```
+
+## Test Connexion
+
+### CLI PostgreSQL
+
+```bash
+docker-compose exec postgres psql -U csweb_analytics -d csweb_analytics
+```
+
+### Vérification Driver
+
+```bash
+php bin/console csweb:check-database-drivers
+# ✅ pdo_pgsql : Available
+```
+
+## Breakout vers PostgreSQL
+
+### Commande
+
+```bash
+php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+### Tables Créées
+
+Tables créées dans le schema `public` :
+
+```sql
+-- Liste des tables
+\dt
+
+-- Exemple
+eval_cases
+eval_producteurs
+eval_observations
+```
+
+### Query Exemple
+
+```sql
+-- Compter les cases
+SELECT COUNT(*) FROM eval_cases;
+
+-- Cases par statut
+SELECT verified, COUNT(*)
+FROM eval_cases
+GROUP BY verified;
+```
+
+## pgAdmin (Interface Web)
+
+### Accès
+
+Avec profil `dev` :
+
+```bash
+docker-compose --profile local-postgres --profile dev up -d
+```
+
+**URL** : http://localhost:8082
+
+**Identifiants** :
+- Email : `admin@csweb.local`
+- Password : `admin123`
+
+### Connexion au Serveur
+
+**Add Server** :
+- Name: `CSWeb PostgreSQL`
+- Host: `postgres`
+- Port: `5432`
+- Database: `csweb_analytics`
+- Username: `csweb_analytics`
+
+## Performance
+
+### Indexes Recommandés
+
+```sql
+-- Index sur guid (clé primaire)
+CREATE INDEX IF NOT EXISTS idx_cases_guid ON eval_cases(guid);
+
+-- Index sur dates
+CREATE INDEX IF NOT EXISTS idx_cases_modified ON eval_cases(modified_date);
+```
+
+### Vacuum Régulier
+
+```bash
+docker-compose exec postgres vacuumdb -U csweb_analytics -d csweb_analytics
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+```bash
+# Vérifier service running
+docker-compose ps postgres
+
+# Logs
+docker-compose logs postgres
+```
+
+### Driver Not Found
+
+```bash
+# Installer driver
+apt-get install php8.1-pgsql
+
+# Redémarrer
+docker-compose restart csweb
+```
+
+### Port Déjà Utilisé
+
+Changer port dans `.env` :
+
+```bash
+POSTGRES_PORT=5433
+```
+
+Puis dans `docker-compose.yml` :
+
+```yaml
+ports:
+  - "${POSTGRES_PORT}:5432"
+```
+
+## Backup & Restore
+
+### Backup
+
+```bash
+docker-compose exec postgres pg_dump -U csweb_analytics csweb_analytics > backup.sql
+```
+
+### Restore
+
+```bash
+cat backup.sql | docker-compose exec -T postgres psql -U csweb_analytics -d csweb_analytics
+```
+
+## Ressources
+
+- [Multi-DB Configuration](/guides/database/multi-db)
+- [Migration MySQL → PostgreSQL](/guides/database/migration)
+- [Drivers Installation](/reference/config/drivers)
+- [Docker Compose Config](/reference/config/docker-compose)

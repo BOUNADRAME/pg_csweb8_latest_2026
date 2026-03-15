@@ -1,16 +1,12 @@
-# Drivers Base de Données
+# Drivers Base de Données Guide d'installation et configuration des drivers de base de données.
 
-Guide d'installation et configuration des drivers de base de données.
-
-## Vue d'Ensemble
-
-CSWeb Community Platform supporte **3 drivers PDO** pour la flexibilité multi-SGBD :
+## Vue d'Ensemble CSWeb Community Platform supporte **3 drivers PDO** pour la flexibilité multi-SGBD :
 
 | Driver | SGBD | Usage | Status |
 |--------|------|-------|--------|
-| `pdo_mysql` | MySQL/MariaDB | Metadata (obligatoire) + Breakout (optionnel) | ✅ Pré-installé |
-| `pdo_pgsql` | PostgreSQL | Breakout uniquement | ✅ Pré-installé |
-| `pdo_sqlsrv` | SQL Server | Breakout uniquement | ✅ Pré-installé |
+| `pdo_mysql` | MySQL/MariaDB | Metadata (obligatoire) + Breakout (optionnel) | Pré-installé |
+| `pdo_pgsql` | PostgreSQL | Breakout uniquement | Pré-installé |
+| `pdo_sqlsrv` | SQL Server | Breakout uniquement | Pré-installé |
 
 ## Vérification
 
@@ -22,9 +18,7 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers
 
 **Output attendu :**
 ```
-✅ pdo_mysql    : Available
-✅ pdo_pgsql    : Available
-✅ pdo_sqlsrv   : Available
+ pdo_mysql : Available pdo_pgsql : Available pdo_sqlsrv : Available
 ```
 
 ### Via PHP
@@ -43,9 +37,7 @@ PDO
 
 ## pdo_mysql
 
-### Description
-
-Driver pour MySQL et MariaDB.
+### Description Driver pour MySQL et MariaDB.
 
 **Utilisé pour :**
 - Base MySQL metadata (obligatoire)
@@ -95,9 +87,7 @@ docker-compose exec mysql-breakout mysql -u breakout_user -p csweb_breakout
 
 ## pdo_pgsql
 
-### Description
-
-Driver pour PostgreSQL.
+### Description Driver pour PostgreSQL.
 
 **Utilisé pour :**
 - Base PostgreSQL breakout (si `BREAKOUT_DB_TYPE=postgresql`)
@@ -125,9 +115,7 @@ extension=pdo_pgsql
 
 **Variables .env :**
 ```bash
-BREAKOUT_DB_TYPE=postgresql
-
-POSTGRES_HOST=postgres
+BREAKOUT_DB_TYPE=postgresql POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=csweb_analytics
 POSTGRES_USER=csweb_analytics
@@ -138,15 +126,13 @@ POSTGRES_PASSWORD=***
 
 ```bash
 docker-compose exec postgres psql \
-  -U csweb_analytics \
-  -d csweb_analytics
+ -U csweb_analytics \
+ -d csweb_analytics
 ```
 
 ## pdo_sqlsrv
 
-### Description
-
-Driver pour Microsoft SQL Server.
+### Description Driver pour Microsoft SQL Server.
 
 **Utilisé pour :**
 - Base SQL Server breakout (si `BREAKOUT_DB_TYPE=sqlserver`)
@@ -159,7 +145,7 @@ Driver pour Microsoft SQL Server.
 # Ajouter repository Microsoft
 curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
 curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list \
-  > /etc/apt/sources.list.d/mssql-release.list
+ > /etc/apt/sources.list.d/mssql-release.list
 
 # Installer ODBC Driver
 apt-get update
@@ -191,9 +177,7 @@ php -m | grep sqlsrv
 
 **Variables .env :**
 ```bash
-BREAKOUT_DB_TYPE=sqlserver
-
-SQLSERVER_HOST=sqlserver
+BREAKOUT_DB_TYPE=sqlserver SQLSERVER_HOST=sqlserver
 SQLSERVER_PORT=1433
 SQLSERVER_DATABASE=CSWeb_Analytics
 SQLSERVER_USER=sa
@@ -204,26 +188,24 @@ SQLSERVER_PASSWORD=YourStrong!Passw0rd
 
 ```bash
 docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd \
-  -S localhost \
-  -U sa \
-  -P YourStrong!Passw0rd
+ -S localhost \
+ -U sa \
+ -P YourStrong!Passw0rd
 ```
 
 ## Dockerfile
 
-### Configuration Pré-installée
-
-Le `Dockerfile` de CSWeb Community Platform pré-installe tous les drivers :
+### Configuration Pré-installée Le `Dockerfile` de CSWeb Community Platform pré-installe tous les drivers :
 
 ```dockerfile
 FROM php:8.1-apache
 
 # Extensions PHP de base
 RUN apt-get update && apt-get install -y \
-    libpq-dev \
-    libzip-dev \
-    unzip \
-    git
+ libpq-dev \
+ libzip-dev \
+ unzip \
+ git
 
 # pdo_mysql
 RUN docker-php-ext-install pdo pdo_mysql mysqli
@@ -233,18 +215,18 @@ RUN docker-php-ext-install pdo_pgsql pgsql
 
 # pdo_sqlsrv (Microsoft)
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl https://packages.microsoft.com/config/debian/11/prod.list \
-      > /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update && \
-    ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
-    pecl install sqlsrv pdo_sqlsrv && \
-    docker-php-ext-enable pdo_sqlsrv sqlsrv
+ curl https://packages.microsoft.com/config/debian/11/prod.list \
+ > /etc/apt/sources.list.d/mssql-release.list && \
+ apt-get update && \
+ ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
+ pecl install sqlsrv pdo_sqlsrv && \
+ docker-php-ext-enable pdo_sqlsrv sqlsrv
 
 # Autres extensions
 RUN docker-php-ext-install zip opcache
 ```
 
-## Correspondance Driver ↔ SGBD
+## Correspondance Driver SGBD
 
 | Driver PHP | Extension Requise | SGBD Supportés | Port Défaut |
 |------------|-------------------|----------------|-------------|
@@ -258,30 +240,30 @@ RUN docker-php-ext-install zip opcache
 
 | Version | pdo_mysql | Status |
 |---------|-----------|--------|
-| MySQL 5.7 | ✅ | Compatible |
-| MySQL 8.0 | ✅ | Recommandé |
-| MySQL 8.1+ | ✅ | Compatible |
-| MariaDB 10.3 | ✅ | Compatible |
-| MariaDB 10.6+ | ✅ | Recommandé |
+| MySQL 5.7 | | Compatible |
+| MySQL 8.0 | | Recommandé |
+| MySQL 8.1+ | | Compatible |
+| MariaDB 10.3 | | Compatible |
+| MariaDB 10.6+ | | Recommandé |
 
 ### PostgreSQL
 
 | Version | pdo_pgsql | Status |
 |---------|-----------|--------|
-| PostgreSQL 12 | ✅ | Compatible |
-| PostgreSQL 13 | ✅ | Compatible |
-| PostgreSQL 14 | ✅ | Compatible |
-| PostgreSQL 15 | ✅ | Compatible |
-| PostgreSQL 16 | ✅ | Recommandé |
+| PostgreSQL 12 | | Compatible |
+| PostgreSQL 13 | | Compatible |
+| PostgreSQL 14 | | Compatible |
+| PostgreSQL 15 | | Compatible |
+| PostgreSQL 16 | | Recommandé |
 
 ### SQL Server
 
 | Version | pdo_sqlsrv | ODBC Driver | Status |
 |---------|------------|-------------|--------|
-| SQL Server 2017 | ✅ | 18 | Compatible |
-| SQL Server 2019 | ✅ | 18 | Recommandé |
-| SQL Server 2022 | ✅ | 18 | Compatible |
-| Azure SQL | ✅ | 18 | Compatible |
+| SQL Server 2017 | | 18 | Compatible |
+| SQL Server 2019 | | 18 | Recommandé |
+| SQL Server 2022 | | 18 | Compatible |
+| Azure SQL | | 18 | Compatible |
 
 ## Troubleshooting
 
@@ -289,7 +271,7 @@ RUN docker-php-ext-install zip opcache
 
 **Symptôme :**
 ```
-❌ pdo_pgsql : NOT FOUND
+ pdo_pgsql : NOT FOUND
 ```
 
 **Solutions :**
@@ -308,9 +290,7 @@ service php8.1-fpm restart
 3. **Vérifier php.ini :**
 ```bash
 php --ini
-# Configuration File: /etc/php/8.1/cli/php.ini
-
-grep pdo_pgsql /etc/php/8.1/cli/php.ini
+# Configuration File: /etc/php/8.1/cli/php.ini grep pdo_pgsql /etc/php/8.1/cli/php.ini
 ```
 
 ### Extension Loaded but Not Working
@@ -321,16 +301,16 @@ php -m | grep pdo_pgsql
 # pdo_pgsql
 
 # Mais commande CSWeb dit:
-❌ pdo_pgsql : NOT FOUND
+ pdo_pgsql : NOT FOUND
 ```
 
 **Cause :** Extension installée pour CLI mais pas FPM.
 
 **Solution :**
 ```bash
-# Copier config CLI → FPM
+# Copier config CLI FPM
 cp /etc/php/8.1/cli/conf.d/20-pdo_pgsql.ini \
-   /etc/php/8.1/fpm/conf.d/
+ /etc/php/8.1/fpm/conf.d/
 
 # Redémarrer FPM
 service php8.1-fpm restart
@@ -412,12 +392,11 @@ pdo.attr_default_fetch_mode = PDO::FETCH_ASSOC
 ```yaml
 # docker-compose.yml
 services:
-  pgbouncer:
-    image: pgbouncer/pgbouncer
-    environment:
-      - DATABASES_HOST=postgres
-      - DATABASES_PORT=5432
-      - DATABASES_USER=csweb_analytics
+ pgbouncer:
+ image: pgbouncer/pgbouncer environment:
+ - DATABASES_HOST=postgres
+ - DATABASES_PORT=5432
+ - DATABASES_USER=csweb_analytics
 ```
 
 ## Ressources

@@ -1,10 +1,6 @@
-# Webhooks API
+# Webhooks API API pour configurer et gérer les webhooks CSWeb.
 
-API pour configurer et gérer les webhooks CSWeb.
-
-## Authentification Requise
-
-Toutes les requêtes nécessitent un **Bearer token OAuth2**.
+## Authentification Requise Toutes les requêtes nécessitent un **Bearer token OAuth2**.
 
 ```http
 Authorization: Bearer YOUR_ACCESS_TOKEN
@@ -12,15 +8,13 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 
 ---
 
-## Concept des Webhooks
+## Concept des Webhooks Les **webhooks** permettent à CSWeb de notifier des applications externes lors d'événements spécifiques :
 
-Les **webhooks** permettent à CSWeb de notifier des applications externes lors d'événements spécifiques :
-
-- 📤 **Case uploaded** : Nouveau questionnaire uploadé
-- 📝 **Case modified** : Questionnaire modifié
-- ✅ **Case verified** : Questionnaire vérifié
-- 🗑️ **Case deleted** : Questionnaire supprimé
-- 📋 **Dictionary uploaded** : Nouveau dictionnaire uploadé
+- **Case uploaded** : Nouveau questionnaire uploadé
+- **Case modified** : Questionnaire modifié
+- **Case verified** : Questionnaire vérifié
+- **Case deleted** : Questionnaire supprimé
+- **Dictionary uploaded** : Nouveau dictionnaire uploadé
 
 **Use Case :** Synchronisation temps réel avec applications externes (BI, analytics, dashboards).
 
@@ -28,54 +22,50 @@ Les **webhooks** permettent à CSWeb de notifier des applications externes lors 
 
 ## Endpoints
 
-### GET /api/webhooks
-
-Liste tous les webhooks configurés.
+### GET /api/webhooks Liste tous les webhooks configurés.
 
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/webhooks \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 [
-  {
-    "id": 1,
-    "name": "Analytics Sync",
-    "url": "https://analytics.example.com/api/csweb/webhook",
-    "events": ["case_uploaded", "case_modified"],
-    "active": true,
-    "secret": "whsec_abc123...",
-    "created_at": "2026-01-15T10:00:00Z"
-  },
-  {
-    "id": 2,
-    "name": "Dashboard Notification",
-    "url": "https://dashboard.example.com/webhooks/csweb",
-    "events": ["case_verified"],
-    "active": true,
-    "secret": "whsec_xyz789...",
-    "created_at": "2026-02-10T14:30:00Z"
-  }
+ {
+ "id": 1,
+ "name": "Analytics Sync",
+ "url": "https://analytics.example.com/api/csweb/webhook",
+ "events": ["case_uploaded", "case_modified"],
+ "active": true,
+ "secret": "whsec_abc123...",
+ "created_at": "2026-01-15T10:00:00Z"
+ },
+ {
+ "id": 2,
+ "name": "Dashboard Notification",
+ "url": "https://dashboard.example.com/webhooks/csweb",
+ "events": ["case_verified"],
+ "active": true,
+ "secret": "whsec_xyz789...",
+ "created_at": "2026-02-10T14:30:00Z"
+ }
 ]
 ```
 
 ---
 
-### POST /api/webhooks
-
-Créer un nouveau webhook.
+### POST /api/webhooks Créer un nouveau webhook.
 
 **Request Body:**
 ```json
 {
-  "name": "My Webhook",
-  "url": "https://myapp.example.com/webhook",
-  "events": ["case_uploaded", "case_verified"],
-  "secret": "my_secret_key_123",
-  "active": true
+ "name": "My Webhook",
+ "url": "https://myapp.example.com/webhook",
+ "events": ["case_uploaded", "case_verified"],
+ "secret": "my_secret_key_123",
+ "active": true
 }
 ```
 
@@ -89,26 +79,26 @@ Créer un nouveau webhook.
 **Request:**
 ```bash
 curl -X POST http://localhost:8080/api/webhooks \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Analytics Sync",
-    "url": "https://analytics.example.com/api/webhook",
-    "events": ["case_uploaded"],
-    "secret": "secure_secret_123"
-  }'
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{
+ "name": "Analytics Sync",
+ "url": "https://analytics.example.com/api/webhook",
+ "events": ["case_uploaded"],
+ "secret": "secure_secret_123"
+ }'
 ```
 
 **Response (201 Created):**
 ```json
 {
-  "id": 3,
-  "name": "Analytics Sync",
-  "url": "https://analytics.example.com/api/webhook",
-  "events": ["case_uploaded"],
-  "active": true,
-  "secret": "secure_secret_123",
-  "created_at": "2026-03-15T12:00:00Z"
+ "id": 3,
+ "name": "Analytics Sync",
+ "url": "https://analytics.example.com/api/webhook",
+ "events": ["case_uploaded"],
+ "active": true,
+ "secret": "secure_secret_123",
+ "created_at": "2026-03-15T12:00:00Z"
 }
 ```
 
@@ -121,22 +111,22 @@ Mettre à jour un webhook existant.
 **Request:**
 ```bash
 curl -X PUT http://localhost:8080/api/webhooks/1 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "active": false
-  }'
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+ -H "Content-Type: application/json" \
+ -d '{
+ "active": false
+ }'
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "id": 1,
-  "name": "Analytics Sync",
-  "url": "https://analytics.example.com/api/webhook",
-  "events": ["case_uploaded", "case_modified"],
-  "active": false,
-  "updated_at": "2026-03-15T12:30:00Z"
+ "id": 1,
+ "name": "Analytics Sync",
+ "url": "https://analytics.example.com/api/webhook",
+ "events": ["case_uploaded", "case_modified"],
+ "active": false,
+ "updated_at": "2026-03-15T12:30:00Z"
 }
 ```
 
@@ -149,53 +139,51 @@ Supprimer un webhook.
 **Request:**
 ```bash
 curl -X DELETE http://localhost:8080/api/webhooks/1 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "message": "Webhook deleted successfully",
-  "id": 1
+ "message": "Webhook deleted successfully",
+ "id": 1
 }
 ```
 
 ---
 
-### POST /api/webhooks/\{id\}/test
-
-Tester un webhook en envoyant un événement de test.
+### POST /api/webhooks/\{id\}/test Tester un webhook en envoyant un événement de test.
 
 **Request:**
 ```bash
 curl -X POST http://localhost:8080/api/webhooks/1/test \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "status": "success",
-  "webhook_id": 1,
-  "test_payload_sent": {
-    "event": "webhook_test",
-    "timestamp": "2026-03-15T12:00:00Z",
-    "data": {
-      "message": "This is a test webhook"
-    }
-  },
-  "response_status": 200,
-  "response_time": "245ms"
+ "status": "success",
+ "webhook_id": 1,
+ "test_payload_sent": {
+ "event": "webhook_test",
+ "timestamp": "2026-03-15T12:00:00Z",
+ "data": {
+ "message": "This is a test webhook"
+ }
+ },
+ "response_status": 200,
+ "response_time": "245ms"
 }
 ```
 
 **Response (502 Bad Gateway):**
 ```json
 {
-  "status": "failed",
-  "webhook_id": 1,
-  "error": "Connection timeout",
-  "details": "Failed to connect to https://analytics.example.com/api/webhook after 30s"
+ "status": "failed",
+ "webhook_id": 1,
+ "error": "Connection timeout",
+ "details": "Failed to connect to https://analytics.example.com/api/webhook after 30s"
 }
 ```
 
@@ -219,19 +207,19 @@ curl -X POST http://localhost:8080/api/webhooks/1/test \
 
 ```json
 {
-  "event": "case_uploaded",
-  "timestamp": "2026-03-15T12:00:00Z",
-  "webhook_id": 1,
-  "data": {
-    "dictionary": "EVAL_DICT",
-    "case": {
-      "guid": "abc123-def456-ghi789",
-      "case_label": "001-2025-001",
-      "modified_date": "2026-03-15T12:00:00Z",
-      "verified": false,
-      "deleted": false
-    }
-  }
+ "event": "case_uploaded",
+ "timestamp": "2026-03-15T12:00:00Z",
+ "webhook_id": 1,
+ "data": {
+ "dictionary": "EVAL_DICT",
+ "case": {
+ "guid": "abc123-def456-ghi789",
+ "case_label": "001-2025-001",
+ "modified_date": "2026-03-15T12:00:00Z",
+ "verified": false,
+ "deleted": false
+ }
+ }
 }
 ```
 
@@ -239,32 +227,30 @@ curl -X POST http://localhost:8080/api/webhooks/1/test \
 
 ```json
 {
-  "event": "case_modified",
-  "timestamp": "2026-03-15T13:00:00Z",
-  "webhook_id": 1,
-  "data": {
-    "dictionary": "EVAL_DICT",
-    "case": {
-      "guid": "abc123-def456-ghi789",
-      "case_label": "001-2025-001",
-      "modified_date": "2026-03-15T13:00:00Z",
-      "verified": true
-    },
-    "changes": {
-      "verified": {
-        "old": false,
-        "new": true
-      }
-    }
-  }
+ "event": "case_modified",
+ "timestamp": "2026-03-15T13:00:00Z",
+ "webhook_id": 1,
+ "data": {
+ "dictionary": "EVAL_DICT",
+ "case": {
+ "guid": "abc123-def456-ghi789",
+ "case_label": "001-2025-001",
+ "modified_date": "2026-03-15T13:00:00Z",
+ "verified": true
+ },
+ "changes": {
+ "verified": {
+ "old": false,
+ "new": true
+ }
+ }
+ }
 }
 ```
 
 ---
 
-## Vérification de Signature
-
-Pour sécuriser les webhooks, CSWeb signe chaque requête avec HMAC-SHA256.
+## Vérification de Signature Pour sécuriser les webhooks, CSWeb signe chaque requête avec HMAC-SHA256.
 
 ### Header de Signature
 
@@ -278,28 +264,27 @@ X-CSWeb-Signature: sha256=abc123def456...
 const crypto = require('crypto');
 
 function verifyWebhookSignature(payload, signature, secret) {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(JSON.stringify(payload))
-    .digest('hex');
+ const expectedSignature = crypto
+ .createHmac('sha256', secret)
+ .update(JSON.stringify(payload))
+ .digest('hex');
 
-  return `sha256=${expectedSignature}` === signature;
+ return `sha256=${expectedSignature}` === signature;
 }
 
 // Utilisation dans Express
 app.post('/webhook', (req, res) => {
-  const signature = req.headers['x-csweb-signature'];
-  const secret = 'secure_secret_123';
+ const signature = req.headers['x-csweb-signature'];
+ const secret = 'secure_secret_123';
 
-  if (!verifyWebhookSignature(req.body, signature, secret)) {
-    return res.status(401).json({ error: 'Invalid signature' });
-  }
+ if (!verifyWebhookSignature(req.body, signature, secret)) {
+ return res.status(401).json({ error: 'Invalid signature' });
+ }
 
-  // Traiter webhook
-  console.log('Event:', req.body.event);
-  console.log('Data:', req.body.data);
+ // Traiter webhook console.log('Event:', req.body.event);
+ console.log('Data:', req.body.data);
 
-  res.status(200).json({ received: true });
+ res.status(200).json({ received: true });
 });
 ```
 
@@ -307,24 +292,24 @@ app.post('/webhook', (req, res) => {
 
 ```php
 function verifyWebhookSignature($payload, $signature, $secret) {
-    $expectedSignature = 'sha256=' . hash_hmac('sha256', json_encode($payload), $secret);
-    return hash_equals($expectedSignature, $signature);
+ $expectedSignature = 'sha256=' . hash_hmac('sha256', json_encode($payload), $secret);
+ return hash_equals($expectedSignature, $signature);
 }
 
 // Utilisation dans Laravel
 Route::post('/webhook', function (Request $request) {
-    $signature = $request->header('X-CSWeb-Signature');
-    $secret = 'secure_secret_123';
+ $signature = $request->header('X-CSWeb-Signature');
+ $secret = 'secure_secret_123';
 
-    if (!verifyWebhookSignature($request->all(), $signature, $secret)) {
-        return response()->json(['error' => 'Invalid signature'], 401);
-    }
+ if (!verifyWebhookSignature($request->all(), $signature, $secret)) {
+ return response()->json(['error' => 'Invalid signature'], 401);
+ }
 
-    // Traiter webhook
-    $event = $request->input('event');
-    $data = $request->input('data');
+ // Traiter webhook
+ $event = $request->input('event');
+ $data = $request->input('data');
 
-    return response()->json(['received' => true]);
+ return response()->json(['received' => true]);
 });
 ```
 
@@ -336,37 +321,31 @@ Route::post('/webhook', function (Request $request) {
 
 ```json
 {
-  "url": "https://myapp.example.com/webhook"  // ✅ Sécurisé
+ "url": "https://myapp.example.com/webhook" // Sécurisé
 }
 ```
 
-❌ Éviter HTTP non chiffré en production.
+ Éviter HTTP non chiffré en production.
 
-### 2. Vérifier la Signature
-
-Toujours vérifier `X-CSWeb-Signature` pour éviter les requêtes malveillantes.
+### 2. Vérifier la Signature Toujours vérifier `X-CSWeb-Signature` pour éviter les requêtes malveillantes.
 
 ### 3. Répondre Rapidement (< 5s)
 
 ```javascript
-// ✅ Bon : Réponse immédiate + traitement async
+// Bon : Réponse immédiate + traitement async
 app.post('/webhook', async (req, res) => {
-  res.status(200).json({ received: true });
+ res.status(200).json({ received: true });
 
-  // Traitement en arrière-plan
-  await processWebhook(req.body);
+ // Traitement en arrière-plan await processWebhook(req.body);
 });
 
-// ❌ Mauvais : Traitement synchrone long
+// Mauvais : Traitement synchrone long
 app.post('/webhook', async (req, res) => {
-  await longProcessing(req.body);  // Timeout possible
-  res.status(200).json({ received: true });
+ await longProcessing(req.body); // Timeout possible res.status(200).json({ received: true });
 });
 ```
 
-### 4. Gérer les Retry
-
-CSWeb réessaie automatiquement **3 fois** (1min, 5min, 15min) si webhook échoue.
+### 4. Gérer les Retry CSWeb réessaie automatiquement **3 fois** (1min, 5min, 15min) si webhook échoue.
 
 **Implémenter idempotence :**
 ```javascript
@@ -374,7 +353,7 @@ CSWeb réessaie automatiquement **3 fois** (1min, 5min, 15min) si webhook échou
 const eventKey = `${req.body.webhook_id}_${req.body.timestamp}`;
 
 if (await isAlreadyProcessed(eventKey)) {
-  return res.status(200).json({ received: true, duplicate: true });
+ return res.status(200).json({ received: true, duplicate: true });
 }
 
 await markAsProcessed(eventKey);
@@ -385,42 +364,40 @@ await processWebhook(req.body);
 
 ## Logs & Monitoring
 
-### GET /api/webhooks/\{id\}/deliveries
-
-Voir l'historique des envois d'un webhook.
+### GET /api/webhooks/\{id\}/deliveries Voir l'historique des envois d'un webhook.
 
 **Request:**
 ```bash
 curl -X GET http://localhost:8080/api/webhooks/1/deliveries?limit=10 \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+ -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 **Response (200 OK):**
 ```json
 {
-  "webhook_id": 1,
-  "total_deliveries": 1250,
-  "successful": 1230,
-  "failed": 20,
-  "deliveries": [
-    {
-      "id": 5001,
-      "event": "case_uploaded",
-      "status": "success",
-      "response_status": 200,
-      "response_time": "245ms",
-      "attempted_at": "2026-03-15T12:00:00Z"
-    },
-    {
-      "id": 5000,
-      "event": "case_uploaded",
-      "status": "failed",
-      "response_status": 500,
-      "error": "Internal Server Error",
-      "attempted_at": "2026-03-15T11:58:00Z",
-      "retry_count": 3
-    }
-  ]
+ "webhook_id": 1,
+ "total_deliveries": 1250,
+ "successful": 1230,
+ "failed": 20,
+ "deliveries": [
+ {
+ "id": 5001,
+ "event": "case_uploaded",
+ "status": "success",
+ "response_status": 200,
+ "response_time": "245ms",
+ "attempted_at": "2026-03-15T12:00:00Z"
+ },
+ {
+ "id": 5000,
+ "event": "case_uploaded",
+ "status": "failed",
+ "response_status": 500,
+ "error": "Internal Server Error",
+ "attempted_at": "2026-03-15T11:58:00Z",
+ "retry_count": 3
+ }
+ ]
 }
 ```
 

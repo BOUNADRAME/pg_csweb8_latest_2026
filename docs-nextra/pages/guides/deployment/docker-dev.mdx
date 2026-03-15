@@ -1,56 +1,36 @@
-# Docker Développement
-
-import { Callout, Tabs } from 'nextra/components'
+# Docker Développement 
 
 Guide de déploiement Docker pour **environnement de développement** (local).
 
-<Callout type="info">
-**Pour production :** Voir [Docker Production](/guides/deployment/docker-prod)
-</Callout>
+## Vue d'Ensemble CSWeb Community Platform fournit une configuration Docker Compose complète pour le développement :
 
-## Vue d'Ensemble
-
-CSWeb Community Platform fournit une configuration Docker Compose complète pour le développement :
-
-- ✅ **CSWeb Application** (PHP 8.1 + Apache)
-- ✅ **PostgreSQL 16** (breakout analytics - par défaut)
-- ✅ **MySQL 8.0** (métadonnées CSWeb)
-- ✅ **phpMyAdmin** (interface MySQL)
-- ✅ **pgAdmin** (interface PostgreSQL)
-- ✅ **Volumes persistants**
-- ✅ **Hot reload** (code changes)
+- **CSWeb Application** (PHP 8.1 + Apache)
+- **PostgreSQL 16** (breakout analytics - par défaut)
+- **MySQL 8.0** (métadonnées CSWeb)
+- **phpMyAdmin** (interface MySQL)
+- **pgAdmin** (interface PostgreSQL)
+- **Volumes persistants**
+- **Hot reload** (code changes)
 
 ## Architecture
 
 ```
-┌────────────────────────────────────────────────────────────┐
-│                    Docker Compose Stack                     │
-├────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐   ┌──────────────┐   ┌────────────────┐ │
-│  │   CSWeb     │───│    MySQL     │   │   PostgreSQL   │ │
-│  │  (Apache)   │   │  (Metadata)  │   │   (Analytics)  │ │
-│  │   :8080     │   │    :3306     │   │     :5432      │ │
-│  └─────────────┘   └──────────────┘   └────────────────┘ │
-│         │                  │                    │          │
-│         │                  │                    │          │
-│  ┌─────────────────────────────────────────────────────┐  │
-│  │            csweb-network (bridge)                   │  │
-│  └─────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌─────────────┐                    ┌────────────────┐    │
-│  │ phpMyAdmin  │                    │    pgAdmin     │    │
-│  │   :8081     │                    │     :8082      │    │
-│  └─────────────┘                    └────────────────┘    │
-│                                                             │
-└────────────────────────────────────────────────────────────┘
+
+ Docker Compose Stack CSWeb MySQL PostgreSQL 
+ (Apache) (Metadata) (Analytics) 
+ :8080 :3306 :5432 
+
+ csweb-network (bridge) 
+
+ phpMyAdmin pgAdmin 
+ :8081 :8082 
 
 Volumes Persistants:
-├── csweb_files      (fichiers uploadés)
-├── csweb_logs       (logs application)
-├── mysql_data       (données MySQL)
-├── postgres_data    (données PostgreSQL)
-└── pgadmin_data     (config pgAdmin)
+ csweb_files (fichiers uploadés)
+ csweb_logs (logs application)
+ mysql_data (données MySQL)
+ postgres_data (données PostgreSQL)
+ pgadmin_data (config pgAdmin)
 ```
 
 ## Prérequis
@@ -74,7 +54,7 @@ Volumes Persistants:
 ### Installation Docker
 
 <Tabs items={['Ubuntu/Debian', 'macOS', 'Windows']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Installation script officiel
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -88,9 +68,9 @@ newgrp docker
 docker --version
 docker-compose --version
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Via Homebrew
 brew install --cask docker
@@ -102,9 +82,9 @@ open /Applications/Docker.app
 docker --version
 docker-compose --version
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 **Docker Desktop pour Windows :**
 
 1. Télécharger : [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
@@ -115,7 +95,7 @@ docker-compose --version
 docker --version
 docker-compose --version
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
 ---
@@ -153,9 +133,9 @@ cd pg_csweb8_latest_2026
 cp .env.example .env
 
 # 3. Générer mots de passe
-openssl rand -base64 24  # MYSQL_PASSWORD
-openssl rand -base64 24  # POSTGRES_PASSWORD
-openssl rand -hex 32     # APP_SECRET
+openssl rand -base64 24 # MYSQL_PASSWORD
+openssl rand -base64 24 # POSTGRES_PASSWORD
+openssl rand -hex 32 # APP_SECRET
 
 # 4. Éditer .env avec vos mots de passe
 nano .env
@@ -175,15 +155,15 @@ docker-compose ps
 
 ```bash
 # Application
-APP_ENV=dev                      # dev pour développement
-APP_DEBUG=true                   # Active debug logs
+APP_ENV=dev # dev pour développement
+APP_DEBUG=true # Active debug logs
 APP_TIMEZONE=UTC
 APP_SECRET=<GENERER_ICI>
 CSWEB_PORT=8080
 
 # Breakout
 BREAKOUT_MODE=local
-BREAKOUT_DB_TYPE=postgresql      # postgresql|mysql|sqlserver
+BREAKOUT_DB_TYPE=postgresql # postgresql|mysql|sqlserver
 
 # MySQL Metadata (FIXE)
 MYSQL_HOST=mysql
@@ -227,12 +207,12 @@ docker-compose ps
 
 **Output attendu :**
 ```
-NAME              STATUS    PORTS
-csweb             running   0.0.0.0:8080->80/tcp
-mysql             running   3306/tcp
-postgres          running   5432/tcp
-phpmyadmin        running   0.0.0.0:8081->80/tcp
-pgadmin           running   0.0.0.0:8082->80/tcp
+NAME STATUS PORTS
+csweb running 0.0.0.0:8080->80/tcp
+mysql running 3306/tcp
+postgres running 5432/tcp
+phpmyadmin running 0.0.0.0:8081->80/tcp
+pgadmin running 0.0.0.0:8082->80/tcp
 ```
 
 ### Démarrer Sans Outils Dev
@@ -245,7 +225,7 @@ docker-compose --profile local-postgres up -d
 ### Choisir SGBD Breakout
 
 <Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # .env
 BREAKOUT_DB_TYPE=postgresql
@@ -253,9 +233,9 @@ BREAKOUT_DB_TYPE=postgresql
 # Démarrer
 docker-compose --profile local-postgres up -d
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # .env
 BREAKOUT_DB_TYPE=mysql
@@ -263,9 +243,9 @@ BREAKOUT_DB_TYPE=mysql
 # Démarrer
 docker-compose --profile local-mysql up -d
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # .env
 BREAKOUT_DB_TYPE=sqlserver
@@ -273,7 +253,7 @@ BREAKOUT_DB_TYPE=sqlserver
 # Démarrer
 docker-compose --profile local-sqlserver up -d
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
 ---
@@ -288,14 +268,14 @@ docker-compose --profile local-sqlserver up -d
 
 **Premier login (après setup.php) :**
 - Username : `admin`
-- Password : `admin123` (⚠️ à changer)
+- Password : `admin123` ( à changer)
 
 ### phpMyAdmin (MySQL)
 
 - **URL** : http://localhost:8081
 - **Server** : `mysql`
 - **Username** : `root`
-- **Password** : Voir `.env` → `MYSQL_ROOT_PASSWORD`
+- **Password** : Voir `.env` `MYSQL_ROOT_PASSWORD`
 
 **Accès base metadata :**
 - Database : `csweb_metadata`
@@ -308,15 +288,15 @@ docker-compose --profile local-sqlserver up -d
 - **Password** : `admin123`
 
 **Ajouter serveur PostgreSQL :**
-1. Servers → Create → Server
+1. Servers Create Server
 2. **General Tab** :
-   - Name : `CSWeb Analytics`
+ - Name : `CSWeb Analytics`
 3. **Connection Tab** :
-   - Host : `postgres`
-   - Port : `5432`
-   - Database : `csweb_analytics`
-   - Username : `csweb_analytics`
-   - Password : Voir `.env` → `POSTGRES_PASSWORD`
+ - Host : `postgres`
+ - Port : `5432`
+ - Database : `csweb_analytics`
+ - Username : `csweb_analytics`
+ - Password : Voir `.env` `POSTGRES_PASSWORD`
 4. Save
 
 ---
@@ -366,7 +346,7 @@ docker-compose up -d --build
 # Arrêter et supprimer containers (SANS supprimer volumes)
 docker-compose down
 
-# Arrêter et supprimer containers + volumes (⚠️ PERTE DONNÉES)
+# Arrêter et supprimer containers + volumes ( PERTE DONNÉES)
 docker-compose down -v
 
 # Nettoyer images inutilisées
@@ -402,15 +382,15 @@ docker volume inspect pg_csweb8_latest_2026_postgres_data
 ```bash
 # Backup PostgreSQL data
 docker run --rm \
-  -v pg_csweb8_latest_2026_postgres_data:/data \
-  -v $(pwd):/backup \
-  ubuntu tar czf /backup/postgres_backup.tar.gz /data
+ -v pg_csweb8_latest_2026_postgres_data:/data \
+ -v $(pwd):/backup \
+ ubuntu tar czf /backup/postgres_backup.tar.gz /data
 
 # Backup MySQL data
 docker run --rm \
-  -v pg_csweb8_latest_2026_mysql_data:/data \
-  -v $(pwd):/backup \
-  ubuntu tar czf /backup/mysql_backup.tar.gz /data
+ -v pg_csweb8_latest_2026_mysql_data:/data \
+ -v $(pwd):/backup \
+ ubuntu tar czf /backup/mysql_backup.tar.gz /data
 ```
 
 ### Restore Volumes
@@ -418,9 +398,9 @@ docker run --rm \
 ```bash
 # Restore PostgreSQL
 docker run --rm \
-  -v pg_csweb8_latest_2026_postgres_data:/data \
-  -v $(pwd):/backup \
-  ubuntu tar xzf /backup/postgres_backup.tar.gz -C /
+ -v pg_csweb8_latest_2026_postgres_data:/data \
+ -v $(pwd):/backup \
+ ubuntu tar xzf /backup/postgres_backup.tar.gz -C /
 ```
 
 ---
@@ -435,7 +415,7 @@ docker run --rm \
 nano src/Controller/MyController.php
 
 # Sauvegarder
-# ✅ Changement immédiat (pas de rebuild nécessaire)
+# Changement immédiat (pas de rebuild nécessaire)
 
 # Rafraîchir navigateur pour voir changement
 ```
@@ -494,7 +474,7 @@ exit
 ### Inspecter Base de Données
 
 <Tabs items={['PostgreSQL', 'MySQL']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Accéder à psql
 docker-compose exec postgres psql -U csweb_analytics csweb_analytics
@@ -508,9 +488,9 @@ SELECT COUNT(*) FROM eval_cases;
 # Quitter
 \q
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Accéder à mysql
 docker-compose exec mysql mysql -u csweb_user -p csweb_metadata
@@ -524,7 +504,7 @@ SELECT COUNT(*) FROM cspro_dictionaries;
 # Quitter
 exit
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
 ---

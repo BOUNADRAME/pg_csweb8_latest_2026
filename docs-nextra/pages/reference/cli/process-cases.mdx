@@ -1,23 +1,15 @@
-# csweb:process-cases-by-dict
+# csweb:process-cases-by-dict 
 
-import { Callout, Tabs } from 'nextra/components'
-
-## Description
-
-Commande CLI pour effectuer le **breakout sélectif** des questionnaires CSPro vers la base de données analytique (PostgreSQL/MySQL/SQL Server).
-
-<Callout type="info">
-**Innovation** : Cette commande implémente le breakout sélectif par dictionnaire développé par **Assietou DIAGNE** (ANSD, Sénégal), validé en production sur le **RGPH5** avec 3.2M questionnaires.
-</Callout>
+## Description Commande CLI pour effectuer le **breakout sélectif** des questionnaires CSPro vers la base de données analytique (PostgreSQL/MySQL/SQL Server).
 
 ## Syntax
 
 ```bash
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=<DICT_NAME>[,<DICT_NAME2>,...] \
-  [--threads=<NUMBER>] \
-  [--overwrite] \
-  [-vvv]
+ dictionnaires=<DICT_NAME>[,<DICT_NAME2>,...] \
+ [--threads=<NUMBER>] \
+ [--overwrite] \
+ [-vvv]
 ```
 
 ## Arguments
@@ -41,15 +33,9 @@ dictionnaires=SURVEY_DICT
 dictionnaires=EVAL_DICT,KAIROS_DICT,CENSUS_DICT
 ```
 
-<Callout type="warning">
-Le nom du dictionnaire doit correspondre **exactement** au nom dans CSWeb (case-sensitive).
-</Callout>
-
 ## Options
 
-### --threads=NUMBER
-
-Nombre de threads parallèles pour le traitement des questionnaires.
+### --threads=NUMBER Nombre de threads parallèles pour le traitement des questionnaires.
 
 **Défaut :** `1`
 **Recommandé :** `3-5` (selon CPU disponibles)
@@ -89,10 +75,6 @@ php bin/console csweb:process-cases-by-dict dictionnaires=EVAL_DICT --overwrite
 # Breakout initial (échouera si tables existent)
 php bin/console csweb:process-cases-by-dict dictionnaires=EVAL_DICT
 ```
-
-<Callout type="error">
-**Attention :** `--overwrite` **supprime toutes les données** des tables existantes. Faire un backup avant !
-</Callout>
 
 ### -vvv (Verbosity)
 
@@ -134,7 +116,7 @@ php bin/console csweb:process-cases-by-dict dictionnaires=KAIROS_DICT -vvv
 
 ```bash
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT
+ dictionnaires=EVAL_DICT
 ```
 
 **Résultat :**
@@ -145,9 +127,9 @@ docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
 
 ```bash
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=SURVEY_DICT,CENSUS_DICT,KAIROS_DICT \
-  --threads=5 \
-  -vvv
+ dictionnaires=SURVEY_DICT,CENSUS_DICT,KAIROS_DICT \
+ --threads=5 \
+ -vvv
 ```
 
 **Résultat :**
@@ -160,9 +142,9 @@ docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
 
 ```bash
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT \
-  --overwrite \
-  --threads=3
+ dictionnaires=EVAL_DICT \
+ --overwrite \
+ --threads=3
 ```
 
 **Résultat :**
@@ -174,9 +156,9 @@ docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
 
 ```bash
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=RGPH5_DICT \
-  --threads=10 \
-  -vvv > /tmp/rgph5_breakout.log 2>&1 &
+ dictionnaires=RGPH5_DICT \
+ --threads=10 \
+ -vvv > /tmp/rgph5_breakout.log 2>&1 &
 ```
 
 **Résultat :**
@@ -208,13 +190,7 @@ $prefix = strtolower($label) . "_";
 | `EVAL_DICT` | `eval` | `eval_cases`, `eval_producteurs_cases`, `eval_observations_cases` |
 | `RGPH5_DICT` | `rgph5` | `rgph5_cases`, `rgph5_menages`, `rgph5_individus` |
 
-<Callout>
-**Convention :** Les noms de tables sont toujours en **minuscules** pour compatibilité PostgreSQL.
-</Callout>
-
-## Tables Créées
-
-Pour chaque dictionnaire, les tables suivantes sont automatiquement créées :
+## Tables Créées Pour chaque dictionnaire, les tables suivantes sont automatiquement créées :
 
 ### 1. Table `{label}_cases`
 
@@ -222,44 +198,40 @@ Table principale contenant les métadonnées de chaque questionnaire.
 
 **Colonnes :**
 ```sql
-guid VARCHAR(255) PRIMARY KEY  -- Identifiant unique du questionnaire
-level_id VARCHAR(50)           -- Niveau hiérarchique
-case_label TEXT                -- Label du questionnaire
-deleted INT                    -- Soft delete (0 = actif, 1 = supprimé)
-verified INT                   -- Statut de vérification
-partial_save INT               -- Sauvegarde partielle
-modified_date TIMESTAMP        -- Date de dernière modification
+guid VARCHAR(255) PRIMARY KEY -- Identifiant unique du questionnaire
+level_id VARCHAR(50) -- Niveau hiérarchique
+case_label TEXT -- Label du questionnaire
+deleted INT -- Soft delete (0 = actif, 1 = supprimé)
+verified INT -- Statut de vérification
+partial_save INT -- Sauvegarde partielle
+modified_date TIMESTAMP -- Date de dernière modification
 ```
 
-### 2. Tables de Levels
-
-Tables pour chaque niveau hiérarchique (ménage, individu, observation, etc.).
+### 2. Tables de Levels Tables pour chaque niveau hiérarchique (ménage, individu, observation, etc.).
 
 **Exemple : `{label}_level_1`**
 ```sql
 CREATE TABLE kairos_level_1 (
-    guid VARCHAR(255) PRIMARY KEY,
-    parent_guid VARCHAR(255),
-    -- Colonnes spécifiques au niveau 1 --
-    FOREIGN KEY (parent_guid) REFERENCES kairos_cases(guid)
+ guid VARCHAR(255) PRIMARY KEY,
+ parent_guid VARCHAR(255),
+ -- Colonnes spécifiques au niveau 1 --
+ FOREIGN KEY (parent_guid) REFERENCES kairos_cases(guid)
 );
 ```
 
-### 3. Tables de Records
-
-Tables pour chaque record CSPro défini dans le dictionnaire.
+### 3. Tables de Records Tables pour chaque record CSPro défini dans le dictionnaire.
 
 **Exemple : `{label}_producteurs`**
 ```sql
 CREATE TABLE kairos_producteurs (
-    guid VARCHAR(255) PRIMARY KEY,
-    parent_guid VARCHAR(255),
-    producteur_id INT,
-    nom TEXT,
-    prenom TEXT,
-    telephone VARCHAR(20),
-    -- Autres colonnes du record --
-    FOREIGN KEY (parent_guid) REFERENCES kairos_level_1(guid)
+ guid VARCHAR(255) PRIMARY KEY,
+ parent_guid VARCHAR(255),
+ producteur_id INT,
+ nom TEXT,
+ prenom TEXT,
+ telephone VARCHAR(20),
+ -- Autres colonnes du record --
+ FOREIGN KEY (parent_guid) REFERENCES kairos_level_1(guid)
 );
 ```
 
@@ -269,22 +241,22 @@ CREATE TABLE kairos_producteurs (
 
 ```
 1. Lecture du dictionnaire CSPro
-   ↓
+
 2. Génération schéma tables SQL
-   ↓
+
 3. Création tables dans DB breakout
-   ↓
+
 4. Comptage des questionnaires (getDataCounts)
-   ↓
+
 5. Répartition en jobs (1 job par thread)
-   ↓
+
 6. Traitement parallèle:
-   - Thread 1 : Cases 1-10000
-   - Thread 2 : Cases 10001-20000
-   - Thread 3 : Cases 20001-30000
-   ↓
+ - Thread 1 : Cases 1-10000
+ - Thread 2 : Cases 10001-20000
+ - Thread 3 : Cases 20001-30000
+
 7. Insertion données dans tables
-   ↓
+
 8. Vérification intégrité
 ```
 
@@ -304,7 +276,7 @@ CREATE TABLE kairos_producteurs (
 
 ```bash
 # Type de SGBD
-BREAKOUT_DB_TYPE=postgresql  # ou mysql, sqlserver
+BREAKOUT_DB_TYPE=postgresql # ou mysql, sqlserver
 
 # PostgreSQL
 POSTGRES_HOST=postgres
@@ -343,7 +315,7 @@ MYSQL_PASSWORD=csweb_pass
 ### 1. Vérifier Tables Créées
 
 <Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```sql
 -- Se connecter à PostgreSQL
 docker-compose exec postgres psql -U csweb_analytics csweb_analytics
@@ -352,15 +324,15 @@ docker-compose exec postgres psql -U csweb_analytics csweb_analytics
 \dt
 
 -- Output attendu:
---  Schema |        Name         | Type  |     Owner
+-- Schema | Name | Type | Owner
 -- --------+---------------------+-------+----------------
---  public | eval_cases          | table | csweb_analytics
---  public | eval_producteurs    | table | csweb_analytics
---  public | eval_observations   | table | csweb_analytics
+-- public | eval_cases | table | csweb_analytics
+-- public | eval_producteurs | table | csweb_analytics
+-- public | eval_observations | table | csweb_analytics
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```sql
 -- Se connecter à MySQL
 docker-compose exec mysql-breakout mysql -u breakout_user -p csweb_breakout
@@ -370,20 +342,20 @@ SHOW TABLES;
 
 -- Output attendu:
 -- +----------------------------+
--- | Tables_in_csweb_breakout   |
+-- | Tables_in_csweb_breakout |
 -- +----------------------------+
--- | eval_cases                 |
--- | eval_producteurs           |
--- | eval_observations          |
+-- | eval_cases |
+-- | eval_producteurs |
+-- | eval_observations |
 -- +----------------------------+
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```sql
 -- Se connecter à SQL Server
 docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd \
-  -S localhost -U sa -P YourStrong!Passw0rd
+ -S localhost -U sa -P YourStrong!Passw0rd
 
 -- Lister tables
 SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE';
@@ -393,7 +365,7 @@ SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'
 -- eval_producteurs
 -- eval_observations
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
 ### 2. Compter les Lignes
@@ -412,9 +384,8 @@ SELECT COUNT(*) FROM eval_observations;
 
 ```sql
 -- Exemple: Compter producteurs par région
-SELECT
-    region,
-    COUNT(*) as nb_producteurs
+SELECT region,
+ COUNT(*) as nb_producteurs
 FROM eval_producteurs
 GROUP BY region
 ORDER BY nb_producteurs DESC;
@@ -426,7 +397,7 @@ ORDER BY nb_producteurs DESC;
 
 **Symptôme :**
 ```
-SQLSTATE[42P07]: Relation already exists: 7 ERROR:  relation "eval_cases" already exists
+SQLSTATE[42P07]: Relation already exists: 7 ERROR: relation "eval_cases" already exists
 ```
 
 **Cause :** Les tables existent déjà dans la base de données.
@@ -463,13 +434,11 @@ Dictionary "SURVEY_DICT" not found in CSWeb
 1. **Vérifier dictionnaires disponibles** :
 ```bash
 # Via MySQL metadata
-docker-compose exec csweb-mysql mysql -u csweb -p csweb
-
-SELECT name, label FROM cspro_dictionaries;
+docker-compose exec csweb-mysql mysql -u csweb -p csweb SELECT name, label FROM cspro_dictionaries;
 ```
 
 2. **Uploader dictionnaire** dans CSWeb UI :
-   - Administration → Dictionaries → Upload
+ - Administration Dictionaries Upload
 
 ### Erreur: Connection Refused
 
@@ -487,7 +456,7 @@ SQLSTATE[HY000] [2002] Connection refused
 docker-compose ps
 
 # Démarrer container manquant
-docker-compose up -d postgres  # ou mysql-breakout, sqlserver
+docker-compose up -d postgres # ou mysql-breakout, sqlserver
 ```
 
 ### Erreur: Out of Memory
@@ -504,7 +473,7 @@ PHP Fatal error: Allowed memory size of 134217728 bytes exhausted
 ```bash
 # Augmenter memory limit PHP
 docker-compose exec csweb php -d memory_limit=2G bin/console \
-  csweb:process-cases-by-dict dictionnaires=RGPH5_DICT --threads=10
+ csweb:process-cases-by-dict dictionnaires=RGPH5_DICT --threads=10
 ```
 
 ### Erreur: Wrong Database Type
@@ -520,8 +489,8 @@ SQLSTATE[HY000]: Driver not found for pdo_sqlsrv
 
 ```bash
 # Vérifier cohérence .env
-BREAKOUT_DB_TYPE=sqlserver  # ← Doit correspondre
-SQLSERVER_HOST=...          # ← Variables SQL Server doivent être remplies
+BREAKOUT_DB_TYPE=sqlserver # Doit correspondre
+SQLSERVER_HOST=... # Variables SQL Server doivent être remplies
 ```
 
 ## Logs
@@ -539,7 +508,7 @@ php bin/console csweb:process-cases-by-dict dictionnaires=KAIROS_DICT -vvv
 ### Logs de la Base de Données
 
 <Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Logs PostgreSQL
 sudo tail -f /var/log/postgresql/postgresql-14-main.log
@@ -547,9 +516,9 @@ sudo tail -f /var/log/postgresql/postgresql-14-main.log
 # Activer query logging (postgresql.conf)
 log_statement = 'all'
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Logs MySQL
 sudo tail -f /var/log/mysql/error.log
@@ -558,9 +527,9 @@ sudo tail -f /var/log/mysql/error.log
 general_log = 1
 general_log_file = /var/log/mysql/queries.log
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Logs SQL Server
 docker-compose logs -f sqlserver
@@ -571,7 +540,7 @@ RECONFIGURE;
 sp_configure 'xp_cmdshell', 1;
 RECONFIGURE;
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
 ## Performance
@@ -602,7 +571,7 @@ RECONFIGURE;
 
 - **Guide Breakout Sélectif** : [Guides - Breakout Sélectif](/guides/breakout/selective)
 - **Configuration Multi-DB** : [Database - Multi-DB](/guides/database/multi-db)
-- **Transformation CSWeb → PostgreSQL** : [Architecture - Transformation](/guides/architecture/csweb-postgresql-transformation)
+- **Transformation CSWeb PostgreSQL** : [Architecture - Transformation](/guides/architecture/csweb-postgresql-transformation)
 - **Troubleshooting** : [Common Issues](/reference/troubleshooting/common-issues), [FAQ](/reference/troubleshooting/faq)
 
 ---

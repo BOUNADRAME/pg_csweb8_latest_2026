@@ -1,0 +1,210 @@
+# MySQL pour CSWeb
+
+MySQL est compatible avec CSWeb vanilla et peut être utilisé pour le breakout.
+
+## Quick Start
+
+```bash
+# .env
+BREAKOUT_DB_TYPE=mysql
+MYSQL_BREAKOUT_HOST=mysql-breakout
+MYSQL_BREAKOUT_PORT=3307
+MYSQL_BREAKOUT_DATABASE=csweb_breakout
+MYSQL_BREAKOUT_USER=breakout_user
+MYSQL_BREAKOUT_PASSWORD=your_secure_password
+```
+
+```bash
+docker-compose --profile local-mysql up -d
+```
+
+## Configuration
+
+### Variables d'Environnement
+
+| Variable | Description | Défaut |
+|----------|-------------|--------|
+| `MYSQL_BREAKOUT_HOST` | Hostname MySQL | `mysql-breakout` |
+| `MYSQL_BREAKOUT_PORT` | Port | `3307` |
+| `MYSQL_BREAKOUT_DATABASE` | Nom base | `csweb_breakout` |
+| `MYSQL_BREAKOUT_USER` | Utilisateur | `breakout_user` |
+| `MYSQL_BREAKOUT_PASSWORD` | Mot de passe | (requis) |
+
+### Docker Compose
+
+Service activé avec profil `local-mysql` :
+
+```yaml
+mysql-breakout:
+  image: mysql:8.0
+  profiles: ["local-mysql"]
+  environment:
+    - MYSQL_DATABASE=${MYSQL_BREAKOUT_DATABASE}
+    - MYSQL_USER=${MYSQL_BREAKOUT_USER}
+    - MYSQL_PASSWORD=${MYSQL_BREAKOUT_PASSWORD}
+  ports:
+    - "3307:3306"
+```
+
+**Note** : Port `3307` pour éviter conflit avec MySQL metadata (port `3306`).
+
+## Test Connexion
+
+### CLI MySQL
+
+```bash
+docker-compose exec mysql-breakout mysql -u breakout_user -p csweb_breakout
+```
+
+### Vérification Driver
+
+```bash
+php bin/console csweb:check-database-drivers
+# ✅ pdo_mysql : Available
+```
+
+## Breakout vers MySQL
+
+### Commande
+
+```bash
+php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+### Tables Créées
+
+```sql
+-- Liste des tables
+SHOW TABLES;
+
+-- Exemple
+eval_cases
+eval_producteurs
+eval_observations
+```
+
+### Query Exemple
+
+```sql
+-- Compter les cases
+SELECT COUNT(*) FROM eval_cases;
+
+-- Cases vérifiés
+SELECT COUNT(*) FROM eval_cases WHERE verified = 1;
+```
+
+## phpMyAdmin (Interface Web)
+
+### Accès
+
+Avec profil `dev` :
+
+```bash
+docker-compose --profile local-mysql --profile dev up -d
+```
+
+**URL** : http://localhost:8081
+
+**Identifiants** :
+- Server: `mysql-breakout`
+- Username: `breakout_user`
+- Password: (votre mot de passe)
+
+## Migration depuis PostgreSQL
+
+### Export PostgreSQL
+
+```bash
+docker-compose exec postgres pg_dump -U csweb_analytics -t eval_cases --data-only csweb_analytics > data.sql
+```
+
+### Conversion SQL
+
+Adapter syntaxe PostgreSQL → MySQL :
+
+```bash
+# Remplacer séquences
+sed -i 's/SERIAL/INT AUTO_INCREMENT/g' data.sql
+
+# Remplacer booléens
+sed -i 's/true/1/g' data.sql
+sed -i 's/false/0/g' data.sql
+```
+
+### Import MySQL
+
+```bash
+cat data.sql | docker-compose exec -T mysql-breakout mysql -u breakout_user -p csweb_breakout
+```
+
+## Performance
+
+### Indexes
+
+```sql
+-- Index sur guid
+CREATE INDEX idx_cases_guid ON eval_cases(guid);
+
+-- Index sur dates
+CREATE INDEX idx_cases_modified ON eval_cases(modified_date);
+```
+
+### Optimisation
+
+```sql
+-- Analyser table
+ANALYZE TABLE eval_cases;
+
+-- Optimiser
+OPTIMIZE TABLE eval_cases;
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+```bash
+# Vérifier service
+docker-compose ps mysql-breakout
+
+# Logs
+docker-compose logs mysql-breakout
+```
+
+### Port Conflict
+
+Si port `3307` occupé, changer dans `.env` :
+
+```bash
+MYSQL_BREAKOUT_PORT=3308
+```
+
+### Authentication Plugin Error
+
+Si erreur `caching_sha2_password` :
+
+```sql
+ALTER USER 'breakout_user'@'%' IDENTIFIED WITH mysql_native_password BY 'password';
+FLUSH PRIVILEGES;
+```
+
+## Backup & Restore
+
+### Backup
+
+```bash
+docker-compose exec mysql-breakout mysqldump -u breakout_user -p csweb_breakout > backup.sql
+```
+
+### Restore
+
+```bash
+cat backup.sql | docker-compose exec -T mysql-breakout mysql -u breakout_user -p csweb_breakout
+```
+
+## Ressources
+
+- [Multi-DB Configuration](/guides/database/multi-db)
+- [Migration vers PostgreSQL](/guides/database/migration)
+- [Drivers Installation](/reference/config/drivers)
+- [Docker Compose Config](/reference/config/docker-compose)
