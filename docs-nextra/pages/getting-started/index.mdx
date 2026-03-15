@@ -3,7 +3,7 @@ title: Bienvenue - Getting Started
 description: Introduction à CSWeb Community Platform
 ---
 
-import { Callout } from '../../components/Callout'
+
 
 # Bienvenue sur CSWeb Community Platform
 
@@ -23,15 +23,9 @@ import { Callout } from '../../components/Callout'
 | **Admin UI** | Basique | React moderne + Tailwind |
 | **Documentation** | Limitée | 255+ pages (FR) |
 
-<Callout type="success">
-  CSWeb Community est 100% compatible avec CSWeb vanilla. Vous pouvez migrer vos données existantes sans perte.
-</Callout>
-
 ---
 
-## Architecture Overview
-
-CSWeb Community Platform utilise une **architecture à deux bases de données** :
+## Architecture Overview CSWeb Community Platform utilise une **architecture à deux bases de données** :
 
 ### 1. Base Metadata (MySQL)
 Stocke les métadonnées CSWeb :
@@ -50,10 +44,6 @@ Stocke les données breakées des questionnaires :
 
 **Localisation :** Locale OU remote (flexible)
 
-<Callout type="info">
-  Cette architecture permet de séparer les données métier (breakout) de la configuration (metadata), idéal pour la production.
-</Callout>
-
 ---
 
 ## Deux Modes de Déploiement
@@ -61,16 +51,12 @@ Stocke les données breakées des questionnaires :
 ### Mode Local (Développement)
 
 ```
-┌─────────────────────────────────┐
-│      Machine Développeur         │
-├─────────────────────────────────┤
-│  CSWeb (Docker)                  │
-│    ├─ MySQL (metadata)           │
-│    └─ App PHP                    │
-│                                  │
-│  PostgreSQL (Docker)             │
-│    └─ Breakout DB                │
-└─────────────────────────────────┘
+
+ Machine Développeur CSWeb (Docker) 
+ MySQL (metadata) 
+ App PHP PostgreSQL (Docker) 
+ Breakout DB 
+
 ```
 
 **Cas d'usage :**
@@ -81,12 +67,9 @@ Stocke les données breakées des questionnaires :
 ### Mode Remote (Production)
 
 ```
-┌─────────────────┐         ┌─────────────────┐
-│  CSWeb Serveur  │         │  Serveur Remote │
-├─────────────────┤         ├─────────────────┤
-│ MySQL (metadata)│─────────▶ PostgreSQL       │
-│ App PHP         │         │ (analytics DB)  │
-└─────────────────┘         └─────────────────┘
+
+ CSWeb Serveur Serveur Remote MySQL (metadata) PostgreSQL App PHP (analytics DB) 
+
 ```
 
 **Cas d'usage :**
@@ -94,13 +77,13 @@ Stocke les données breakées des questionnaires :
 - Production INS
 - Séparation analytics/metadata
 
-[En savoir plus sur l'architecture flexible →](/guides/architecture/flexible)
+[En savoir plus sur l'architecture flexible ](/guides/architecture/flexible)
 
 ---
 
 ## Cas d'Usage
 
-### 🧑‍💻 Développeur Local
+### Développeur Local
 
 **Objectif :** Tester CSWeb sur votre laptop
 
@@ -113,11 +96,11 @@ docker-compose up -d
 
 **Base breakout :** PostgreSQL local (port 5432)
 
-[Guide installation →](/getting-started/installation)
+[Guide installation ](/getting-started/installation)
 
 ---
 
-### 🏢 Institut National de Statistique (INS)
+### Institut National de Statistique (INS)
 
 **Objectif :** Production RGPH5 avec séparation metadata/analytics
 
@@ -130,11 +113,11 @@ docker-compose up -d
 - Analytics sur PostgreSQL optimisé
 - Breakout sélectif pour gérer la charge
 
-[Guide déploiement remote →](/guides/deployment/remote)
+[Guide déploiement remote ](/guides/deployment/remote)
 
 ---
 
-### 📊 Projet de Recherche
+### Projet de Recherche
 
 **Objectif :** Collecte de données avec monitoring temps réel
 
@@ -148,7 +131,7 @@ docker-compose up -d
 - Monitoring logs streaming
 - Exports automatiques
 
-[Guide scheduler →](/guides/admin/scheduler)
+[Guide scheduler ](/guides/admin/scheduler)
 
 ---
 
@@ -167,10 +150,6 @@ php bin/console csweb:breakout
 # Breake UN dictionnaire spécifique
 php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS
 ```
-
-<Callout type="warning">
-  Le breakout global peut prendre des heures sur des bases volumineuses. Le breakout sélectif permet de cibler uniquement les dictionnaires nécessaires.
-</Callout>
 
 ### 2. Support Multi-SGBD
 
@@ -192,7 +171,7 @@ Configuration via UI ou fichier `.env`.
 
 **CSWeb Community :**
 ```bash
-docker-compose up -d  # C'est tout!
+docker-compose up -d # C'est tout!
 ```
 
 ### 4. Monitoring Temps Réel
@@ -208,18 +187,12 @@ docker-compose up -d  # C'est tout!
 
 ---
 
-## Prochaines Étapes
-
-Maintenant que vous comprenez les concepts, voici comment démarrer :
+## Prochaines Étapes Maintenant que vous comprenez les concepts, voici comment démarrer :
 
 1. **[Installation](/getting-started/installation)** - Déployer CSWeb en 5 minutes avec Docker
 2. **[Premier Breakout](/getting-started/first-breakout)** - Tutorial step-by-step
 3. **[Vérification](/getting-started/verify)** - Checklist de vérification
 4. **[Prochaines Étapes](/getting-started/next-steps)** - Aller plus loin
-
-<Callout type="info">
-  **Temps estimé :** 15 minutes pour installer et faire votre premier breakout.
-</Callout>
 
 ---
 

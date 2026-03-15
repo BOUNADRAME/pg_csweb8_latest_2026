@@ -1,18 +1,8 @@
 # Variables d'Environnement (.env)
 
-import { Callout, Tabs } from 'nextra/components'
 
-## Vue d'Ensemble
 
-Toutes les configurations de CSWeb Community Platform sont définies dans le fichier **`.env`** situé à la racine du projet.
-
-<Callout type="warning">
-**IMPORTANT :**
-- ✅ Copier `.env.example` vers `.env` lors de l'installation
-- ✅ Modifier les valeurs selon votre environnement
-- ❌ **NE JAMAIS** committer `.env` (contient mots de passe)
-- ❌ `.env` est dans `.gitignore` par défaut
-</Callout>
+## Vue d'Ensemble Toutes les configurations de CSWeb Community Platform sont définies dans le fichier **`.env`** situé à la racine du projet.
 
 ## Création du Fichier .env
 
@@ -21,16 +11,14 @@ Toutes les configurations de CSWeb Community Platform sont définies dans le fic
 cp .env.example .env
 
 # Éditer avec vos valeurs
-nano .env  # ou vim, code, etc.
+nano .env # ou vim, code, etc.
 ```
 
 ---
 
 ## Configuration Breakout (ESSENTIEL)
 
-### BREAKOUT_MODE
-
-Mode de déploiement de la base de données breakout.
+### BREAKOUT_MODE Mode de déploiement de la base de données breakout.
 
 **Valeurs :**
 - `local` : Docker containers (développement, test)
@@ -41,28 +29,22 @@ Mode de déploiement de la base de données breakout.
 **Exemples :**
 
 <Tabs items={['Local (Dev)', 'Remote (Prod)']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Développement avec Docker
 BREAKOUT_MODE=local
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Production avec serveur distant
 BREAKOUT_MODE=remote
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
-<Callout>
-**Note :** Cette variable est **informative** uniquement. Le choix du driver se fait via `BREAKOUT_DB_TYPE`.
-</Callout>
-
-### BREAKOUT_DB_TYPE
-
-Type de base de données pour le breakout sélectif.
+### BREAKOUT_DB_TYPE Type de base de données pour le breakout sélectif.
 
 **Valeurs :**
 - `postgresql` : PostgreSQL (recommandé pour analytics)
@@ -79,40 +61,30 @@ Type de base de données pour le breakout sélectif.
 **Exemples :**
 
 <Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 BREAKOUT_DB_TYPE=postgresql
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 BREAKOUT_DB_TYPE=mysql
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 BREAKOUT_DB_TYPE=sqlserver
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
-
-<Callout type="error">
-**Attention :** Si vous changez `BREAKOUT_DB_TYPE`, vous devez **redémarrer les containers** :
-```bash
-docker-compose down
-docker-compose --profile local-<TYPE> up -d
-```
-</Callout>
 
 ---
 
 ## Application
 
-### APP_ENV
-
-Environnement d'exécution de l'application.
+### APP_ENV Environnement d'exécution de l'application.
 
 **Valeurs :**
 - `prod` : Production (logs minimaux, cache activé)
@@ -131,19 +103,13 @@ APP_ENV=prod
 APP_ENV=dev
 ```
 
-### APP_DEBUG
-
-Active le mode debug (affichage erreurs détaillées).
+### APP_DEBUG Active le mode debug (affichage erreurs détaillées).
 
 **Valeurs :**
 - `true` : Debug activé (stack traces complètes)
 - `false` : Debug désactivé (messages génériques)
 
 **Défaut :** `false`
-
-<Callout type="warning">
-**JAMAIS** activer debug en production (risque de fuite d'informations sensibles).
-</Callout>
 
 **Exemples :**
 
@@ -155,9 +121,7 @@ APP_DEBUG=false
 APP_DEBUG=true
 ```
 
-### APP_TIMEZONE
-
-Fuseau horaire de l'application (format PHP timezone).
+### APP_TIMEZONE Fuseau horaire de l'application (format PHP timezone).
 
 **Valeurs :** Tout timezone PHP valide (voir [Liste PHP Timezones](https://www.php.net/manual/en/timezones.php))
 
@@ -176,9 +140,7 @@ APP_TIMEZONE=Europe/Paris
 APP_TIMEZONE=UTC
 ```
 
-### APP_SECRET
-
-Clé secrète pour chiffrement/hachage (Symfony).
+### APP_SECRET Clé secrète pour chiffrement/hachage (Symfony).
 
 **Format :** Chaîne aléatoire longue (32+ caractères)
 
@@ -198,17 +160,7 @@ openssl rand -hex 32
 APP_SECRET=a1b2c3d4e5f67890abcdef1234567890fedcba0987654321abcdef1234567890
 ```
 
-<Callout type="error">
-**CRITIQUE :**
-- ✅ Générer une clé **unique** par environnement
-- ✅ Ne **JAMAIS** partager cette clé
-- ❌ Ne **JAMAIS** utiliser la valeur d'exemple
-- ❌ Ne **JAMAIS** committer cette valeur
-</Callout>
-
-### CSWEB_PORT
-
-Port HTTP pour accéder à CSWeb.
+### CSWEB_PORT Port HTTP pour accéder à CSWeb.
 
 **Défaut :** `8080`
 
@@ -230,17 +182,7 @@ CSWEB_PORT=9090
 
 ## MySQL Metadata (FIXE)
 
-<Callout type="info">
-**À SAVOIR :**
-- Base de données **imposée** par CSWeb vanilla (schéma non modifiable)
-- Contient : users, dictionaries, oauth_clients, sync_queue, system_config
-- **TOUJOURS** sur la même machine que CSWeb (localhost ou container `mysql`)
-- **NE JAMAIS** utiliser cette base pour le breakout (performances limitées)
-</Callout>
-
-### MYSQL_HOST
-
-Nom d'hôte du serveur MySQL metadata.
+### MYSQL_HOST Nom d'hôte du serveur MySQL metadata.
 
 **Valeurs :**
 - `mysql` : Container Docker (mode local)
@@ -259,9 +201,7 @@ MYSQL_HOST=mysql
 MYSQL_HOST=localhost
 ```
 
-### MYSQL_PORT
-
-Port du serveur MySQL metadata.
+### MYSQL_PORT Port du serveur MySQL metadata.
 
 **Défaut :** `3306`
 
@@ -271,9 +211,7 @@ Port du serveur MySQL metadata.
 MYSQL_PORT=3306
 ```
 
-### MYSQL_DATABASE
-
-Nom de la base de données metadata.
+### MYSQL_DATABASE Nom de la base de données metadata.
 
 **Défaut :** `csweb_metadata`
 
@@ -283,13 +221,7 @@ Nom de la base de données metadata.
 MYSQL_DATABASE=csweb_metadata
 ```
 
-<Callout>
-**Note :** Cette base est créée automatiquement par `setup.php` lors de l'installation.
-</Callout>
-
-### MYSQL_USER
-
-Utilisateur MySQL pour la base metadata.
+### MYSQL_USER Utilisateur MySQL pour la base metadata.
 
 **Défaut :** `csweb_user`
 
@@ -299,9 +231,7 @@ Utilisateur MySQL pour la base metadata.
 MYSQL_USER=csweb_user
 ```
 
-### MYSQL_PASSWORD
-
-Mot de passe de l'utilisateur MySQL metadata.
+### MYSQL_PASSWORD Mot de passe de l'utilisateur MySQL metadata.
 
 **Génération :**
 
@@ -316,16 +246,7 @@ openssl rand -base64 32
 MYSQL_PASSWORD=MySecurePass123!Metadata
 ```
 
-<Callout type="warning">
-**Sécurité :**
-- Minimum 12 caractères
-- Majuscules + minuscules + chiffres + symboles
-- Différent du mot de passe root
-</Callout>
-
-### MYSQL_ROOT_PASSWORD
-
-Mot de passe root du serveur MySQL.
+### MYSQL_ROOT_PASSWORD Mot de passe root du serveur MySQL.
 
 **Génération :**
 
@@ -339,23 +260,11 @@ openssl rand -base64 32
 MYSQL_ROOT_PASSWORD=MyVerySecureRootPass456!
 ```
 
-<Callout type="error">
-**CRITIQUE :**
-- ✅ Mot de passe **très fort** (16+ caractères)
-- ✅ Différent de `MYSQL_PASSWORD`
-- ❌ Ne **JAMAIS** utiliser en production depuis applications
-- ❌ Uniquement pour admin/maintenance
-</Callout>
-
 ---
 
-## PostgreSQL Breakout
+## PostgreSQL Breakout Variables utilisées si `BREAKOUT_DB_TYPE=postgresql`.
 
-Variables utilisées si `BREAKOUT_DB_TYPE=postgresql`.
-
-### POSTGRES_HOST
-
-Nom d'hôte du serveur PostgreSQL.
+### POSTGRES_HOST Nom d'hôte du serveur PostgreSQL.
 
 **Valeurs :**
 - `postgres` : Container Docker (mode local)
@@ -367,14 +276,14 @@ Nom d'hôte du serveur PostgreSQL.
 **Exemples :**
 
 <Tabs items={['Local', 'Remote']}>
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Docker container
 POSTGRES_HOST=postgres
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 
-  <Tabs.Tab>
+ <Tabs.Tab>
 ```bash
 # Serveur distant
 POSTGRES_HOST=192.168.1.100
@@ -382,12 +291,10 @@ POSTGRES_HOST=192.168.1.100
 # Serveur RGPH5 Sénégal
 POSTGRES_HOST=172.16.0.50
 ```
-  </Tabs.Tab>
+ </Tabs.Tab>
 </Tabs>
 
-### POSTGRES_PORT
-
-Port du serveur PostgreSQL.
+### POSTGRES_PORT Port du serveur PostgreSQL.
 
 **Défaut :** `5432`
 
@@ -397,9 +304,7 @@ Port du serveur PostgreSQL.
 POSTGRES_PORT=5432
 ```
 
-### POSTGRES_DATABASE
-
-Nom de la base de données breakout PostgreSQL.
+### POSTGRES_DATABASE Nom de la base de données breakout PostgreSQL.
 
 **Défaut :** `csweb_analytics`
 
@@ -416,9 +321,7 @@ POSTGRES_DATABASE=prod_analytics
 POSTGRES_DATABASE=rgph5_analytics
 ```
 
-### POSTGRES_USER
-
-Utilisateur PostgreSQL pour la base breakout.
+### POSTGRES_USER Utilisateur PostgreSQL pour la base breakout.
 
 **Défaut :** `csweb_analytics`
 
@@ -428,9 +331,7 @@ Utilisateur PostgreSQL pour la base breakout.
 POSTGRES_USER=csweb_analytics
 ```
 
-### POSTGRES_PASSWORD
-
-Mot de passe de l'utilisateur PostgreSQL.
+### POSTGRES_PASSWORD Mot de passe de l'utilisateur PostgreSQL.
 
 **Génération :**
 
@@ -450,13 +351,9 @@ POSTGRES_PASSWORD=ProdSecurePostgres789!
 
 ---
 
-## MySQL Breakout
+## MySQL Breakout Variables utilisées si `BREAKOUT_DB_TYPE=mysql`.
 
-Variables utilisées si `BREAKOUT_DB_TYPE=mysql`.
-
-### MYSQL_BREAKOUT_HOST
-
-Nom d'hôte du serveur MySQL breakout.
+### MYSQL_BREAKOUT_HOST Nom d'hôte du serveur MySQL breakout.
 
 **Défaut :** `mysql-breakout`
 
@@ -470,9 +367,7 @@ MYSQL_BREAKOUT_HOST=mysql-breakout
 MYSQL_BREAKOUT_HOST=10.20.30.40
 ```
 
-### MYSQL_BREAKOUT_PORT
-
-Port du serveur MySQL breakout.
+### MYSQL_BREAKOUT_PORT Port du serveur MySQL breakout.
 
 **Défaut :** `3307` (port différent pour éviter conflit avec MySQL metadata)
 
@@ -486,9 +381,7 @@ MYSQL_BREAKOUT_PORT=3307
 MYSQL_BREAKOUT_PORT=3306
 ```
 
-### MYSQL_BREAKOUT_DATABASE
-
-Nom de la base de données breakout MySQL.
+### MYSQL_BREAKOUT_DATABASE Nom de la base de données breakout MySQL.
 
 **Défaut :** `csweb_breakout`
 
@@ -498,9 +391,7 @@ Nom de la base de données breakout MySQL.
 MYSQL_BREAKOUT_DATABASE=csweb_breakout
 ```
 
-### MYSQL_BREAKOUT_USER
-
-Utilisateur MySQL pour la base breakout.
+### MYSQL_BREAKOUT_USER Utilisateur MySQL pour la base breakout.
 
 **Défaut :** `breakout_user`
 
@@ -510,9 +401,7 @@ Utilisateur MySQL pour la base breakout.
 MYSQL_BREAKOUT_USER=breakout_user
 ```
 
-### MYSQL_BREAKOUT_PASSWORD
-
-Mot de passe de l'utilisateur MySQL breakout.
+### MYSQL_BREAKOUT_PASSWORD Mot de passe de l'utilisateur MySQL breakout.
 
 **Génération :**
 
@@ -528,13 +417,9 @@ MYSQL_BREAKOUT_PASSWORD=BreakoutSecurePass456!
 
 ---
 
-## SQL Server Breakout
+## SQL Server Breakout Variables utilisées si `BREAKOUT_DB_TYPE=sqlserver`.
 
-Variables utilisées si `BREAKOUT_DB_TYPE=sqlserver`.
-
-### SQLSERVER_HOST
-
-Nom d'hôte du serveur SQL Server.
+### SQLSERVER_HOST Nom d'hôte du serveur SQL Server.
 
 **Défaut :** `sqlserver`
 
@@ -548,9 +433,7 @@ SQLSERVER_HOST=sqlserver
 SQLSERVER_HOST=172.16.0.50
 ```
 
-### SQLSERVER_PORT
-
-Port du serveur SQL Server.
+### SQLSERVER_PORT Port du serveur SQL Server.
 
 **Défaut :** `1433`
 
@@ -560,9 +443,7 @@ Port du serveur SQL Server.
 SQLSERVER_PORT=1433
 ```
 
-### SQLSERVER_DATABASE
-
-Nom de la base de données breakout SQL Server.
+### SQLSERVER_DATABASE Nom de la base de données breakout SQL Server.
 
 **Défaut :** `CSWeb_Analytics`
 
@@ -576,15 +457,7 @@ SQLSERVER_DATABASE=CSWeb_Analytics
 SQLSERVER_DATABASE=RGPH5_Analytics
 ```
 
-<Callout>
-**Conventions SQL Server :**
-- Noms avec PascalCase (`CSWeb_Analytics`)
-- Noms de tables avec underscore (`eval_producteurs`)
-</Callout>
-
-### SQLSERVER_USER
-
-Utilisateur SQL Server.
+### SQLSERVER_USER Utilisateur SQL Server.
 
 **Défaut :** `sa` (System Administrator)
 
@@ -598,13 +471,7 @@ SQLSERVER_USER=sa
 SQLSERVER_USER=csweb_breakout_user
 ```
 
-<Callout type="warning">
-**Production :** Créer un utilisateur dédié avec permissions limitées (pas `sa`).
-</Callout>
-
-### SQLSERVER_PASSWORD
-
-Mot de passe SQL Server.
+### SQLSERVER_PASSWORD Mot de passe SQL Server.
 
 **Contraintes SQL Server :**
 - Minimum 8 caractères
@@ -621,21 +488,11 @@ SQLSERVER_PASSWORD=YourStrong!Passw0rd
 SQLSERVER_PASSWORD=RGPH5SecurePass!2026
 ```
 
-<Callout type="error">
-**Erreur courante :**
-```
-Password validation failed. The password does not meet policy requirements.
-```
-**Solution :** Utiliser majuscule + chiffre + symbole (ex: `MyPass123!`)
-</Callout>
-
 ---
 
 ## Outils de Développement
 
-### PHPMYADMIN_PORT
-
-Port pour accéder à phpMyAdmin (interface MySQL).
+### PHPMYADMIN_PORT Port pour accéder à phpMyAdmin (interface MySQL).
 
 **Défaut :** `8081`
 
@@ -650,9 +507,7 @@ PHPMYADMIN_PORT=8081
 - Server : `mysql` (ou `mysql-breakout` pour breakout DB)
 - Username/Password : Selon DB (`MYSQL_USER` / `MYSQL_BREAKOUT_USER`)
 
-### PGADMIN_PORT
-
-Port pour accéder à pgAdmin (interface PostgreSQL).
+### PGADMIN_PORT Port pour accéder à pgAdmin (interface PostgreSQL).
 
 **Défaut :** `8082`
 
@@ -667,9 +522,7 @@ PGADMIN_PORT=8082
 - Email : `PGADMIN_EMAIL`
 - Password : `PGADMIN_PASSWORD`
 
-### PGADMIN_EMAIL
-
-Email de login pgAdmin.
+### PGADMIN_EMAIL Email de login pgAdmin.
 
 **Défaut :** `admin@csweb.local`
 
@@ -679,9 +532,7 @@ Email de login pgAdmin.
 PGADMIN_EMAIL=admin@csweb.local
 ```
 
-### PGADMIN_PASSWORD
-
-Mot de passe de login pgAdmin.
+### PGADMIN_PASSWORD Mot de passe de login pgAdmin.
 
 **Défaut :** `admin123`
 
@@ -692,20 +543,14 @@ Mot de passe de login pgAdmin.
 PGADMIN_PASSWORD=admin123
 
 # Production (désactiver pgAdmin)
-# PGADMIN_PORT=  # Commenter pour désactiver
+# PGADMIN_PORT= # Commenter pour désactiver
 ```
-
-<Callout type="warning">
-**Production :** Désactiver phpMyAdmin et pgAdmin (risque sécurité). Utiliser CLI ou clients locaux.
-</Callout>
 
 ---
 
 ## Sécurité
 
-### JWT_SECRET
-
-Clé secrète pour signer les tokens JWT OAuth2.
+### JWT_SECRET Clé secrète pour signer les tokens JWT OAuth2.
 
 **Format :** Chaîne aléatoire longue (32+ caractères)
 
@@ -721,16 +566,7 @@ openssl rand -hex 32
 JWT_SECRET=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 ```
 
-<Callout type="error">
-**CRITIQUE :**
-- ✅ Différent de `APP_SECRET`
-- ✅ Unique par environnement
-- ❌ Ne **JAMAIS** changer en production (invaliderait tous les tokens)
-</Callout>
-
-### JWT_EXPIRATION
-
-Durée de validité des tokens JWT en millisecondes.
+### JWT_EXPIRATION Durée de validité des tokens JWT en millisecondes.
 
 **Défaut :** `86400000` (24 heures)
 
@@ -752,9 +588,7 @@ JWT_EXPIRATION=604800000
 - 24 heures = 86 400 000 ms
 - 7 jours = 604 800 000 ms
 
-### FILES_FOLDER
-
-Dossier de stockage des fichiers uploadés (photos, documents).
+### FILES_FOLDER Dossier de stockage des fichiers uploadés (photos, documents).
 
 **Défaut :** `/var/www/html/files`
 
@@ -768,16 +602,7 @@ FILES_FOLDER=/var/www/html/files
 FILES_FOLDER=/mnt/storage/csweb/files
 ```
 
-<Callout>
-**Production :**
-- Utiliser un volume Docker persistant
-- Sauvegarder régulièrement ce dossier
-- Vérifier permissions (www-data:www-data)
-</Callout>
-
-### API_URL
-
-URL de base de l'API CSWeb (utilisée pour webhooks, callbacks).
+### API_URL URL de base de l'API CSWeb (utilisée pour webhooks, callbacks).
 
 **Défaut :** `http://localhost:8080/api/`
 
@@ -794,17 +619,11 @@ API_URL=https://csweb.example.org/api/
 API_URL=http://193.203.15.16/kairos/api/
 ```
 
-<Callout type="warning">
-**Attention :** Terminer par `/` (slash final obligatoire).
-</Callout>
-
 ---
 
 ## Logging
 
-### CSWEB_LOG_LEVEL
-
-Niveau de logs de l'application CSWeb.
+### CSWEB_LOG_LEVEL Niveau de logs de l'application CSWeb.
 
 **Valeurs :**
 - `debug` : Tous les messages (verbose)
@@ -824,9 +643,7 @@ CSWEB_LOG_LEVEL=error
 CSWEB_LOG_LEVEL=debug
 ```
 
-### CSWEB_PROCESS_CASES_LOG_LEVEL
-
-Niveau de logs spécifique à la commande `process-cases-by-dict`.
+### CSWEB_PROCESS_CASES_LOG_LEVEL Niveau de logs spécifique à la commande `process-cases-by-dict`.
 
 **Valeurs :** Identiques à `CSWEB_LOG_LEVEL`
 
@@ -842,9 +659,7 @@ CSWEB_PROCESS_CASES_LOG_LEVEL=error
 CSWEB_PROCESS_CASES_LOG_LEVEL=debug
 ```
 
-### MAX_EXECUTION_TIME
-
-Temps maximum d'exécution PHP en secondes.
+### MAX_EXECUTION_TIME Temps maximum d'exécution PHP en secondes.
 
 **Défaut :** `300` (5 minutes)
 
@@ -855,12 +670,8 @@ Temps maximum d'exécution PHP en secondes.
 MAX_EXECUTION_TIME=300
 
 # Breakout RGPH (très long)
-MAX_EXECUTION_TIME=0  # Illimité (déconseillé)
+MAX_EXECUTION_TIME=0 # Illimité (déconseillé)
 ```
-
-<Callout type="warning">
-**Breakout :** Pour `process-cases-by-dict` avec millions de cas, augmenter ou désactiver (0 = illimité).
-</Callout>
 
 ---
 
@@ -948,14 +759,14 @@ SQLSERVER_PASSWORD=RGPH5SecurePass!2026
 
 # Sécurité
 JWT_SECRET=PROD_JWT_SECRET_CHANGE_ME_UNIQUE_VALUE
-JWT_EXPIRATION=3600000  # 1h (sécurisé)
+JWT_EXPIRATION=3600000 # 1h (sécurisé)
 FILES_FOLDER=/var/www/html/files
 API_URL=http://193.203.15.16/kairos/api/
 
 # Logs (production)
 CSWEB_LOG_LEVEL=error
 CSWEB_PROCESS_CASES_LOG_LEVEL=error
-MAX_EXECUTION_TIME=0  # Illimité pour breakout 3.2M cas
+MAX_EXECUTION_TIME=0 # Illimité pour breakout 3.2M cas
 ```
 
 ### Configuration Hybrid (MySQL local + PostgreSQL remote)
@@ -1033,12 +844,7 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers --test-co
 
 **Output attendu :**
 ```
-✅ pdo_mysql    : Available
-✅ pdo_pgsql    : Available
-✅ pdo_sqlsrv   : Available
-
-✅ MySQL Metadata : Connected to mysql:3306/csweb_metadata
-✅ PostgreSQL Breakout : Connected to postgres:5432/csweb_analytics
+ pdo_mysql : Available pdo_pgsql : Available pdo_sqlsrv : Available MySQL Metadata : Connected to mysql:3306/csweb_metadata PostgreSQL Breakout : Connected to postgres:5432/csweb_analytics
 ```
 
 ---
@@ -1082,8 +888,8 @@ SQLSTATE[HY000]: Driver not found for pdo_sqlsrv
 
 ```bash
 # Vérifier cohérence
-BREAKOUT_DB_TYPE=sqlserver  # ← Doit correspondre
-SQLSERVER_HOST=...          # ← Variables SQL Server doivent être remplies
+BREAKOUT_DB_TYPE=sqlserver # Doit correspondre
+SQLSERVER_HOST=... # Variables SQL Server doivent être remplies
 ```
 
 ### Erreur: Mot de Passe Invalide (SQL Server)

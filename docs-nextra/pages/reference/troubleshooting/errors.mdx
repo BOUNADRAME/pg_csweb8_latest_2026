@@ -1,0 +1,626 @@
+# Codes d'Erreur
+
+Référence complète des codes d'erreur CSWeb Community Platform avec solutions.
+
+import { Callout } from '../../../components/Callout'
+
+## Erreurs Database
+
+### DB-001: Connection Refused
+
+**Message** :
+
+```
+SQLSTATE[08006] Connection refused
+```
+
+**Causes** :
+- Service PostgreSQL/MySQL non démarré
+- Port incorrect (5432/3306)
+- Host incorrect (localhost vs postgres)
+
+**Solutions** :
+
+```bash
+# Vérifier service
+docker-compose ps postgres
+
+# Restart
+docker-compose restart postgres
+
+# Vérifier .env
+POSTGRES_HOST=postgres  # Nom service Docker
+POSTGRES_PORT=5432
+```
+
+### DB-002: Authentication Failed
+
+**Message** :
+
+```
+SQLSTATE[28P01] password authentication failed for user "csweb"
+```
+
+**Causes** :
+- Password incorrect dans .env
+- User n'existe pas
+- pg_hba.conf mal configuré
+
+**Solutions** :
+
+```bash
+# Vérifier credentials
+echo $POSTGRES_USER
+echo $POSTGRES_PASSWORD
+
+# Reset password
+docker-compose exec postgres psql -U postgres -c \
+  "ALTER USER csweb_analytics PASSWORD 'new_password';"
+```
+
+### DB-003: Database Does Not Exist
+
+**Message** :
+
+```
+SQLSTATE[3D000] database "csweb_analytics" does not exist
+```
+
+**Solutions** :
+
+```bash
+# Créer database
+docker-compose exec postgres psql -U postgres -c \
+  "CREATE DATABASE csweb_analytics OWNER csweb_analytics;"
+
+# Ou rebuild
+docker-compose down -v
+docker-compose up -d
+```
+
+### DB-004: Driver Not Found
+
+**Message** :
+
+```
+could not find driver pdo_pgsql
+```
+
+**Causes** :
+- Extension PDO non installée
+- Driver SQL Server non installé
+
+**Solutions** :
+
+```bash
+# PostgreSQL
+apt-get install php8.1-pgsql
+php -m | grep pdo_pgsql
+
+# MySQL
+apt-get install php8.1-mysql
+
+# SQL Server
+./install-sqlsrv-driver.sh
+```
+
+### DB-005: Connection Pool Exhausted
+
+**Message** :
+
+```
+FATAL: sorry, too many clients already
+```
+
+**Solutions** :
+
+```sql
+-- PostgreSQL: Augmenter max_connections
+ALTER SYSTEM SET max_connections = 200;
+SELECT pg_reload_conf();
+
+-- Vérifier connexions actives
+SELECT count(*) FROM pg_stat_activity;
+```
+
+## Erreurs Breakout
+
+### BRK-001: Dictionary Not Found
+
+**Message** :
+
+```
+Dictionary 'EVAL_DICT' not found in CSPro server
+```
+
+**Causes** :
+- Dictionnaire non uploadé
+- Nom incorrect (case-sensitive)
+- CSPro server inaccessible
+
+**Solutions** :
+
+```bash
+# Vérifier dictionnaires disponibles
+curl -X GET http://localhost:8080/api/dictionaries
+
+# Uploader dictionnaire
+curl -X POST http://localhost:8080/api/dictionaries \
+  -F "file=@survey.dcf"
+```
+
+### BRK-002: Breakout Failed
+
+**Message** :
+
+```
+Breakout process terminated with exit code 1
+```
+
+**Causes** :
+- Table déjà existe
+- Permission denied sur DB
+- Schema invalide
+
+**Solutions** :
+
+```bash
+# Vérifier logs
+docker-compose logs csweb | grep -A 10 "Breakout"
+
+# Drop table existante
+DROP TABLE IF EXISTS eval_dict_producteurs;
+
+# Vérifier permissions
+GRANT ALL ON SCHEMA public TO csweb_analytics;
+```
+
+### BRK-003: Case Parse Error
+
+**Message** :
+
+```
+Failed to parse case data: Invalid JSON
+```
+
+**Solutions** :
+
+```bash
+# Vérifier format case
+cat case.json | jq .
+
+# Re-synchroniser CSPro
+curl -X POST http://cspro-server/api/sync
+```
+
+### BRK-004: Table Already Exists
+
+**Message** :
+
+```
+Table 'eval_dict_level_1' already exists
+```
+
+**Solutions** :
+
+```bash
+# Drop tables
+php bin/console csweb:drop-breakout-tables EVAL_DICT
+
+# Ou force overwrite
+php bin/console csweb:process-cases-by-dict EVAL_DICT --force
+```
+
+## Erreurs OAuth2
+
+### AUTH-001: Invalid Credentials
+
+**Message** :
+
+```json
+{
+  "error": "invalid_grant",
+  "error_description": "Invalid username or password"
+}
+```
+
+**Solutions** :
+
+```bash
+# Vérifier user existe
+SELECT username, enabled FROM users WHERE username = 'admin';
+
+# Reset password
+php bin/console security:encode-password newpassword
+UPDATE users SET password = 'HASH' WHERE username = 'admin';
+```
+
+### AUTH-002: Invalid Client
+
+**Message** :
+
+```json
+{
+  "error": "invalid_client",
+  "error_description": "Client credentials are invalid"
+}
+```
+
+**Solutions** :
+
+```bash
+# Vérifier .env
+echo $OAUTH_CLIENT_ID
+echo $OAUTH_CLIENT_SECRET
+
+# Recreate client
+php bin/console oauth:client:create
+```
+
+### AUTH-003: Token Expired
+
+**Message** :
+
+```json
+{
+  "error": "invalid_token",
+  "error_description": "The access token provided has expired"
+}
+```
+
+**Solutions** :
+
+```bash
+# Regénérer token
+curl -X POST http://localhost:8080/api/token \
+  -d "grant_type=password" \
+  -d "username=admin" \
+  -d "password=admin123"
+```
+
+### AUTH-004: Insufficient Permissions
+
+**Message** :
+
+```json
+{
+  "error": "access_denied",
+  "error_description": "You do not have permission to access this resource"
+}
+```
+
+**Solutions** :
+
+```sql
+-- Vérifier rôles user
+SELECT username, roles FROM users WHERE username = 'admin';
+
+-- Ajouter rôle ADMIN
+UPDATE users SET roles = '["ROLE_ADMIN"]' WHERE username = 'admin';
+```
+
+## Erreurs API
+
+### API-001: Method Not Allowed
+
+**Message** :
+
+```json
+{
+  "error": "Method POST not allowed for this route"
+}
+```
+
+**Solutions** :
+
+```bash
+# Vérifier méthode HTTP
+curl -X GET http://localhost:8080/api/dictionaries  # Correct
+curl -X POST http://localhost:8080/api/dictionaries  # Incorrect
+```
+
+### API-002: Resource Not Found
+
+**Message** :
+
+```json
+{
+  "error": "Dictionary 'UNKNOWN' not found"
+}
+```
+
+**Solutions** :
+
+```bash
+# Lister ressources disponibles
+curl -X GET http://localhost:8080/api/dictionaries
+curl -X GET http://localhost:8080/api/breakout/jobs
+```
+
+### API-003: Invalid JSON
+
+**Message** :
+
+```json
+{
+  "error": "Syntax error in JSON payload"
+}
+```
+
+**Solutions** :
+
+```bash
+# Valider JSON
+echo '{"key": "value"}' | jq .
+
+# Correct request
+curl -X POST http://localhost:8080/api/webhooks \
+  -H "Content-Type: application/json" \
+  -d '{"event": "case_uploaded", "dictionary": "EVAL_DICT"}'
+```
+
+### API-004: Rate Limit Exceeded
+
+**Message** :
+
+```json
+{
+  "error": "Too many requests",
+  "retry_after": 60
+}
+```
+
+**Solutions** :
+
+```bash
+# Attendre 60 secondes
+sleep 60
+
+# Ou augmenter limite (config/packages/rate_limiter.yaml)
+limit: 100
+interval: '1 minute'
+```
+
+## Erreurs Docker
+
+### DCK-001: Port Already in Use
+
+**Message** :
+
+```
+Error: bind: address already in use 0.0.0.0:8080
+```
+
+**Solutions** :
+
+```bash
+# Trouver processus
+lsof -i :8080
+netstat -tuln | grep 8080
+
+# Kill processus
+kill -9 <PID>
+
+# Ou changer port
+CSWEB_PORT=8081
+docker-compose up -d
+```
+
+### DCK-002: Volume Permission Denied
+
+**Message** :
+
+```
+Permission denied: '/var/lib/postgresql/data'
+```
+
+**Solutions** :
+
+```bash
+# Fix permissions
+sudo chown -R 999:999 ./postgres-data
+
+# Ou recreate volume
+docker-compose down -v
+docker-compose up -d
+```
+
+### DCK-003: Out of Memory
+
+**Message** :
+
+```
+Container killed (OOMKilled)
+```
+
+**Solutions** :
+
+```bash
+# Augmenter mémoire
+docker-compose.yml:
+  csweb:
+    mem_limit: 2g
+    mem_reservation: 1g
+
+# Vérifier usage
+docker stats
+```
+
+### DCK-004: Network Not Found
+
+**Message** :
+
+```
+network csweb_default not found
+```
+
+**Solutions** :
+
+```bash
+# Recreate network
+docker-compose down
+docker-compose up -d
+
+# Ou créer manuellement
+docker network create csweb_default
+```
+
+## Erreurs Webhooks
+
+### WHK-001: Unauthorized
+
+**Message** :
+
+```json
+{
+  "error": "Invalid webhook token"
+}
+```
+
+**Solutions** :
+
+```bash
+# Vérifier token match
+echo $CSPRO_WEBHOOK_TOKEN  # CSWeb
+echo $BREAKOUT_WEBHOOK_TOKEN  # CSPro
+
+# Utiliser même token
+CSPRO_WEBHOOK_TOKEN=secret123
+```
+
+### WHK-002: Webhook Timeout
+
+**Message** :
+
+```
+Webhook timed out after 30 seconds
+```
+
+**Solutions** :
+
+```php
+// Répondre immédiatement
+http_response_code(202);
+echo json_encode(['status' => 'accepted']);
+
+// Traitement async
+fastcgi_finish_request();
+exec("php process-webhook.php > /dev/null 2>&1 &");
+```
+
+### WHK-003: Invalid Payload
+
+**Message** :
+
+```json
+{
+  "error": "Missing required field: 'dictionary'"
+}
+```
+
+**Solutions** :
+
+```bash
+# Payload correct
+curl -X POST http://localhost:8080/webhooks/breakout \
+  -H "X-Webhook-Token: secret123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "case_uploaded",
+    "dictionary": "EVAL_DICT",
+    "case_id": "abc123"
+  }'
+```
+
+## Erreurs Performance
+
+### PERF-001: Slow Query
+
+**Message** :
+
+```
+Query took 15.3 seconds to execute
+```
+
+**Solutions** :
+
+```sql
+-- Créer index
+CREATE INDEX idx_case_id ON eval_dict_level_1(case_id);
+CREATE INDEX idx_verified ON eval_cases(verified);
+
+-- Analyser query
+EXPLAIN ANALYZE SELECT * FROM eval_dict_level_1 WHERE case_id = '123';
+```
+
+### PERF-002: Memory Limit Exceeded
+
+**Message** :
+
+```
+PHP Fatal error: Allowed memory size exhausted
+```
+
+**Solutions** :
+
+```ini
+# php.ini
+memory_limit = 512M
+
+# Ou pour une commande
+php -d memory_limit=1G bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+## Codes HTTP
+
+| Code | Signification | Action |
+|------|---------------|--------|
+| **400** | Bad Request | Vérifier payload JSON |
+| **401** | Unauthorized | Regénérer token OAuth |
+| **403** | Forbidden | Vérifier rôles user |
+| **404** | Not Found | Vérifier URL/resource existe |
+| **429** | Too Many Requests | Attendre rate limit reset |
+| **500** | Internal Server Error | Vérifier logs serveur |
+| **502** | Bad Gateway | Vérifier service backend running |
+| **503** | Service Unavailable | Attendre service redémarre |
+
+## Logs Debug
+
+### Activer Logs Détaillés
+
+```bash
+# .env
+APP_ENV=dev
+APP_DEBUG=true
+LOG_LEVEL=debug
+```
+
+### Tail Logs
+
+```bash
+# Tous les logs
+docker-compose logs -f
+
+# Service spécifique
+docker-compose logs -f csweb
+
+# Filtrer erreurs
+docker-compose logs csweb | grep ERROR
+```
+
+### Logs PostgreSQL
+
+```bash
+# Activer slow query log
+ALTER SYSTEM SET log_min_duration_statement = 1000;
+SELECT pg_reload_conf();
+
+# Voir logs
+docker-compose exec postgres tail -f /var/lib/postgresql/data/log/postgresql.log
+```
+
+## Ressources
+
+- [Common Issues](/reference/troubleshooting/common-issues)
+- [FAQ](/reference/troubleshooting/faq)
+- [Monitoring](/guides/admin/monitoring)

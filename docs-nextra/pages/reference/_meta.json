@@ -1,6 +1,6 @@
 {
-  "api": "API Reference",
-  "cli": "Commandes CLI",
+  "api": "API",
+  "cli": "CLI",
   "config": "Configuration",
   "troubleshooting": "Dépannage",
   "resources": "Ressources"

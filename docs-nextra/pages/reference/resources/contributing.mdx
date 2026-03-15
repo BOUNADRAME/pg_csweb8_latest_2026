@@ -1,19 +1,15 @@
-# Guide de Contribution
+# Guide de Contribution Merci de votre intérêt pour contribuer à CSWeb Community Platform ! 
 
-Merci de votre intérêt pour contribuer à CSWeb Community Platform ! 🎉
+## Code de Conduite En participant à ce projet, vous vous engagez à respecter notre code de conduite :
 
-## Code de Conduite
-
-En participant à ce projet, vous vous engagez à respecter notre code de conduite :
-
-- 🤝 Être respectueux envers tous les contributeurs
-- 💬 Communiquer de manière constructive
-- 🌍 Accueillir la diversité et l'inclusion
-- 🎓 Aider les nouveaux contributeurs
+- Être respectueux envers tous les contributeurs
+- Communiquer de manière constructive
+- Accueillir la diversité et l'inclusion
+- Aider les nouveaux contributeurs
 
 ## Types de Contributions
 
-### 🐛 Signaler un Bug
+### Signaler un Bug
 
 **Avant de créer une issue :**
 1. Vérifier que le bug n'est pas déjà signalé
@@ -44,15 +40,15 @@ Logs pertinents
 ```
 ```
 
-### ✨ Proposer une Fonctionnalité
+### Proposer une Fonctionnalité
 
 **Créer une issue "Feature Request" avec :**
-- 📝 Description de la fonctionnalité
-- 🎯 Problème résolu / Use case
-- 💡 Solution proposée
-- 🔄 Alternatives considérées
+- Description de la fonctionnalité
+- Problème résolu / Use case
+- Solution proposée
+- Alternatives considérées
 
-### 📝 Améliorer la Documentation
+### Améliorer la Documentation
 
 **Contributions bienvenues :**
 - Corriger typos/erreurs
@@ -60,14 +56,14 @@ Logs pertinents
 - Traduire pages (EN, ES, PT)
 - Créer tutoriels vidéo
 
-### 🧪 Écrire des Tests
+### Écrire des Tests
 
 - Tests unitaires (PHPUnit)
 - Tests d'intégration
 - Tests E2E
 - Tests de performance
 
-### 🎨 Améliorer le Code
+### Améliorer le Code
 
 - Refactoring
 - Optimisations performance
@@ -112,11 +108,11 @@ git checkout -b fix/mon-bug
 
 **Guidelines :**
 
-- ✅ Suivre les conventions de code (PSR-12 pour PHP)
-- ✅ Écrire tests pour nouveau code
-- ✅ Commenter code complexe
-- ✅ Mettre à jour documentation
-- ✅ Commits atomiques et descriptifs
+- Suivre les conventions de code (PSR-12 pour PHP)
+- Écrire tests pour nouveau code
+- Commenter code complexe
+- Mettre à jour documentation
+- Commits atomiques et descriptifs
 
 **Convention commits :**
 ```bash
@@ -212,28 +208,26 @@ Description claire des changements
 
 **PSR-12 Compliance :**
 ```php
-<?php
-
-namespace App\Service;
+<?php namespace App\Service;
 
 use App\Entity\Dictionary;
 
 class BreakoutService
 {
-    private DatabaseService $database;
+ private DatabaseService $database;
 
-    public function __construct(DatabaseService $database)
-    {
-        $this->database = $database;
-    }
+ public function __construct(DatabaseService $database)
+ {
+ $this->database = $database;
+ }
 
-    /**
-     * Process cases for specific dictionary
-     */
-    public function processCases(Dictionary $dictionary, int $threads = 1): void
-    {
-        // Implementation
-    }
+ /**
+ * Process cases for specific dictionary
+ */
+ public function processCases(Dictionary $dictionary, int $threads = 1): void
+ {
+ // Implementation
+ }
 }
 ```
 
@@ -241,15 +235,9 @@ class BreakoutService
 
 **Structure :**
 ```mdx
-# Page Title
-
-import { Callout } from 'nextra/components'
+# Page Title 
 
 Brief introduction.
-
-<Callout type="info">
-Important note
-</Callout>
 
 ## Section 1
 
@@ -268,22 +256,20 @@ Content...
 
 **Exemple :**
 ```php
-<?php
-
-namespace App\Tests\Service;
+<?php namespace App\Tests\Service;
 
 use PHPUnit\Framework\TestCase;
 use App\Service\BreakoutService;
 
 class BreakoutServiceTest extends TestCase
 {
-    public function testProcessCases(): void
-    {
-        $service = new BreakoutService();
-        $result = $service->processCases($dictionary);
+ public function testProcessCases(): void
+ {
+ $service = new BreakoutService();
+ $result = $service->processCases($dictionary);
 
-        $this->assertTrue($result->isSuccess());
-    }
+ $this->assertTrue($result->isSuccess());
+ }
 }
 ```
 
@@ -291,8 +277,8 @@ class BreakoutServiceTest extends TestCase
 
 ### Documentation
 
-- 📖 **[Documentation Nextra](/)** : Docs complètes
-- 📄 **[CONTRIBUTING.md](https://github.com/BOUNADRAME/pg_csweb8_latest_2026/blob/master/CONTRIBUTING.md)** : Guide complet
+- **[Documentation Nextra](/)** : Docs complètes
+- **[CONTRIBUTING.md](https://github.com/BOUNADRAME/pg_csweb8_latest_2026/blob/master/CONTRIBUTING.md)** : Guide complet
 
 ### Outils
 
@@ -303,19 +289,15 @@ class BreakoutServiceTest extends TestCase
 
 ### Communication
 
-- 💬 **Discord** : Lien dans README
-- 🐛 **GitHub Issues** : Questions techniques
-- 📧 **Email** : Voir profil GitHub
+- **Discord** : Lien dans README
+- **GitHub Issues** : Questions techniques
+- **Email** : Voir profil GitHub
 
-## Contributeurs
+## Contributeurs Voir la liste complète des contributeurs :
 
-Voir la liste complète des contributeurs :
+ **[Contributeurs](/reference/resources/contributors)**
 
-👥 **[Contributeurs](/reference/resources/contributors)**
-
-## Licence
-
-En contribuant, vous acceptez que vos contributions soient sous licence MIT.
+## Licence En contribuant, vous acceptez que vos contributions soient sous licence MIT.
 
 ---
 

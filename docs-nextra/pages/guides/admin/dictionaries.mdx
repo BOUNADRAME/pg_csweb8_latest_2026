@@ -1,0 +1,172 @@
+# Gestion des Dictionnaires
+
+Uploader, gérer et supprimer les dictionnaires CSPro.
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="info">
+**v2.1 (Avril 2026)** : Admin Panel React pour gestion dictionnaires. Actuellement : Interface CSWeb vanilla.
+</Callout>
+
+## Upload Dictionnaire
+
+### Via Interface CSWeb
+
+1. Login http://localhost:8080
+2. Administration → Dictionaries
+3. Upload new dictionary
+4. Sélectionner fichier `.dcf`
+5. Submit
+
+### Via API
+
+```bash
+curl -X POST http://localhost:8080/api/dictionaries \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@survey.dcf" \
+  -F "label=survey"
+```
+
+## Lister Dictionnaires
+
+### Via API
+
+```bash
+curl -X GET http://localhost:8080/api/dictionaries \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response** :
+
+```json
+[
+  {
+    "name": "EVAL_DICT",
+    "label": "eval",
+    "version": "1.0",
+    "created_at": "2026-01-15T10:30:00Z"
+  }
+]
+```
+
+### Via SQL
+
+```sql
+SELECT name, label, version, created_at
+FROM dictionaries
+ORDER BY created_at DESC;
+```
+
+## Détails Dictionnaire
+
+### Structure
+
+```bash
+curl -X GET http://localhost:8080/api/dictionaries/EVAL_DICT \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response** :
+
+```json
+{
+  "name": "EVAL_DICT",
+  "label": "eval",
+  "levels": [
+    {"name": "level_1", "label": "Ménages"}
+  ],
+  "records": [
+    {"name": "producteurs", "label": "Producteurs"}
+  ]
+}
+```
+
+## Versions Dictionnaires
+
+### Multiple Versions
+
+CSWeb supporte plusieurs versions d'un même dictionnaire.
+
+**Naming Convention** :
+- `SURVEY_DICT_V1`
+- `SURVEY_DICT_V2`
+
+### Migration Version
+
+```bash
+# Breakout ancienne version
+php bin/console csweb:process-cases-by-dict SURVEY_DICT_V1
+
+# Breakout nouvelle version
+php bin/console csweb:process-cases-by-dict SURVEY_DICT_V2
+```
+
+## Supprimer Dictionnaire
+
+### Via Interface
+
+1. Administration → Dictionaries
+2. Sélectionner dictionnaire
+3. Delete
+
+### Via API
+
+```bash
+curl -X DELETE http://localhost:8080/api/dictionaries/EVAL_DICT \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Vérification
+
+Supprimer seulement si :
+- ✅ Pas de cases associés
+- ✅ Pas de breakout tables
+
+Sinon :
+
+```json
+{
+  "error": "Cannot delete dictionary",
+  "message": "Dictionary has associated cases"
+}
+```
+
+## Backup Dictionnaires
+
+### Export Fichiers .dcf
+
+```bash
+# Copier depuis container
+docker-compose cp csweb:/var/www/html/files/dictionaries ./backup/
+
+# Archive
+tar -czf dictionaries-backup-$(date +%Y%m%d).tar.gz ./backup/dictionaries
+```
+
+## Troubleshooting
+
+### Upload Fail
+
+**Cause** : Taille fichier trop grande.
+
+**Solution** : Augmenter `upload_max_filesize` dans `php.ini` :
+
+```ini
+upload_max_filesize = 50M
+post_max_size = 50M
+```
+
+### Dictionary Not Found
+
+Vérifier :
+
+```bash
+# Lister fichiers
+docker-compose exec csweb ls -la /var/www/html/files/dictionaries/
+```
+
+## Ressources
+
+- [Dictionaries API](/reference/api/dictionaries)
+- [Breakout Sélectif](/guides/breakout/selective)
+- [Docker Config](/reference/config/docker-compose)

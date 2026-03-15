@@ -1,0 +1,230 @@
+# Web Scheduler
+
+Planifier et automatiser les jobs CSWeb (breakout, exports, cleanups).
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="warning">
+**v2.1 (Avril 2026)** : Web Scheduler UI à venir. Actuellement : configuration manuelle via cron.
+</Callout>
+
+## Configuration Actuelle (Cron)
+
+### Crontab
+
+```bash
+# Éditer crontab
+crontab -e
+
+# Exemples de jobs
+# Breakout automatique toutes les heures
+0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
+
+# Cleanup logs tous les jours à 3h
+0 3 * * * find /var/log/csweb -name "*.log" -mtime +30 -delete
+
+# Backup DB tous les dimanches à 2h
+0 2 * * 0 /usr/local/bin/backup-db.sh
+```
+
+### Docker Cron
+
+Pour jobs dans container Docker :
+
+```bash
+# Crontab sur hôte
+0 * * * * docker-compose exec -T csweb php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/cron.log 2>&1
+```
+
+## Jobs Recommandés
+
+### 1. Breakout Automatique
+
+```bash
+# Toutes les heures
+0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+### 2. Cleanup Logs
+
+```bash
+# Supprimer logs > 30 jours
+0 3 * * * find /var/log/csweb -type f -name "*.log" -mtime +30 -delete
+```
+
+### 3. Vacuum Database
+
+PostgreSQL :
+
+```bash
+# Tous les dimanches à 2h
+0 2 * * 0 docker-compose exec -T postgres vacuumdb -U csweb_analytics -d csweb_analytics
+```
+
+MySQL :
+
+```bash
+# Tous les dimanches à 2h
+0 2 * * 0 docker-compose exec -T mysql-breakout mysqlcheck -u breakout_user --password=PASSWORD --optimize --all-databases
+```
+
+### 4. Backup Automatique
+
+```bash
+# Tous les jours à 1h
+0 1 * * * /usr/local/bin/backup-csweb.sh
+
+# Tous les dimanches (backup complet)
+0 1 * * 0 /usr/local/bin/backup-csweb-full.sh
+```
+
+## Script Backup
+
+### backup-csweb.sh
+
+```bash
+#!/bin/bash
+set -e
+
+DATE=$(date +%Y%m%d-%H%M%S)
+BACKUP_DIR="/backups/csweb"
+
+# Backup PostgreSQL
+docker-compose exec -T postgres pg_dump -U csweb_analytics csweb_analytics > "$BACKUP_DIR/db-$DATE.sql"
+
+# Backup fichiers
+tar -czf "$BACKUP_DIR/files-$DATE.tar.gz" /var/www/html/files
+
+# Cleanup vieux backups (> 7 jours)
+find $BACKUP_DIR -type f -mtime +7 -delete
+
+echo "Backup completed: $DATE"
+```
+
+```bash
+chmod +x /usr/local/bin/backup-csweb.sh
+```
+
+## Monitoring Jobs
+
+### Logs Cron
+
+```bash
+# Voir logs cron
+tail -f /var/log/cron.log
+
+# Ou si journalctl
+journalctl -u cron -f
+```
+
+### Email Notifications
+
+Configurer MAILTO dans crontab :
+
+```bash
+MAILTO=admin@example.com
+
+0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+### Health Check
+
+Script pour vérifier jobs :
+
+```bash
+#!/bin/bash
+# health-check-jobs.sh
+
+LAST_BREAKOUT=$(stat -c %Y /tmp/last-breakout.lock 2>/dev/null || echo 0)
+NOW=$(date +%s)
+DIFF=$(( (NOW - LAST_BREAKOUT) / 3600 ))
+
+if [ $DIFF -gt 24 ]; then
+    echo "ERROR: No breakout in last 24h"
+    exit 1
+fi
+
+echo "OK: Last breakout ${DIFF}h ago"
+```
+
+## Web UI (v2.1 Preview)
+
+### Fonctionnalités Prévues
+
+**Dashboard** :
+- 📅 Calendrier jobs planifiés
+- 📊 Historique exécutions
+- 🔔 Alertes en temps réel
+
+**Job Management** :
+- ✏️ Créer job via formulaire (plus de crontab)
+- ⏰ Scheduler visuel (drag & drop)
+- 📈 Logs streaming
+
+**Templates Jobs** :
+- Breakout automatique
+- Cleanup logs
+- Backup DB
+- Export CSV
+
+### Architecture Future
+
+```
+┌─────────────────┐
+│   Web UI        │ (React)
+│   Scheduler     │
+└────────┬────────┘
+         │
+         v
+┌─────────────────┐
+│  Scheduler API  │ (Symfony)
+└────────┬────────┘
+         │
+         v
+┌─────────────────┐
+│  Job Queue      │ (Redis/RabbitMQ)
+└────────┬────────┘
+         │
+         v
+┌─────────────────┐
+│  Worker         │ (Symfony Messenger)
+└─────────────────┘
+```
+
+## Alternative : Symfony Scheduler
+
+### Installation
+
+```bash
+composer require symfony/scheduler
+```
+
+### Configuration
+
+```php
+// config/packages/scheduler.yaml
+framework:
+    scheduler:
+        default_transport: default
+
+        schedules:
+            breakout:
+                frequency: '0 * * * *'  # Toutes les heures
+                command: 'csweb:process-cases-by-dict EVAL_DICT'
+
+            cleanup:
+                frequency: '0 3 * * *'  # 3h du matin
+                command: 'csweb:cleanup-logs'
+```
+
+### Lancer Scheduler
+
+```bash
+php bin/console messenger:consume scheduler
+```
+
+## Ressources
+
+- [Breakout Automatique](/guides/breakout/scheduled)
+- [Backup & Restore](/guides/deployment/backup)
+- [Monitoring](/guides/breakout/monitoring)

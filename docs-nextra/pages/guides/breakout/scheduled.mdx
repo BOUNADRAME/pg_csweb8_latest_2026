@@ -1,0 +1,243 @@
+# Breakout Automatique
+
+Automatiser le breakout avec cron jobs ou webhooks pour un traitement en temps réel.
+
+## Avec Cron Jobs
+
+### Configuration Cron
+
+```bash
+# Éditer crontab
+crontab -e
+
+# Breakout toutes les heures
+0 * * * * cd /path/to/csweb && php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/breakout.log 2>&1
+
+# Breakout tous les jours à 2h du matin
+0 2 * * * cd /path/to/csweb && php bin/console csweb:process-cases-by-dict ALL_DICTS >> /var/log/breakout.log 2>&1
+```
+
+### Script Wrapper
+
+Créer `/usr/local/bin/csweb-breakout.sh` :
+
+```bash
+#!/bin/bash
+set -e
+
+DICT=$1
+LOG_FILE="/var/log/csweb/breakout-$(date +%Y%m%d-%H%M%S).log"
+
+echo "[$(date)] Starting breakout for $DICT" >> $LOG_FILE
+
+cd /var/www/html
+php bin/console csweb:process-cases-by-dict $DICT >> $LOG_FILE 2>&1
+
+echo "[$(date)] Breakout completed" >> $LOG_FILE
+```
+
+```bash
+chmod +x /usr/local/bin/csweb-breakout.sh
+```
+
+### Cron avec Script
+
+```bash
+# Crontab
+0 * * * * /usr/local/bin/csweb-breakout.sh EVAL_DICT
+```
+
+## Avec Docker
+
+### Docker Exec Cron
+
+```bash
+# Éditer crontab de l'hôte
+crontab -e
+
+# Exécuter dans container
+0 * * * * docker-compose exec -T csweb php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/breakout.log 2>&1
+```
+
+### Container Cron Dédié
+
+Créer `Dockerfile.cron` :
+
+```dockerfile
+FROM php:8.1-cli
+
+# Installer cron
+RUN apt-get update && apt-get install -y cron
+
+# Copier crontab
+COPY crontab /etc/cron.d/csweb-breakout
+RUN chmod 0644 /etc/cron.d/csweb-breakout
+RUN crontab /etc/cron.d/csweb-breakout
+
+CMD ["cron", "-f"]
+```
+
+Fichier `crontab` :
+
+```
+0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/breakout.log 2>&1
+```
+
+## Avec Webhooks CSPro
+
+### Configuration Webhook
+
+Recevoir événements CSPro et déclencher breakout automatiquement.
+
+**Webhook URL** : `http://your-server/breakout-webhook.php`
+
+**Fichier** : `breakout-webhook.php`
+
+```php
+<?php
+// Recevoir événement CSPro
+$payload = file_get_contents('php://input');
+$event = json_decode($payload, true);
+
+if ($event['type'] === 'case_uploaded') {
+    $dictionary = $event['dictionary'];
+
+    // Lancer breakout async
+    exec("php bin/console csweb:process-cases-by-dict $dictionary > /dev/null 2>&1 &");
+
+    http_response_code(200);
+    echo json_encode(['status' => 'breakout_scheduled']);
+}
+```
+
+### Sécurité Webhook
+
+Vérifier signature :
+
+```php
+<?php
+$signature = $_SERVER['HTTP_X_CSWEB_SIGNATURE'];
+$secret = 'your_webhook_secret';
+
+$expectedSignature = 'sha256=' . hash_hmac('sha256', $payload, $secret);
+
+if (!hash_equals($expectedSignature, $signature)) {
+    http_response_code(401);
+    exit('Invalid signature');
+}
+```
+
+## Monitoring Jobs
+
+### Logs
+
+```bash
+# Tail logs en temps réel
+tail -f /var/log/csweb/breakout-*.log
+
+# Rechercher erreurs
+grep ERROR /var/log/csweb/breakout-*.log
+```
+
+### Notifications Email
+
+Ajouter à script breakout :
+
+```bash
+#!/bin/bash
+DICT=$1
+LOG_FILE="/tmp/breakout.log"
+
+php bin/console csweb:process-cases-by-dict $DICT > $LOG_FILE 2>&1
+
+if [ $? -ne 0 ]; then
+    # Erreur : envoyer email
+    mail -s "Breakout Failed: $DICT" admin@example.com < $LOG_FILE
+fi
+```
+
+### Slack Notifications
+
+```bash
+#!/bin/bash
+DICT=$1
+SLACK_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+# Breakout
+php bin/console csweb:process-cases-by-dict $DICT
+
+if [ $? -eq 0 ]; then
+    curl -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"✅ Breakout $DICT completed\"}" \
+      $SLACK_WEBHOOK
+else
+    curl -X POST -H 'Content-type: application/json' \
+      --data "{\"text\":\"❌ Breakout $DICT failed\"}" \
+      $SLACK_WEBHOOK
+fi
+```
+
+## Gestion Concurrence
+
+### Lock File
+
+Éviter breakout simultanés :
+
+```bash
+#!/bin/bash
+DICT=$1
+LOCK_FILE="/tmp/breakout-$DICT.lock"
+
+# Vérifier lock
+if [ -f "$LOCK_FILE" ]; then
+    echo "Breakout already running for $DICT"
+    exit 1
+fi
+
+# Créer lock
+touch $LOCK_FILE
+
+# Breakout
+php bin/console csweb:process-cases-by-dict $DICT
+
+# Supprimer lock
+rm -f $LOCK_FILE
+```
+
+### Flock (Linux)
+
+```bash
+#!/bin/bash
+flock -n /tmp/breakout.lock -c "php bin/console csweb:process-cases-by-dict EVAL_DICT"
+```
+
+## Performance
+
+### Breakout Incrémental
+
+Traiter seulement nouveaux cases :
+
+```sql
+-- Identifier dernière modification
+SELECT MAX(modified_date) FROM eval_cases;
+```
+
+Puis filtrer dans commande (si supporté).
+
+### Breakout Parallèle
+
+Plusieurs dictionnaires en parallèle :
+
+```bash
+#!/bin/bash
+php bin/console csweb:process-cases-by-dict DICT_1 &
+php bin/console csweb:process-cases-by-dict DICT_2 &
+wait
+```
+
+## Ressources
+
+- [Breakout Sélectif](/guides/breakout/selective)
+- [Monitoring Breakout](/guides/breakout/monitoring)
+- [Webhooks API](/reference/api/webhooks)
+- [CLI Reference](/reference/cli/process-cases)

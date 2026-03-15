@@ -1,0 +1,146 @@
+# Gestion des Utilisateurs
+
+Gérer les utilisateurs et permissions dans CSWeb.
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="info">
+**v2.1 (Avril 2026)** : Admin Panel React avec interface moderne à venir. Actuellement : gestion via CSWeb vanilla UI.
+</Callout>
+
+## Accès Admin
+
+### Login CSWeb
+
+**URL** : http://localhost:8080
+
+**Identifiants par défaut** :
+- Username: `admin`
+- Password: `admin123`
+
+## Créer Utilisateur
+
+### Via Interface CSWeb
+
+1. Login admin
+2. Administration → Users
+3. Add New User
+4. Remplir formulaire :
+   - Username
+   - Password
+   - Email
+   - Role
+
+### Via SQL (Avancé)
+
+```sql
+-- Insérer utilisateur
+INSERT INTO users (username, password, email, role)
+VALUES ('api_user', 'hashed_password', 'api@example.com', 'API');
+```
+
+**Note** : Hash password avec `password_hash()` PHP.
+
+## Rôles
+
+| Rôle | Permissions |
+|------|-------------|
+| **Administrator** | Accès complet (users, dictionaries, config) |
+| **API** | Accès API OAuth2 uniquement |
+| **Readonly** | Lecture seule (cases, reports) |
+| **Supervisor** | Vérification cases, pas de modification config |
+
+## Reset Password
+
+### Via Interface
+
+1. Administration → Users
+2. Sélectionner utilisateur
+3. Edit → Change Password
+
+### Via CLI
+
+```bash
+php bin/console security:encode-password newpassword
+# Copier hash généré
+
+# Update SQL
+UPDATE users SET password = 'HASH' WHERE username = 'admin';
+```
+
+## OAuth2 Users
+
+### Créer User API
+
+Utilisateurs pour API OAuth2 :
+
+```sql
+INSERT INTO users (username, password, email, role)
+VALUES ('api_external', 'hashed_pass', 'external@example.com', 'API');
+```
+
+### Test Authentification
+
+```bash
+curl -X POST http://localhost:8080/api/token \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=password" \
+  -d "username=api_external" \
+  -d "password=actual_password"
+```
+
+## Désactiver Utilisateur
+
+### Soft Delete
+
+```sql
+UPDATE users SET enabled = 0 WHERE username = 'old_user';
+```
+
+### Hard Delete
+
+```sql
+DELETE FROM users WHERE username = 'old_user';
+```
+
+## Sécurité
+
+### Password Policy
+
+**Exigences recommandées** :
+- Minimum 8 caractères
+- Majuscules + minuscules
+- Au moins 1 chiffre
+- Au moins 1 caractère spécial
+
+### 2FA (v2.1 Planifié)
+
+**À venir** : Two-factor authentication via TOTP.
+
+## Audit Logs
+
+### Tracking Connexions
+
+```sql
+-- Dernières connexions
+SELECT username, last_login
+FROM users
+ORDER BY last_login DESC
+LIMIT 10;
+```
+
+### Failed Login Attempts
+
+Configuration dans `security.yaml` :
+
+```yaml
+security:
+    firewalls:
+        main:
+            failure_handler: app.authentication.failure_handler
+```
+
+## Ressources
+
+- [OAuth2 Authentication](/reference/api/oauth)
+- [Security Best Practices](/guides/architecture/security)

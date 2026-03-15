@@ -1,6 +1,5 @@
 {
-  "flexible": "Architecture Flexible",
-  "csweb-postgresql-transformation": "Transformation CSWeb → PostgreSQL",
-  "local-vs-remote": "Local vs Remote",
+  "index": "Architecture & Déploiement",
+  "csweb-postgresql-transformation": "Transformation PostgreSQL",
   "security": "Sécurité"
 }

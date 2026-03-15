@@ -1,0 +1,233 @@
+# Webhooks
+
+Configurer webhooks pour recevoir événements CSPro en temps réel.
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="info">
+**CSWeb Community Platform** inclut 3 webhooks prêts à l'emploi : breakout automatique, log monitoring, schema sync.
+</Callout>
+
+## Webhooks Disponibles
+
+### 1. Breakout Webhook
+
+**Fichier** : `breakout-webhook.php`
+
+**Fonction** : Lancer breakout automatiquement quand nouveau case uploadé.
+
+**Configuration CSPro** :
+- Event: `case_uploaded`
+- URL: `http://your-server/breakout-webhook.php`
+
+### 2. Log Reader Webhook
+
+**Fichier** : `log-reader-webhook.php`
+
+**Fonction** : Streamer logs CSPro vers système externe (ELK, Splunk).
+
+### 3. Dictionary Schema Webhook
+
+**Fichier** : `dictionary-schema-webhook.php`
+
+**Fonction** : Synchroniser schemas dictionnaires vers base analytics.
+
+## Configuration
+
+### Token Sécurité
+
+```bash
+# .env
+CSPRO_WEBHOOK_TOKEN=your_secret_token_here
+```
+
+**CSWeb** et **CSPro** doivent utiliser le même token.
+
+### CSPro Configuration
+
+Dans CSPro :
+1. Settings → Webhooks
+2. Add Webhook :
+   - URL: `http://your-server/breakout-webhook.php`
+   - Token: `your_secret_token_here`
+   - Events: `case_uploaded`, `case_modified`
+
+## Tester Webhooks
+
+### Curl Test
+
+```bash
+curl -X POST http://localhost:8080/breakout-webhook.php \
+  -H "X-Webhook-Token: your_secret_token_here" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "event": "case_uploaded",
+    "dictionary": "EVAL_DICT",
+    "case_id": "abc123"
+  }'
+```
+
+**Response attendue** :
+
+```json
+{
+  "status": "success",
+  "message": "Breakout scheduled for EVAL_DICT"
+}
+```
+
+### Logs
+
+```bash
+# Voir logs webhook
+tail -f /var/www/html/var/logs/webhook.log
+
+# Filtrer événements
+grep "case_uploaded" /var/www/html/var/logs/webhook.log
+```
+
+## Événements
+
+| Événement | Description | Payload |
+|-----------|-------------|---------|
+| `case_uploaded` | Nouveau questionnaire | `dictionary`, `case_id` |
+| `case_modified` | Questionnaire modifié | `dictionary`, `case_id`, `changes` |
+| `case_verified` | Questionnaire vérifié | `dictionary`, `case_id` |
+| `dictionary_uploaded` | Nouveau dictionnaire | `dictionary`, `version` |
+
+## Sécurité
+
+### Vérification Token
+
+Tous les webhooks vérifient `X-Webhook-Token` :
+
+```php
+<?php
+$token = $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
+$expected = getenv('CSPRO_WEBHOOK_TOKEN');
+
+if (!hash_equals($expected, $token)) {
+    http_response_code(401);
+    exit(json_encode(['error' => 'Invalid token']));
+}
+```
+
+### HTTPS Recommandé
+
+En production :
+
+```
+https://your-server.com/breakout-webhook.php
+```
+
+## Customisation
+
+### Webhook Custom
+
+Créer `custom-webhook.php` :
+
+```php
+<?php
+require_once __DIR__ . '/vendor/autoload.php';
+
+// Vérifier token
+$token = $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
+if (!hash_equals(getenv('CSPRO_WEBHOOK_TOKEN'), $token)) {
+    http_response_code(401);
+    exit;
+}
+
+// Parser payload
+$payload = json_decode(file_get_contents('php://input'), true);
+
+// Logique custom
+if ($payload['event'] === 'case_uploaded') {
+    // Envoyer notification Slack
+    $slack = 'https://hooks.slack.com/services/YOUR/WEBHOOK';
+    $data = ['text' => "New case: {$payload['case_id']}"];
+
+    $ch = curl_init($slack);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_exec($ch);
+}
+
+http_response_code(200);
+echo json_encode(['status' => 'ok']);
+```
+
+## Monitoring
+
+### Webhook Deliveries
+
+Tracker succès/échecs :
+
+```sql
+CREATE TABLE webhook_deliveries (
+    id SERIAL PRIMARY KEY,
+    webhook_name VARCHAR(50),
+    event VARCHAR(50),
+    status VARCHAR(20),
+    response_time INT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Metrics
+
+```sql
+-- Taux de succès
+SELECT
+    webhook_name,
+    COUNT(*) as total,
+    SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success,
+    AVG(response_time) as avg_response_ms
+FROM webhook_deliveries
+GROUP BY webhook_name;
+```
+
+## Troubleshooting
+
+### Webhook Non Reçu
+
+Vérifier :
+
+```bash
+# Firewall
+curl http://your-server/breakout-webhook.php
+
+# Logs Nginx/Apache
+tail -f /var/log/nginx/access.log
+
+# Logs CSPro (côté client)
+```
+
+### Token Mismatch (401)
+
+```bash
+# Vérifier token CSWeb
+echo $CSPRO_WEBHOOK_TOKEN
+
+# Vérifier token CSPro
+# (dans settings CSPro)
+```
+
+### Timeout
+
+Si webhook prend trop de temps :
+
+```php
+// Répondre immédiatement
+http_response_code(202);
+echo json_encode(['status' => 'accepted']);
+
+// Traitement async
+fastcgi_finish_request();
+exec("php process-breakout.php {$dictionary} > /dev/null 2>&1 &");
+```
+
+## Ressources
+
+- [Webhooks API](/reference/api/webhooks)
+- [Breakout Automatique](/guides/breakout/scheduled)
+- [Security Best Practices](/guides/architecture/security)

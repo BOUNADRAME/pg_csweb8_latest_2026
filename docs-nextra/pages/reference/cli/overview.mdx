@@ -1,10 +1,6 @@
-# Vue d'Ensemble CLI
+# Vue d'Ensemble CLI Guide des commandes en ligne de commande (CLI) de CSWeb Community Platform.
 
-Guide des commandes en ligne de commande (CLI) de CSWeb Community Platform.
-
-## Introduction
-
-CSWeb Community Platform fournit des **commandes CLI Symfony** pour gérer le breakout, vérifier la configuration, et administrer la plateforme.
+## Introduction CSWeb Community Platform fournit des **commandes CLI Symfony** pour gérer le breakout, vérifier la configuration, et administrer la plateforme.
 
 ## Accès au CLI
 
@@ -35,8 +31,8 @@ php bin/console <command>
 
 | Commande | Description | Page |
 |----------|-------------|------|
-| `csweb:process-cases-by-dict` | Breakout sélectif par dictionnaire | [→ Documentation](/reference/cli/process-cases) |
-| `csweb:check-database-drivers` | Vérifier drivers disponibles | [→ Documentation](/reference/cli/check-drivers) |
+| `csweb:process-cases-by-dict` | Breakout sélectif par dictionnaire | [ Documentation](/reference/cli/process-cases) |
+| `csweb:check-database-drivers` | Vérifier drivers disponibles | [ Documentation](/reference/cli/check-drivers) |
 
 ### Commandes Symfony Natives
 
@@ -62,23 +58,19 @@ php bin/console csweb:process-cases-by-dict --help
 **Output exemple :**
 ```
 Description:
-  Process cases by dictionary (selective breakout)
+ Process cases by dictionary (selective breakout)
 
 Usage:
-  csweb:process-cases-by-dict dictionnaires=<DICT1>[,<DICT2>] [options]
+ csweb:process-cases-by-dict dictionnaires=<DICT1>[,<DICT2>] [options]
 
 Arguments:
-  dictionnaires         Comma-separated list of dictionaries to process
-
-Options:
-  --threads=THREADS     Number of parallel threads (default: 1)
-  --overwrite          Overwrite existing tables
-  -v|vv|vvv            Increase verbosity
+ dictionnaires Comma-separated list of dictionaries to process Options:
+ --threads=THREADS Number of parallel threads (default: 1)
+ --overwrite Overwrite existing tables
+ -v|vv|vvv Increase verbosity
 ```
 
-## Verbosity Levels
-
-Toutes les commandes supportent les niveaux de verbosité :
+## Verbosity Levels Toutes les commandes supportent les niveaux de verbosité :
 
 | Flag | Niveau | Output |
 |------|--------|--------|
@@ -91,13 +83,11 @@ Toutes les commandes supportent les niveaux de verbosité :
 ```bash
 # Mode debug complet
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT \
-  -vvv
+ dictionnaires=EVAL_DICT \
+ -vvv
 ```
 
-## Variables d'Environnement
-
-Les commandes CLI utilisent les variables du fichier `.env` :
+## Variables d'Environnement Les commandes CLI utilisent les variables du fichier `.env` :
 
 ```bash
 # Database
@@ -126,12 +116,12 @@ docker-compose exec csweb php bin/console csweb:check-database-drivers --test-co
 ```bash
 # Breakout simple
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT
+ dictionnaires=EVAL_DICT
 
 # Breakout multiple avec threads
 docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
-  dictionnaires=EVAL_DICT,KAIROS_DICT \
-  --threads=5
+ dictionnaires=EVAL_DICT,KAIROS_DICT \
+ --threads=5
 ```
 
 ### 3. Vider Cache
@@ -156,9 +146,7 @@ docker-compose exec csweb php bin/console list
 
 ## Logs
 
-### Logs des Commandes
-
-Les commandes écrivent dans les logs Symfony :
+### Logs des Commandes Les commandes écrivent dans les logs Symfony :
 
 ```bash
 # Voir logs en temps réel
@@ -168,9 +156,7 @@ docker-compose exec csweb tail -f var/logs/dev.log
 docker-compose exec csweb grep "process-cases" var/logs/dev.log
 ```
 
-### Niveaux de Log
-
-Configurable dans `.env` :
+### Niveaux de Log Configurable dans `.env` :
 
 ```bash
 # Global
@@ -196,19 +182,14 @@ crontab -e
 
 ```bash
 #!/bin/bash
-# breakout_all.sh - Breakout tous les dictionnaires
+# breakout_all.sh - Breakout tous les dictionnaires DICTS=("EVAL_DICT" "KAIROS_DICT" "CENSUS_DICT")
 
-DICTS=("EVAL_DICT" "KAIROS_DICT" "CENSUS_DICT")
-
-for DICT in "${DICTS[@]}"; do
-  echo "Processing $DICT..."
-  docker-compose exec -T csweb php bin/console csweb:process-cases-by-dict \
-    dictionnaires=$DICT \
-    --threads=3 \
-    -vvv
-done
-
-echo "All dictionaries processed!"
+for DICT in "${DICTS[@]}"; do echo "Processing $DICT..."
+ docker-compose exec -T csweb php bin/console csweb:process-cases-by-dict \
+ dictionnaires=$DICT \
+ --threads=3 \
+ -vvv
+done echo "All dictionaries processed!"
 ```
 
 ## Troubleshooting

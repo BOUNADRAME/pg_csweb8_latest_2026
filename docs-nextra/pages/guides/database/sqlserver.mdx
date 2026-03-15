@@ -1,0 +1,234 @@
+# SQL Server pour CSWeb
+
+SQL Server peut être utilisé pour le breakout dans un écosystème Microsoft.
+
+import { Callout } from '../../../components/Callout'
+
+<Callout type="warning">
+**Architecture ARM non supportée** : SQL Server fonctionne uniquement sur x86_64 (pas Apple M1/M2).
+</Callout>
+
+## Quick Start
+
+```bash
+# .env
+BREAKOUT_DB_TYPE=sqlserver
+SQLSERVER_HOST=sqlserver
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=CSWeb_Analytics
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=YourStrong!Passw0rd
+```
+
+```bash
+docker-compose --profile local-sqlserver up -d
+```
+
+## Configuration
+
+### Variables d'Environnement
+
+| Variable | Description | Défaut |
+|----------|-------------|--------|
+| `SQLSERVER_HOST` | Hostname SQL Server | `sqlserver` |
+| `SQLSERVER_PORT` | Port | `1433` |
+| `SQLSERVER_DATABASE` | Nom base | `CSWeb_Analytics` |
+| `SQLSERVER_USER` | Utilisateur | `sa` |
+| `SQLSERVER_PASSWORD` | Mot de passe | (requis, min 8 chars) |
+
+**Exigences mot de passe** : Au moins 8 caractères avec majuscules, minuscules, chiffres et caractères spéciaux.
+
+### Docker Compose
+
+```yaml
+sqlserver:
+  image: mcr.microsoft.com/mssql/server:2019-latest
+  profiles: ["local-sqlserver"]
+  environment:
+    - ACCEPT_EULA=Y
+    - SA_PASSWORD=${SQLSERVER_PASSWORD}
+    - MSSQL_PID=Express
+  ports:
+    - "1433:1433"
+```
+
+## Installation Driver
+
+### Linux (Ubuntu/Debian)
+
+```bash
+# Microsoft ODBC Driver 18
+curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
+curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list
+
+apt-get update
+ACCEPT_EULA=Y apt-get install -y msodbcsql18
+
+# Extension PHP
+pecl install sqlsrv pdo_sqlsrv
+echo "extension=pdo_sqlsrv.so" > /etc/php/8.1/cli/conf.d/30-pdo_sqlsrv.ini
+```
+
+### Vérification
+
+```bash
+php -m | grep pdo_sqlsrv
+# pdo_sqlsrv
+# sqlsrv
+```
+
+## Test Connexion
+
+### CLI sqlcmd
+
+```bash
+docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd \
+  -S localhost \
+  -U sa \
+  -P 'YourStrong!Passw0rd'
+```
+
+### Vérification Driver PHP
+
+```bash
+php bin/console csweb:check-database-drivers
+# ✅ pdo_sqlsrv : Available
+```
+
+## Breakout vers SQL Server
+
+### Commande
+
+```bash
+php bin/console csweb:process-cases-by-dict EVAL_DICT
+```
+
+### Tables Créées
+
+```sql
+-- Liste des tables
+SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES;
+
+-- Exemple
+eval_cases
+eval_producteurs
+eval_observations
+```
+
+### Query Exemple
+
+```sql
+-- Compter cases
+SELECT COUNT(*) FROM eval_cases;
+
+-- Cases par statut
+SELECT verified, COUNT(*)
+FROM eval_cases
+GROUP BY verified;
+```
+
+## Azure SQL Database
+
+### Connection String
+
+```bash
+SQLSERVER_HOST=myserver.database.windows.net
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=CSWeb_Analytics
+SQLSERVER_USER=azureuser@myserver
+SQLSERVER_PASSWORD=YourAzurePassword
+```
+
+### Firewall
+
+Ajouter IP client dans Azure Portal :
+- SQL databases → Networking → Firewall rules
+- Add client IP
+
+## Performance
+
+### Indexes
+
+```sql
+-- Index sur guid
+CREATE INDEX idx_cases_guid ON eval_cases(guid);
+
+-- Index sur dates
+CREATE INDEX idx_cases_modified ON eval_cases(modified_date);
+```
+
+### Statistiques
+
+```sql
+-- Mettre à jour statistiques
+UPDATE STATISTICS eval_cases;
+```
+
+## Troubleshooting
+
+### Login Failed for User 'sa'
+
+Vérifier mot de passe respecte exigences :
+
+```bash
+# Minimum 8 caractères : majuscules, minuscules, chiffres, spéciaux
+SQLSERVER_PASSWORD='MyStrong@Pass123'
+```
+
+### Cannot Connect
+
+```bash
+# Vérifier service
+docker-compose ps sqlserver
+
+# Logs
+docker-compose logs sqlserver
+
+# Test connexion
+telnet localhost 1433
+```
+
+### Driver Not Found
+
+```bash
+# Vérifier ODBC installé
+odbcinst -q -d
+# [ODBC Driver 18 for SQL Server]
+
+# Réinstaller si absent
+ACCEPT_EULA=Y apt-get install --reinstall msodbcsql18
+```
+
+### SSL Certificate Error
+
+Si erreur SSL :
+
+```bash
+# Désactiver vérification SSL (dev uniquement)
+# Connection string : TrustServerCertificate=yes
+```
+
+## Backup & Restore
+
+### Backup
+
+```bash
+docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong!Passw0rd' \
+  -Q "BACKUP DATABASE [CSWeb_Analytics] TO DISK = N'/var/opt/mssql/backup.bak'"
+```
+
+### Restore
+
+```bash
+docker-compose exec sqlserver /opt/mssql-tools/bin/sqlcmd \
+  -S localhost -U sa -P 'YourStrong!Passw0rd' \
+  -Q "RESTORE DATABASE [CSWeb_Analytics] FROM DISK = N'/var/opt/mssql/backup.bak'"
+```
+
+## Ressources
+
+- [Multi-DB Configuration](/guides/database/multi-db)
+- [Migration vers PostgreSQL](/guides/database/migration)
+- [Drivers Installation](/reference/config/drivers)
+- [Docker Compose Config](/reference/config/docker-compose)
