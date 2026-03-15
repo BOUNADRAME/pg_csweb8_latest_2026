@@ -1,0 +1,596 @@
+# Docker Développement
+
+import { Callout, Tabs } from 'nextra/components'
+
+Guide de déploiement Docker pour **environnement de développement** (local).
+
+<Callout type="info">
+**Pour production :** Voir [Docker Production](/guides/deployment/docker-prod)
+</Callout>
+
+## Vue d'Ensemble
+
+CSWeb Community Platform fournit une configuration Docker Compose complète pour le développement :
+
+- ✅ **CSWeb Application** (PHP 8.1 + Apache)
+- ✅ **PostgreSQL 16** (breakout analytics - par défaut)
+- ✅ **MySQL 8.0** (métadonnées CSWeb)
+- ✅ **phpMyAdmin** (interface MySQL)
+- ✅ **pgAdmin** (interface PostgreSQL)
+- ✅ **Volumes persistants**
+- ✅ **Hot reload** (code changes)
+
+## Architecture
+
+```
+┌────────────────────────────────────────────────────────────┐
+│                    Docker Compose Stack                     │
+├────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────┐   ┌──────────────┐   ┌────────────────┐ │
+│  │   CSWeb     │───│    MySQL     │   │   PostgreSQL   │ │
+│  │  (Apache)   │   │  (Metadata)  │   │   (Analytics)  │ │
+│  │   :8080     │   │    :3306     │   │     :5432      │ │
+│  └─────────────┘   └──────────────┘   └────────────────┘ │
+│         │                  │                    │          │
+│         │                  │                    │          │
+│  ┌─────────────────────────────────────────────────────┐  │
+│  │            csweb-network (bridge)                   │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─────────────┐                    ┌────────────────┐    │
+│  │ phpMyAdmin  │                    │    pgAdmin     │    │
+│  │   :8081     │                    │     :8082      │    │
+│  └─────────────┘                    └────────────────┘    │
+│                                                             │
+└────────────────────────────────────────────────────────────┘
+
+Volumes Persistants:
+├── csweb_files      (fichiers uploadés)
+├── csweb_logs       (logs application)
+├── mysql_data       (données MySQL)
+├── postgres_data    (données PostgreSQL)
+└── pgadmin_data     (config pgAdmin)
+```
+
+## Prérequis
+
+### Logiciels
+
+| Composant | Version Minimale | Recommandé |
+|-----------|------------------|------------|
+| **Docker** | 20.10+ | Latest |
+| **Docker Compose** | 2.0+ | Latest |
+| **Git** | 2.0+ | Latest |
+
+### Matériel
+
+| Ressource | Minimum | Recommandé |
+|-----------|---------|------------|
+| **RAM** | 4 GB | 8 GB |
+| **Disque** | 10 GB | 20 GB |
+| **CPU** | 2 cores | 4 cores |
+
+### Installation Docker
+
+<Tabs items={['Ubuntu/Debian', 'macOS', 'Windows']}>
+  <Tabs.Tab>
+```bash
+# Installation script officiel
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Ajouter user au groupe docker
+sudo usermod -aG docker $USER
+newgrp docker
+
+# Vérifier
+docker --version
+docker-compose --version
+```
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+```bash
+# Via Homebrew
+brew install --cask docker
+
+# Lancer Docker Desktop
+open /Applications/Docker.app
+
+# Vérifier
+docker --version
+docker-compose --version
+```
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+**Docker Desktop pour Windows :**
+
+1. Télécharger : [https://www.docker.com/products/docker-desktop/](https://www.docker.com/products/docker-desktop/)
+2. Installer avec WSL2 backend
+3. Redémarrer Windows
+4. Vérifier dans PowerShell :
+```powershell
+docker --version
+docker-compose --version
+```
+  </Tabs.Tab>
+</Tabs>
+
+---
+
+## Installation Rapide
+
+### Méthode 1: Script Automatique (Recommandé)
+
+```bash
+# Clone repository
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+
+# Lancer installation wizard
+chmod +x install.sh
+./install.sh
+```
+
+**Le script va :**
+1. Générer `.env` avec mots de passe sécurisés
+2. Choisir SGBD pour breakout (PostgreSQL/MySQL/SQL Server)
+3. Démarrer containers Docker
+4. Afficher URLs d'accès
+
+**Temps estimé : 5 minutes**
+
+### Méthode 2: Manuel
+
+```bash
+# 1. Clone repository
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+
+# 2. Copier .env
+cp .env.example .env
+
+# 3. Générer mots de passe
+openssl rand -base64 24  # MYSQL_PASSWORD
+openssl rand -base64 24  # POSTGRES_PASSWORD
+openssl rand -hex 32     # APP_SECRET
+
+# 4. Éditer .env avec vos mots de passe
+nano .env
+
+# 5. Démarrer containers
+docker-compose --profile local-postgres up -d
+
+# 6. Vérifier status
+docker-compose ps
+```
+
+---
+
+## Configuration .env
+
+### Variables Essentielles
+
+```bash
+# Application
+APP_ENV=dev                      # dev pour développement
+APP_DEBUG=true                   # Active debug logs
+APP_TIMEZONE=UTC
+APP_SECRET=<GENERER_ICI>
+CSWEB_PORT=8080
+
+# Breakout
+BREAKOUT_MODE=local
+BREAKOUT_DB_TYPE=postgresql      # postgresql|mysql|sqlserver
+
+# MySQL Metadata (FIXE)
+MYSQL_HOST=mysql
+MYSQL_PORT=3306
+MYSQL_DATABASE=csweb_metadata
+MYSQL_USER=csweb_user
+MYSQL_PASSWORD=<GENERER_ICI>
+MYSQL_ROOT_PASSWORD=<GENERER_ICI>
+
+# PostgreSQL Breakout
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=csweb_analytics
+POSTGRES_USER=csweb_analytics
+POSTGRES_PASSWORD=<GENERER_ICI>
+
+# Outils Dev
+PHPMYADMIN_PORT=8081
+PGADMIN_PORT=8082
+PGADMIN_EMAIL=admin@csweb.local
+PGADMIN_PASSWORD=admin123
+
+# Logging (verbose pour dev)
+CSWEB_LOG_LEVEL=debug
+CSWEB_PROCESS_CASES_LOG_LEVEL=debug
+```
+
+---
+
+## Démarrage
+
+### Démarrer Tous les Services
+
+```bash
+# Démarrer stack complète (avec outils dev)
+docker-compose --profile local-postgres --profile dev up -d
+
+# Vérifier status
+docker-compose ps
+```
+
+**Output attendu :**
+```
+NAME              STATUS    PORTS
+csweb             running   0.0.0.0:8080->80/tcp
+mysql             running   3306/tcp
+postgres          running   5432/tcp
+phpmyadmin        running   0.0.0.0:8081->80/tcp
+pgadmin           running   0.0.0.0:8082->80/tcp
+```
+
+### Démarrer Sans Outils Dev
+
+```bash
+# Sans phpMyAdmin ni pgAdmin
+docker-compose --profile local-postgres up -d
+```
+
+### Choisir SGBD Breakout
+
+<Tabs items={['PostgreSQL', 'MySQL', 'SQL Server']}>
+  <Tabs.Tab>
+```bash
+# .env
+BREAKOUT_DB_TYPE=postgresql
+
+# Démarrer
+docker-compose --profile local-postgres up -d
+```
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+```bash
+# .env
+BREAKOUT_DB_TYPE=mysql
+
+# Démarrer
+docker-compose --profile local-mysql up -d
+```
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+```bash
+# .env
+BREAKOUT_DB_TYPE=sqlserver
+
+# Démarrer
+docker-compose --profile local-sqlserver up -d
+```
+  </Tabs.Tab>
+</Tabs>
+
+---
+
+## Accès aux Services
+
+### CSWeb Application
+
+- **URL** : http://localhost:8080
+- **Setup** : http://localhost:8080/setup/
+- **API** : http://localhost:8080/api/
+
+**Premier login (après setup.php) :**
+- Username : `admin`
+- Password : `admin123` (⚠️ à changer)
+
+### phpMyAdmin (MySQL)
+
+- **URL** : http://localhost:8081
+- **Server** : `mysql`
+- **Username** : `root`
+- **Password** : Voir `.env` → `MYSQL_ROOT_PASSWORD`
+
+**Accès base metadata :**
+- Database : `csweb_metadata`
+- Tables : `cspro_dictionaries`, `cspro_users`, etc.
+
+### pgAdmin (PostgreSQL)
+
+- **URL** : http://localhost:8082
+- **Email** : `admin@csweb.local`
+- **Password** : `admin123`
+
+**Ajouter serveur PostgreSQL :**
+1. Servers → Create → Server
+2. **General Tab** :
+   - Name : `CSWeb Analytics`
+3. **Connection Tab** :
+   - Host : `postgres`
+   - Port : `5432`
+   - Database : `csweb_analytics`
+   - Username : `csweb_analytics`
+   - Password : Voir `.env` → `POSTGRES_PASSWORD`
+4. Save
+
+---
+
+## Commandes Utiles
+
+### Gestion Containers
+
+```bash
+# Démarrer
+docker-compose up -d
+
+# Arrêter
+docker-compose down
+
+# Redémarrer
+docker-compose restart
+
+# Voir logs
+docker-compose logs -f
+
+# Logs d'un service spécifique
+docker-compose logs -f csweb
+docker-compose logs -f postgres
+
+# Status containers
+docker-compose ps
+
+# Accéder au shell d'un container
+docker-compose exec csweb bash
+docker-compose exec postgres psql -U csweb_analytics csweb_analytics
+```
+
+### Rebuild Images
+
+```bash
+# Rebuild après modification Dockerfile
+docker-compose build --no-cache
+
+# Rebuild et redémarrer
+docker-compose up -d --build
+```
+
+### Nettoyer
+
+```bash
+# Arrêter et supprimer containers (SANS supprimer volumes)
+docker-compose down
+
+# Arrêter et supprimer containers + volumes (⚠️ PERTE DONNÉES)
+docker-compose down -v
+
+# Nettoyer images inutilisées
+docker system prune -a
+```
+
+---
+
+## Volumes Persistants
+
+### Liste des Volumes
+
+```bash
+# Lister volumes
+docker volume ls | grep csweb
+
+# Inspecter volume
+docker volume inspect pg_csweb8_latest_2026_postgres_data
+```
+
+**Volumes créés :**
+
+| Volume | Montage | Contenu |
+|--------|---------|---------|
+| `csweb_files` | `/var/www/html/files` | Fichiers uploadés (photos, docs) |
+| `csweb_logs` | `/var/www/html/var/logs` | Logs application |
+| `mysql_data` | `/var/lib/mysql` | Base MySQL metadata |
+| `postgres_data` | `/var/lib/postgresql/data` | Base PostgreSQL analytics |
+| `pgadmin_data` | `/var/lib/pgadmin` | Config pgAdmin |
+
+### Backup Volumes
+
+```bash
+# Backup PostgreSQL data
+docker run --rm \
+  -v pg_csweb8_latest_2026_postgres_data:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/postgres_backup.tar.gz /data
+
+# Backup MySQL data
+docker run --rm \
+  -v pg_csweb8_latest_2026_mysql_data:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/mysql_backup.tar.gz /data
+```
+
+### Restore Volumes
+
+```bash
+# Restore PostgreSQL
+docker run --rm \
+  -v pg_csweb8_latest_2026_postgres_data:/data \
+  -v $(pwd):/backup \
+  ubuntu tar xzf /backup/postgres_backup.tar.gz -C /
+```
+
+---
+
+## Hot Reload (Code Changes)
+
+### Code PHP
+
+**Modifications automatiquement détectées :**
+```bash
+# Éditer code PHP
+nano src/Controller/MyController.php
+
+# Sauvegarder
+# ✅ Changement immédiat (pas de rebuild nécessaire)
+
+# Rafraîchir navigateur pour voir changement
+```
+
+### Code Symfony
+
+**Après modification config/routes :**
+```bash
+# Vider cache Symfony
+docker-compose exec csweb php bin/console cache:clear
+```
+
+### Dockerfile/docker-compose.yml
+
+**Modifications nécessitent rebuild :**
+```bash
+# Rebuild après modification Dockerfile
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+---
+
+## Debug
+
+### Voir Logs en Temps Réel
+
+```bash
+# Tous les containers
+docker-compose logs -f
+
+# Container spécifique
+docker-compose logs -f csweb
+
+# Filtrer par niveau
+docker-compose logs csweb | grep ERROR
+```
+
+### Accéder au Shell
+
+```bash
+# Shell container CSWeb
+docker-compose exec csweb bash
+
+# Vérifier extensions PHP
+php -m | grep pdo
+
+# Tester connexion DB
+php bin/console csweb:check-database-drivers --test-connections
+
+# Exit
+exit
+```
+
+### Inspecter Base de Données
+
+<Tabs items={['PostgreSQL', 'MySQL']}>
+  <Tabs.Tab>
+```bash
+# Accéder à psql
+docker-compose exec postgres psql -U csweb_analytics csweb_analytics
+
+# Lister tables
+\dt
+
+# Requête
+SELECT COUNT(*) FROM eval_cases;
+
+# Quitter
+\q
+```
+  </Tabs.Tab>
+
+  <Tabs.Tab>
+```bash
+# Accéder à mysql
+docker-compose exec mysql mysql -u csweb_user -p csweb_metadata
+
+# Lister tables
+SHOW TABLES;
+
+# Requête
+SELECT COUNT(*) FROM cspro_dictionaries;
+
+# Quitter
+exit
+```
+  </Tabs.Tab>
+</Tabs>
+
+---
+
+## Troubleshooting
+
+### Port 8080 Déjà Utilisé
+
+**Erreur :**
+```
+Error: port 8080 is already allocated
+```
+
+**Solution :**
+```bash
+# Changer port dans .env
+CSWEB_PORT=9090
+
+# Redémarrer
+docker-compose down
+docker-compose up -d
+
+# Accès : http://localhost:9090
+```
+
+### Container Exits Immediately
+
+**Erreur :**
+```
+docker-compose ps
+# Status: Exit 1
+```
+
+**Solution :**
+```bash
+# Voir logs erreur
+docker-compose logs csweb
+
+# Causes courantes :
+# - Syntax error .env
+# - Variable manquante
+# - Permissions fichiers
+```
+
+### Permission Denied (Volumes)
+
+**Erreur :**
+```
+mkdir: cannot create directory '/var/www/html/files': Permission denied
+```
+
+**Solution :**
+```bash
+# Corriger permissions
+docker-compose exec csweb chown -R www-data:www-data /var/www/html
+```
+
+---
+
+## Prochaines Étapes
+
+1. **Setup Initial** : [Getting Started - Installation](/getting-started/installation)
+2. **Premier Breakout** : [Getting Started - First Breakout](/getting-started/first-breakout)
+3. **Production** : [Deployment - Docker Production](/guides/deployment/docker-prod)
+
+---
+
+**CSWeb Community Platform v2.0 - Docker Développement**
+Architecte : Bouna DRAME | [Portfolio](https://bounadrame.github.io)

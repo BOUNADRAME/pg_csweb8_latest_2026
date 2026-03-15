@@ -1,0 +1,264 @@
+# Migration depuis CSWeb Vanilla
+
+Guide de migration de **CSWeb vanilla** vers **CSWeb Community Platform v2.0**.
+
+## Compatibilité
+
+<div className="border-l-4 border-green-500 bg-green-50 dark:bg-green-950 p-6 my-8 rounded-r-lg">
+  <h3>✅ Migration 100% Compatible</h3>
+  <p>CSWeb Community Platform est <strong>100% rétrocompatible</strong> avec CSWeb vanilla.</p>
+  <p><strong>Garantie :</strong> Aucune perte de données. Migration bidirectionnelle possible.</p>
+</div>
+
+## Avant de Commencer
+
+### Évaluation
+
+| Question | Votre Réponse |
+|----------|---------------|
+| Version CSWeb vanilla actuelle ? | ______________ |
+| Nombre de dictionnaires ? | ______________ |
+| Nombre de questionnaires ? | ______________ |
+| Taille base MySQL metadata ? | ______________ |
+| Infrastructure actuelle ? | ______________ |
+
+### Prérequis
+
+- ✅ Accès root serveur CSWeb vanilla
+- ✅ Backup complet de la base MySQL
+- ✅ Serveur destination avec Docker installé
+- ✅ Temps de downtime accepté (1-4h selon volume)
+
+## Procédure de Migration
+
+### Étape 1: Backup CSWeb Vanilla
+
+```bash
+# Sur serveur CSWeb vanilla
+
+# 1. Backup base MySQL metadata
+mysqldump -u root -p csweb_metadata > backup_vanilla_metadata.sql
+
+# 2. Backup fichiers uploadés
+tar -czf backup_vanilla_files.tar.gz /var/www/html/files/
+
+# 3. Copier vers serveur destination
+scp backup_vanilla_metadata.sql user@new-server:/tmp/
+scp backup_vanilla_files.tar.gz user@new-server:/tmp/
+```
+
+### Étape 2: Installer CSWeb Community
+
+```bash
+# Sur nouveau serveur
+
+# Clone repository
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+
+# Installation
+./install.sh
+# Choisir: PostgreSQL (pour breakout)
+```
+
+### Étape 3: Restore Metadata
+
+```bash
+# Arrêter containers
+docker-compose down
+
+# Restore MySQL metadata
+docker-compose up -d mysql
+sleep 10  # Attendre démarrage MySQL
+
+docker-compose exec -T mysql mysql -u root -p csweb_metadata < /tmp/backup_vanilla_metadata.sql
+
+# Vérifier
+docker-compose exec mysql mysql -u root -p csweb_metadata
+
+SHOW TABLES;  # Doit afficher tables CSPro
+SELECT COUNT(*) FROM cspro_dictionaries;
+```
+
+### Étape 4: Restore Fichiers
+
+```bash
+# Extraire fichiers
+tar -xzf /tmp/backup_vanilla_files.tar.gz -C files/
+
+# Corriger permissions
+docker-compose exec csweb chown -R www-data:www-data /var/www/html/files
+```
+
+### Étape 5: Redémarrer CSWeb Community
+
+```bash
+# Démarrer stack complète
+docker-compose --profile local-postgres up -d
+
+# Vérifier
+docker-compose ps
+docker-compose logs csweb
+```
+
+### Étape 6: Vérification
+
+**Accéder à CSWeb :** http://new-server:8080
+
+**Vérifier :**
+- [ ] Login admin fonctionne (même credentials vanilla)
+- [ ] Dictionnaires visibles (Administration → Dictionaries)
+- [ ] Utilisateurs visibles (Administration → Users)
+- [ ] Fichiers accessibles
+
+### Étape 7: Breakout Sélectif (Nouveau)
+
+```bash
+# Lister dictionnaires
+docker-compose exec mysql mysql -u csweb_user -p csweb_metadata
+
+SELECT name, label FROM cspro_dictionaries;
+
+# Breakout vers PostgreSQL
+docker-compose exec csweb php bin/console csweb:process-cases-by-dict \
+  dictionnaires=SURVEY_DICT,CENSUS_DICT \
+  --threads=5 \
+  -vvv
+```
+
+**Résultat :** Tables PostgreSQL créées (`survey_cases`, `census_cases`, etc.)
+
+### Étape 8: Tests Fonctionnels
+
+- [ ] Upload nouveau questionnaire
+- [ ] Synchronisation fonctionne
+- [ ] API OAuth fonctionne
+- [ ] Breakout sélectif fonctionne
+- [ ] Requêtes SQL sur PostgreSQL fonctionnent
+
+## Migration Scénarios
+
+### Scénario 1: Migration Simple (< 100k questionnaires)
+
+**Temps estimé : 1-2 heures**
+
+1. Backup vanilla
+2. Installer CSWeb Community
+3. Restore metadata + fichiers
+4. Breakout sélectif
+5. Tests
+
+### Scénario 2: Migration RGPH (Millions de questionnaires)
+
+**Temps estimé : 4-8 heures (+ temps breakout)**
+
+**Particularités :**
+- Planifier downtime (weekend/nuit)
+- Augmenter threads breakout (10+)
+- Utiliser SQL Server distant si disponible
+- Backup incrémentaux pendant migration
+
+**Exemple RGPH5 Sénégal :**
+```bash
+# Migration metadata: 30 min
+# Breakout 3.2M cas: 6h (10 threads, SQL Server)
+# Total downtime: 7h
+```
+
+### Scénario 3: Migration Progressive (Coexistence temporaire)
+
+**Configuration :**
+- CSWeb vanilla : Production (lecture seule)
+- CSWeb Community : Test/validation (nouveau breakout)
+- Basculement après validation complète
+
+## Rollback (Retour Vanilla)
+
+### Si Migration Échoue
+
+```bash
+# 1. Arrêter CSWeb Community
+docker-compose down
+
+# 2. Restaurer CSWeb vanilla depuis backup
+# (sur ancien serveur ou nouveau)
+
+mysqldump < backup_vanilla_metadata.sql
+tar -xzf backup_vanilla_files.tar.gz
+
+# 3. Redémarrer CSWeb vanilla
+service apache2 restart
+```
+
+**Perte de données :** Uniquement données créées **après** backup (avant migration).
+
+## Migration Inverse (Community → Vanilla)
+
+**Possible mais déconseillé.**
+
+**Que garder :**
+- ✅ Base MySQL metadata (100% compatible)
+- ✅ Fichiers uploadés
+- ✅ Utilisateurs, dictionnaires, OAuth clients
+
+**Que perdre :**
+- ❌ Tables breakout PostgreSQL/SQL Server
+- ❌ Breakout sélectif (revenir au global)
+- ❌ Architecture flexible
+
+**Procédure :**
+1. Backup MySQL metadata depuis Community
+2. Restore sur CSWeb vanilla
+3. Re-breakout global vanilla
+
+## FAQ Migration
+
+### Les données vanilla sont-elles modifiées ?
+
+**Non.** CSWeb Community **lit** la base metadata vanilla sans modification structurelle.
+
+### Puis-je tester sans affecter la production ?
+
+**Oui.** Clone vanilla sur serveur test, puis migre le clone.
+
+### Combien de temps de downtime ?
+
+| Volume | Downtime Estimé |
+|--------|-----------------|
+| < 10k questionnaires | 30 min - 1h |
+| 10k-100k | 1-2h |
+| 100k-1M | 2-4h |
+| > 1M (RGPH) | 4-8h |
+
+**Inclut :** Backup + migration + breakout + tests.
+
+### Les URLs API changent-elles ?
+
+**Non.** API 100% compatible :
+- `POST /api/token`
+- `GET /api/dictionaries`
+- `GET /api/files/media/{filename}/content`
+
+### Les clients OAuth existants fonctionnent-ils ?
+
+**Oui.** Table `cspro_oauth_clients` préservée.
+
+## Support Migration
+
+**Besoin d'aide pour migration ?**
+
+1. **Documentation** : [Getting Started](/getting-started)
+2. **GitHub Issues** : [https://github.com/BOUNADRAME/pg_csweb8_latest_2026/issues](https://github.com/BOUNADRAME/pg_csweb8_latest_2026/issues)
+3. **Email** : Voir profil GitHub
+
+## Ressources
+
+- **Installation** : [Getting Started - Installation](/getting-started/installation)
+- **Breakout Sélectif** : [Guides - Breakout Sélectif](/guides/breakout/selective)
+- **Backup** : [Deployment - Backup & Restore](/guides/deployment/backup)
+- **Troubleshooting** : [Common Issues](/reference/troubleshooting/common-issues)
+
+---
+
+**CSWeb Community Platform v2.0 - Migration Guide**
+Architecte : Bouna DRAME | [Portfolio](https://bounadrame.github.io)
