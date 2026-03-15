@@ -1,0 +1,168 @@
+# Déploiement Remote
+
+Guide de déploiement avec **serveurs de bases de données distants**.
+
+## Concept
+
+Mode **Remote** = Container CSWeb local + Bases de données sur serveurs distants.
+
+**Use Case :** RGPH5 Sénégal
+- CSWeb : Container Docker local
+- MySQL metadata : Container local
+- SQL Server breakout : Serveur ANSD distant (172.16.0.50)
+
+## Configuration
+
+### .env Remote
+
+```bash
+# Mode
+BREAKOUT_MODE=remote
+
+# Type SGBD distant
+BREAKOUT_DB_TYPE=sqlserver
+
+# SQL Server DISTANT
+SQLSERVER_HOST=172.16.0.50      # IP serveur distant
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=RGPH5_Analytics
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=ProdPass!
+
+# MySQL Metadata LOCAL (container)
+MYSQL_HOST=mysql
+MYSQL_PORT=3306
+MYSQL_DATABASE=csweb_metadata
+MYSQL_USER=csweb_user
+MYSQL_PASSWORD=LocalPass!
+```
+
+## Démarrage
+
+```bash
+# Démarrer SEULEMENT CSWeb et MySQL (pas de DB breakout locale)
+docker-compose up -d
+
+# Vérifier connexion au serveur distant
+docker-compose exec csweb php bin/console csweb:check-database-drivers --test-connections
+```
+
+**Output attendu :**
+```
+✅ SQL Server Breakout : Connected to 172.16.0.50:1433/RGPH5_Analytics
+```
+
+## Prérequis Réseau
+
+### 1. Connectivité
+
+```bash
+# Tester ping
+ping 172.16.0.50
+
+# Tester port SQL Server
+telnet 172.16.0.50 1433
+```
+
+### 2. Firewall Serveur Distant
+
+**Sur serveur SQL Server :**
+```bash
+# Windows Firewall
+New-NetFirewallRule -DisplayName "SQL Server" -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow
+```
+
+**Sur serveur PostgreSQL :**
+```bash
+# Linux ufw
+sudo ufw allow from 192.168.1.0/24 to any port 5432
+```
+
+### 3. Configuration SGBD
+
+**PostgreSQL (`postgresql.conf`) :**
+```ini
+listen_addresses = '*'
+```
+
+**PostgreSQL (`pg_hba.conf`) :**
+```
+host all all 0.0.0.0/0 md5
+```
+
+**MySQL (`my.cnf`) :**
+```ini
+bind-address = 0.0.0.0
+```
+
+**SQL Server :**
+- SQL Server Configuration Manager
+- TCP/IP → Enabled
+- Redémarrer service
+
+## Exemples
+
+### RGPH5 Sénégal (Production Réelle)
+
+```bash
+BREAKOUT_MODE=remote
+BREAKOUT_DB_TYPE=sqlserver
+
+SQLSERVER_HOST=172.16.0.50
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=RGPH5_Analytics
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=<CONFIDENTIEL>
+```
+
+**Résultat :** 3.2M questionnaires traités en 6h.
+
+### INS avec PostgreSQL Remote
+
+```bash
+BREAKOUT_MODE=remote
+BREAKOUT_DB_TYPE=postgresql
+
+POSTGRES_HOST=192.168.1.100
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=census_analytics
+POSTGRES_USER=analytics_user
+POSTGRES_PASSWORD=SecurePass!
+```
+
+## Troubleshooting
+
+### Connection Refused
+
+**Symptôme :**
+```
+SQLSTATE[HY000] [2002] Connection refused
+```
+
+**Solutions :**
+1. Vérifier serveur démarré
+2. Vérifier firewall
+3. Vérifier configuration SGBD (listen_addresses)
+4. Vérifier VPN (si nécessaire)
+
+### Authentication Failed
+
+**Symptôme :**
+```
+SQLSTATE[28000] Invalid authorization
+```
+
+**Solutions :**
+1. Vérifier credentials
+2. Créer user avec host wildcard (`%`)
+3. Activer authentification SQL Server (pas seulement Windows)
+
+## Ressources
+
+- **Architecture** : [Architecture - Local vs Remote](/guides/architecture/local-vs-remote)
+- **Environment Variables** : [Config - Environment](/reference/config/environment)
+- **Troubleshooting** : [Common Issues](/reference/troubleshooting/common-issues)
+
+---
+
+**CSWeb Community Platform v2.0 - Remote Deployment**

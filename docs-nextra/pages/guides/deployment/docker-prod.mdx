@@ -1,0 +1,392 @@
+# Docker Production
+
+import { Callout } from 'nextra/components'
+
+Guide de déploiement Docker pour **environnement de production**.
+
+<Callout type="warning">
+**Production-ready** : Validé sur RGPH5 Sénégal (3.2M questionnaires)
+</Callout>
+
+## Différences Dev vs Prod
+
+| Aspect | Développement | Production |
+|--------|---------------|------------|
+| **APP_DEBUG** | `true` | `false` |
+| **APP_ENV** | `dev` | `prod` |
+| **Logs** | `debug` | `error` |
+| **phpMyAdmin** | Activé | **Désactivé** (risque sécurité) |
+| **pgAdmin** | Activé | **Désactivé** |
+| **SSL/TLS** | Non | **Oui** (obligatoire) |
+| **Firewall** | Ouvert | **Restreint** |
+| **Backups** | Manuels | **Automatisés** (daily) |
+| **Monitoring** | Non | **Oui** (Prometheus, Grafana) |
+
+---
+
+## Configuration Production
+
+### Fichier .env Production
+
+```bash
+# Application
+APP_ENV=prod
+APP_DEBUG=false                  # JAMAIS true en prod
+APP_TIMEZONE=Africa/Dakar
+APP_SECRET=<GENERER_UNIQUE_64_CHARS>
+CSWEB_PORT=8080
+
+# Breakout
+BREAKOUT_MODE=remote             # Souvent remote en prod
+BREAKOUT_DB_TYPE=sqlserver       # Exemple RGPH5
+
+# MySQL Metadata
+MYSQL_HOST=mysql
+MYSQL_PORT=3306
+MYSQL_DATABASE=csweb_prod
+MYSQL_USER=csweb_prod
+MYSQL_PASSWORD=<TRES_FORT>
+MYSQL_ROOT_PASSWORD=<TRES_FORT>
+
+# SQL Server Remote (exemple RGPH5)
+SQLSERVER_HOST=172.16.0.50
+SQLSERVER_PORT=1433
+SQLSERVER_DATABASE=RGPH5_Analytics
+SQLSERVER_USER=sa
+SQLSERVER_PASSWORD=<TRES_FORT>
+
+# Sécurité
+JWT_SECRET=<GENERER_UNIQUE_64_CHARS>
+JWT_EXPIRATION=3600000           # 1h (plus sécurisé que 24h)
+FILES_FOLDER=/var/www/html/files
+API_URL=https://csweb.example.org/api/
+
+# Logs (minimal en prod)
+CSWEB_LOG_LEVEL=error
+CSWEB_PROCESS_CASES_LOG_LEVEL=error
+MAX_EXECUTION_TIME=0             # Illimité pour breakout RGPH
+```
+
+### Générer Secrets Forts
+
+```bash
+# APP_SECRET (64 chars hex)
+openssl rand -hex 32
+
+# JWT_SECRET (64 chars base64)
+openssl rand -base64 48
+
+# Mots de passe DB (32 chars base64)
+openssl rand -base64 32
+```
+
+---
+
+## Déploiement
+
+### Étape 1: Préparer Serveur
+
+```bash
+# Installer Docker
+curl -fsSL https://get.docker.com | sh
+
+# Configurer firewall
+sudo ufw enable
+sudo ufw allow 22/tcp   # SSH
+sudo ufw allow 80/tcp   # HTTP
+sudo ufw allow 443/tcp  # HTTPS
+sudo ufw deny 8080/tcp  # Bloquer accès direct CSWeb
+
+# Créer user non-root
+sudo adduser csweb
+sudo usermod -aG docker csweb
+su - csweb
+```
+
+### Étape 2: Clone & Configuration
+
+```bash
+# Clone repository
+git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
+cd pg_csweb8_latest_2026
+
+# Copier .env
+cp .env.example .env
+
+# Éditer avec valeurs production
+nano .env
+
+# ⚠️ IMPORTANT: Vérifier secrets générés
+```
+
+### Étape 3: Démarrer
+
+```bash
+# Démarrer SANS outils dev
+docker-compose --profile local-postgres up -d
+
+# Vérifier
+docker-compose ps
+docker-compose logs
+```
+
+---
+
+## Reverse Proxy (Nginx + SSL)
+
+### Installation Nginx
+
+```bash
+# Installer Nginx
+sudo apt install nginx certbot python3-certbot-nginx -y
+```
+
+### Configuration Nginx
+
+Créer `/etc/nginx/sites-available/csweb` :
+
+```nginx
+server {
+    listen 80;
+    server_name csweb.example.org;
+
+    # Redirect HTTP → HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name csweb.example.org;
+
+    # SSL Configuration
+    ssl_certificate /etc/letsencrypt/live/csweb.example.org/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/csweb.example.org/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+
+    # Security Headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Proxy to Docker
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeouts
+        proxy_connect_timeout 600;
+        proxy_send_timeout 600;
+        proxy_read_timeout 600;
+        send_timeout 600;
+
+        # File upload size
+        client_max_body_size 100M;
+    }
+
+    # API rate limiting
+    location /api/ {
+        limit_req zone=api_limit burst=20;
+        proxy_pass http://localhost:8080;
+        # ... (même config proxy)
+    }
+}
+
+# Rate limiting zone
+limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+```
+
+### Activer Configuration
+
+```bash
+# Symlink
+sudo ln -s /etc/nginx/sites-available/csweb /etc/nginx/sites-enabled/
+
+# Tester config
+sudo nginx -t
+
+# Générer certificat SSL (Let's Encrypt)
+sudo certbot --nginx -d csweb.example.org
+
+# Redémarrer Nginx
+sudo systemctl restart nginx
+```
+
+**Accès sécurisé :** https://csweb.example.org
+
+---
+
+## Backups Automatisés
+
+### Script Backup
+
+Créer `/home/csweb/backup.sh` :
+
+```bash
+#!/bin/bash
+# Backup quotidien CSWeb
+
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups/csweb/$DATE"
+PROJECT_DIR="/home/csweb/pg_csweb8_latest_2026"
+
+mkdir -p $BACKUP_DIR
+
+cd $PROJECT_DIR
+
+echo "[$DATE] Starting backup..."
+
+# 1. Backup MySQL metadata
+docker-compose exec -T mysql mysqldump \
+  -u csweb_prod -p$MYSQL_PASSWORD csweb_prod \
+  > $BACKUP_DIR/metadata.sql
+
+# 2. Backup PostgreSQL analytics (si local)
+docker-compose exec -T postgres pg_dump \
+  -U csweb_analytics csweb_analytics \
+  > $BACKUP_DIR/analytics.sql
+
+# 3. Backup fichiers
+tar -czf $BACKUP_DIR/files.tar.gz files/
+
+# 4. Backup .env (sans mots de passe)
+grep -v "PASSWORD\|SECRET" .env > $BACKUP_DIR/.env.backup
+
+# 5. Compression finale
+cd /backups/csweb
+tar -czf csweb_backup_$DATE.tar.gz $DATE/
+rm -rf $DATE/
+
+echo "[$DATE] Backup completed: csweb_backup_$DATE.tar.gz"
+
+# 6. Nettoyer backups > 30 jours
+find /backups/csweb -name "csweb_backup_*.tar.gz" -mtime +30 -delete
+
+# 7. (Optionnel) Upload vers S3/cloud
+# aws s3 cp csweb_backup_$DATE.tar.gz s3://mybucket/backups/
+```
+
+### Automatiser (Cron)
+
+```bash
+# Rendre exécutable
+chmod +x /home/csweb/backup.sh
+
+# Ajouter au cron (tous les jours à 2h00 du matin)
+crontab -e
+
+# Ajouter ligne:
+0 2 * * * /home/csweb/backup.sh >> /var/log/csweb_backup.log 2>&1
+```
+
+---
+
+## Monitoring
+
+### Prometheus + Grafana (Optionnel)
+
+Ajouter à `docker-compose.yml` :
+
+```yaml
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=<FORT_PASSWORD>
+```
+
+**Accès Grafana :** http://SERVER_IP:3000
+
+---
+
+## Sécurité Production
+
+### Checklist Sécurité
+
+- [ ] `APP_DEBUG=false` (obligatoire)
+- [ ] Mots de passe forts (32+ chars)
+- [ ] SSL/TLS activé (Let's Encrypt)
+- [ ] Firewall configuré (ufw)
+- [ ] phpMyAdmin/pgAdmin **désactivés**
+- [ ] Backups automatisés (daily)
+- [ ] Monitoring actif
+- [ ] Changer `admin` password par défaut
+- [ ] JWT expiration courte (1h max)
+- [ ] Logs rotation configurée
+
+### Durcir MySQL
+
+```sql
+-- Se connecter
+docker-compose exec mysql mysql -u root -p
+
+-- Supprimer users anonymes
+DELETE FROM mysql.user WHERE User='';
+
+-- Supprimer test database
+DROP DATABASE IF EXISTS test;
+
+-- Restreindre root à localhost
+DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');
+
+-- Appliquer
+FLUSH PRIVILEGES;
+```
+
+---
+
+## Mise à Jour
+
+### Procédure de Mise à Jour
+
+```bash
+cd /home/csweb/pg_csweb8_latest_2026
+
+# 1. Backup avant mise à jour
+./backup.sh
+
+# 2. Pull dernière version
+git pull origin master
+
+# 3. Rebuild images
+docker-compose build --no-cache
+
+# 4. Redémarrer
+docker-compose down
+docker-compose up -d
+
+# 5. Vérifier
+docker-compose logs -f
+```
+
+---
+
+## Ressources
+
+- **Docker Dev** : [Deployment - Docker Développement](/guides/deployment/docker-dev)
+- **Remote Deployment** : [Deployment - Remote](/guides/deployment/remote)
+- **Backup** : [Deployment - Backup & Restore](/guides/deployment/backup)
+- **Troubleshooting** : [Common Issues](/reference/troubleshooting/common-issues)
+
+---
+
+**CSWeb Community Platform v2.0 - Production Deployment**
+Architecte : Bouna DRAME | [Portfolio](https://bounadrame.github.io)

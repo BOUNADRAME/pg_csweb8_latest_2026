@@ -1,0 +1,289 @@
+# Backup & Restore
+
+Guide de sauvegarde et restauration pour CSWeb Community Platform.
+
+## Stratégie de Backup
+
+### Que Sauvegarder ?
+
+| Élément | Importance | Fréquence Recommandée |
+|---------|------------|----------------------|
+| **MySQL Metadata** | 🔴 Critique | Daily |
+| **PostgreSQL Breakout** | 🟠 Important | Daily |
+| **Fichiers uploadés** | 🟠 Important | Daily |
+| **Volumes Docker** | 🟡 Utile | Weekly |
+| **.env** | 🔴 Critique | À chaque modification |
+| **Code custom** | 🟡 Utile | À chaque commit |
+
+## Backup Manuel
+
+### 1. MySQL Metadata
+
+```bash
+# Dump complet
+docker-compose exec mysql mysqldump \
+  -u csweb_user -p \
+  csweb_metadata > backup_metadata_$(date +%Y%m%d).sql
+
+# Dump avec structure uniquement (sans données)
+docker-compose exec mysql mysqldump \
+  -u csweb_user -p \
+  --no-data \
+  csweb_metadata > backup_metadata_structure.sql
+```
+
+### 2. PostgreSQL Breakout
+
+```bash
+# Dump complet
+docker-compose exec postgres pg_dump \
+  -U csweb_analytics \
+  csweb_analytics > backup_analytics_$(date +%Y%m%d).sql
+
+# Dump format custom (compressé)
+docker-compose exec postgres pg_dump \
+  -U csweb_analytics \
+  -Fc csweb_analytics > backup_analytics_$(date +%Y%m%d).dump
+```
+
+### 3. Fichiers Uploadés
+
+```bash
+# Tar.gz des fichiers
+tar -czf backup_files_$(date +%Y%m%d).tar.gz files/
+
+# Rsync vers serveur distant
+rsync -avz files/ user@backup-server:/backups/csweb/files/
+```
+
+### 4. Volumes Docker
+
+```bash
+# Backup volume PostgreSQL
+docker run --rm \
+  -v pg_csweb8_latest_2026_postgres_data:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/postgres_volume_$(date +%Y%m%d).tar.gz /data
+
+# Backup volume MySQL
+docker run --rm \
+  -v pg_csweb8_latest_2026_mysql_data:/data \
+  -v $(pwd):/backup \
+  ubuntu tar czf /backup/mysql_volume_$(date +%Y%m%d).tar.gz /data
+```
+
+## Backup Automatisé
+
+### Script Complet
+
+Créer `/home/csweb/backup.sh` :
+
+```bash
+#!/bin/bash
+# Backup automatisé CSWeb Community Platform
+
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups/csweb"
+PROJECT_DIR="/home/csweb/pg_csweb8_latest_2026"
+RETENTION_DAYS=30
+
+mkdir -p $BACKUP_DIR/$DATE
+
+cd $PROJECT_DIR
+
+echo "[$DATE] Starting backup..."
+
+# 1. MySQL metadata
+docker-compose exec -T mysql mysqldump \
+  -u csweb_user -p$MYSQL_PASSWORD \
+  csweb_metadata > $BACKUP_DIR/$DATE/metadata.sql
+
+# 2. PostgreSQL breakout
+docker-compose exec -T postgres pg_dump \
+  -U csweb_analytics \
+  -Fc csweb_analytics > $BACKUP_DIR/$DATE/analytics.dump
+
+# 3. Fichiers uploadés
+tar -czf $BACKUP_DIR/$DATE/files.tar.gz files/
+
+# 4. .env (sans secrets)
+grep -v "PASSWORD\|SECRET" .env > $BACKUP_DIR/$DATE/.env.backup
+
+# 5. Compression finale
+cd $BACKUP_DIR
+tar -czf csweb_backup_$DATE.tar.gz $DATE/
+rm -rf $DATE/
+
+# 6. Nettoyer vieux backups
+find $BACKUP_DIR -name "csweb_backup_*.tar.gz" -mtime +$RETENTION_DAYS -delete
+
+echo "[$DATE] Backup completed: csweb_backup_$DATE.tar.gz"
+```
+
+### Automatiser (Cron)
+
+```bash
+# Rendre exécutable
+chmod +x /home/csweb/backup.sh
+
+# Cron tous les jours à 2h00
+crontab -e
+
+# Ajouter:
+0 2 * * * /home/csweb/backup.sh >> /var/log/csweb_backup.log 2>&1
+```
+
+## Restore
+
+### 1. Restore MySQL Metadata
+
+```bash
+# Arrêter CSWeb
+docker-compose stop csweb
+
+# Restore
+docker-compose exec -T mysql mysql \
+  -u csweb_user -p$MYSQL_PASSWORD \
+  csweb_metadata < backup_metadata_20260315.sql
+
+# Redémarrer
+docker-compose start csweb
+```
+
+### 2. Restore PostgreSQL Breakout
+
+```bash
+# Format SQL
+docker-compose exec -T postgres psql \
+  -U csweb_analytics \
+  csweb_analytics < backup_analytics_20260315.sql
+
+# Format custom (.dump)
+docker-compose exec -T postgres pg_restore \
+  -U csweb_analytics \
+  -d csweb_analytics \
+  -Fc backup_analytics_20260315.dump
+```
+
+### 3. Restore Fichiers
+
+```bash
+# Extraire tar.gz
+tar -xzf backup_files_20260315.tar.gz -C files/
+
+# Corriger permissions
+docker-compose exec csweb chown -R www-data:www-data /var/www/html/files
+```
+
+### 4. Restore Complet
+
+```bash
+# Extraire backup complet
+tar -xzf csweb_backup_20260315_020000.tar.gz
+
+cd 20260315_020000/
+
+# Restore MySQL
+docker-compose exec -T mysql mysql -u csweb_user -p < metadata.sql
+
+# Restore PostgreSQL
+docker-compose exec -T postgres pg_restore -U csweb_analytics -d csweb_analytics -Fc analytics.dump
+
+# Restore fichiers
+tar -xzf files.tar.gz -C /path/to/project/files/
+
+# Restore .env (éditer manuellement pour re-ajouter secrets)
+cp .env.backup /path/to/project/.env
+nano /path/to/project/.env  # Ajouter PASSWORD, SECRET
+```
+
+## Backup vers Cloud (S3/Azure/GCP)
+
+### AWS S3
+
+```bash
+# Installer AWS CLI
+apt install awscli
+
+# Configurer
+aws configure
+
+# Upload backup
+aws s3 cp csweb_backup_$DATE.tar.gz \
+  s3://mybucket/backups/csweb/
+
+# Lifecycle policy (supprimer après 90 jours)
+aws s3api put-bucket-lifecycle-configuration \
+  --bucket mybucket \
+  --lifecycle-configuration file://lifecycle.json
+```
+
+**lifecycle.json :**
+```json
+{
+  "Rules": [
+    {
+      "Id": "DeleteOldBackups",
+      "Status": "Enabled",
+      "Prefix": "backups/csweb/",
+      "Expiration": {
+        "Days": 90
+      }
+    }
+  ]
+}
+```
+
+### Azure Blob Storage
+
+```bash
+# Installer Azure CLI
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+# Login
+az login
+
+# Upload
+az storage blob upload \
+  --account-name mystorageaccount \
+  --container-name backups \
+  --name csweb/csweb_backup_$DATE.tar.gz \
+  --file csweb_backup_$DATE.tar.gz
+```
+
+## Vérification Backup
+
+### Test Restore (Recommandé Monthly)
+
+```bash
+# 1. Créer environnement test
+mkdir /tmp/csweb_test
+cd /tmp/csweb_test
+
+# 2. Extraire backup
+tar -xzf /backups/csweb/csweb_backup_latest.tar.gz
+
+# 3. Restore dans containers test
+docker-compose -f docker-compose.test.yml up -d
+
+# 4. Restore data
+# ... (commandes restore ci-dessus)
+
+# 5. Vérifier
+curl http://localhost:9090/api/
+docker-compose exec csweb php bin/console csweb:check-database-drivers
+
+# 6. Nettoyer
+docker-compose down -v
+cd ..
+rm -rf /tmp/csweb_test
+```
+
+## Ressources
+
+- **Docker Production** : [Deployment - Docker Production](/guides/deployment/docker-prod)
+- **Troubleshooting** : [Common Issues](/reference/troubleshooting/common-issues)
+
+---
+
+**CSWeb Community Platform v2.0 - Backup & Restore**
