@@ -166,3 +166,152 @@ body.loading .spinner {
 .cspro-nav-item {
   white-space: normal !important;
 }
+
+/*--- Data Settings : Tabs --------------------------------------------------*/
+
+.cspro-tabs .nav-link {
+    font-size: .85rem;
+    color: #858796;
+    border: 1px solid transparent;
+    padding: .6rem 1rem;
+}
+.cspro-tabs .nav-link:hover {
+    color: #4e73df;
+}
+.cspro-tabs .nav-link.active {
+    font-weight: 600;
+    color: #4e73df;
+    border-bottom: 2px solid #4e73df;
+}
+.cspro-tabs .nav-link i {
+    margin-right: .3rem;
+}
+.cspro-tab-toolbar {
+    padding: .75rem 1rem .25rem;
+    text-align: right;
+}
+
+/*--- Breakout Logs : Master-Detail Sidebar ---------------------------------*/
+
+.cspro-logs-container {
+    min-height: 400px;
+}
+.cspro-logs-sidebar {
+    border-right: 1px solid #e3e6f0;
+    max-height: 500px;
+    overflow-y: auto;
+}
+.cspro-logs-dict-list .list-group-item {
+    padding: .45rem .75rem;
+    font-size: .85rem;
+    border-left: 3px solid transparent;
+    cursor: pointer;
+    transition: background-color .15s;
+}
+.cspro-logs-dict-list .list-group-item:hover {
+    background-color: #f8f9fc;
+}
+.cspro-logs-dict-list .list-group-item.active {
+    background-color: #4e73df;
+    border-color: #4e73df;
+    color: #fff;
+}
+.cspro-logs-dict-list .list-group-item.active .badge {
+    background-color: #fff;
+    color: #4e73df;
+}
+
+/*--- Breakout Logs : Pro Modal Log Viewer ----------------------------------*/
+
+.cspro-log-modal-dialog {
+    max-width: 90vw;
+    margin: 2vh auto;
+}
+.cspro-log-modal-content {
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.cspro-log-modal-content .modal-body {
+    flex: 1 1 auto;
+    overflow: hidden;
+    padding: 0;
+    position: relative;
+}
+.cspro-log-wrapper {
+    background: #1e1e1e;
+    overflow: auto;
+    height: 100%;
+}
+.cspro-log-table {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 12px;
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0;
+}
+.cspro-log-table td {
+    padding: 0 8px;
+    vertical-align: top;
+    border: none;
+}
+.cspro-log-line-num {
+    color: #858585;
+    text-align: right;
+    user-select: none;
+    -webkit-user-select: none;
+    background: #252526;
+    border-right: 1px solid #3c3c3c;
+    width: 1%;
+    white-space: nowrap;
+    padding-right: 12px !important;
+}
+.cspro-log-line-text {
+    color: #d4d4d4;
+}
+.cspro-log-line-text pre {
+    margin: 0;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background: transparent;
+    border: none;
+    padding: 0;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-x: visible;
+}
+.cspro-log-wrap .cspro-log-line-text pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+.cspro-log-loading {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(30,30,30,.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+.cspro-log-meta .badge {
+    font-size: .75rem;
+    font-weight: 500;
+}
+
+/*--- Breakout Logs : Responsive --------------------------------------------*/
+
+@media (max-width: 767.98px) {
+    .cspro-logs-sidebar {
+        border-right: none;
+        border-bottom: 1px solid #e3e6f0;
+        max-height: 200px;
+    }
+    .cspro-log-modal-dialog {
+        max-width: 98vw;
+        margin: 1vh auto;
+    }
+    .cspro-log-modal-content {
+        height: 95vh;
+    }
+}

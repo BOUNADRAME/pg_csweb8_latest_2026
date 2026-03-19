@@ -52,6 +52,13 @@ else
     echo "[CSWeb] config.php not found, skipping cache clear (run /setup first)."
 fi
 
+# Start cron daemon for breakout scheduler
+if [ -f /etc/cron.d/csweb-scheduler ]; then
+    echo "[CSWeb] Starting cron daemon for breakout scheduler..."
+    cron
+    echo "[CSWeb] Cron daemon started."
+fi
+
 echo "[CSWeb] Initialization complete. Starting Apache..."
 
 # Execute the original CMD (apache2-foreground)

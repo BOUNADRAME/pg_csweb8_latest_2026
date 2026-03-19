@@ -23,7 +23,7 @@ use const E_USER_DEPRECATED;
 class ArrayType extends Type
 {
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getSQLDeclaration(array $column, AbstractPlatform $platform)
     {
@@ -31,16 +31,15 @@ class ArrayType extends Type
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function convertToDatabaseValue($value, AbstractPlatform $platform)
     {
-        // @todo 3.0 - $value === null check to save real NULL in database
         return serialize($value);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function convertToPHPValue($value, AbstractPlatform $platform)
     {
@@ -66,7 +65,7 @@ class ArrayType extends Type
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function getName()
     {
@@ -74,7 +73,7 @@ class ArrayType extends Type
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      *
      * @deprecated
      */

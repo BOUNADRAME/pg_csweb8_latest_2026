@@ -21,6 +21,26 @@ docker compose exec csweb php bin/console csweb:process-cases-by-dict \
 
 ---
 
+### csweb:scheduler-run Exécuter les breakouts planifiés via le Web Scheduler.
+
+**Syntax :**
+```bash
+php bin/console csweb:scheduler-run [--env=ENV]
+```
+
+**Documentation :** [ scheduler-run](/reference/cli/scheduler-run)
+
+**Exemple :**
+```bash
+# Test manuel
+docker compose exec csweb php bin/console csweb:scheduler-run --env=prod -vvv
+
+# Crontab (production)
+* * * * * docker compose exec -T csweb php bin/console csweb:scheduler-run --env=prod
+```
+
+---
+
 ### csweb:check-database-drivers Vérifier drivers de base de données disponibles.
 
 **Syntax :**
@@ -211,6 +231,9 @@ php bin/console csweb:process-cases-by-dict \
  dictionnaires=EVAL_DICT \
  --overwrite \
  -vvv
+
+# Exécuter schedules planifiés (Web Scheduler)
+php bin/console csweb:scheduler-run --env=prod
 ```
 
 ### Debug & Développement
@@ -329,6 +352,7 @@ csweb cache:clear
 
 - **CLI Overview** : [CLI - Vue d'Ensemble](/reference/cli/overview)
 - **process-cases** : [CLI - process-cases-by-dict](/reference/cli/process-cases)
+- **scheduler-run** : [CLI - scheduler-run](/reference/cli/scheduler-run)
 - **check-drivers** : [CLI - check-database-drivers](/reference/cli/check-drivers)
 - **Symfony Console** : [Symfony Documentation](https://symfony.com/doc/current/console.html)
 

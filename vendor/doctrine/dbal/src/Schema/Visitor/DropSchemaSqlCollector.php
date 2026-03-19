@@ -38,15 +38,15 @@ class DropSchemaSqlCollector extends AbstractVisitor
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function acceptTable(Table $table)
     {
-        $this->tables->attach($table);
+        $this->tables->offsetSet($table);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function acceptForeignKey(Table $localTable, ForeignKeyConstraint $fkConstraint)
     {
@@ -54,15 +54,15 @@ class DropSchemaSqlCollector extends AbstractVisitor
             throw SchemaException::namedForeignKeyRequired($localTable, $fkConstraint);
         }
 
-        $this->constraints->attach($fkConstraint, $localTable);
+        $this->constraints->offsetSet($fkConstraint, $localTable);
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function acceptSequence(Sequence $sequence)
     {
-        $this->sequences->attach($sequence);
+        $this->sequences->offsetSet($sequence);
     }
 
     /** @return void */

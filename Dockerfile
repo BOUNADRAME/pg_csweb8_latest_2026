@@ -14,6 +14,7 @@ FROM php:8.1-apache AS base
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    cron \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
@@ -74,6 +75,12 @@ RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/var/logs \
     && chmod -R 775 /var/www/html/files \
     && chmod -R 777 /var/www/html/var
+
+# Configure cron for breakout scheduler (runs every minute)
+RUN echo "* * * * * www-data /usr/local/bin/php /var/www/html/bin/console csweb:scheduler-run >> /var/www/html/var/logs/scheduler-cron.log 2>&1" \
+    > /etc/cron.d/csweb-scheduler \
+    && chmod 0644 /etc/cron.d/csweb-scheduler \
+    && crontab -u www-data /etc/cron.d/csweb-scheduler || true
 
 # Copy and set entrypoint (auto: permissions, cache clear)
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh

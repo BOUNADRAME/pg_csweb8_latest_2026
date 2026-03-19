@@ -404,6 +404,26 @@ EOT;
 			CREATE TRIGGER tr_cspro_config BEFORE INSERT ON `cspro_config` FOR EACH ROW SET NEW.`created_time` = CURRENT_TIMESTAMP;
 EOT;
     $pdo->exec($sql);
+    $sql = <<<'EOT'
+			CREATE TABLE IF NOT EXISTS `cspro_breakout_scheduler` (
+			  `id` int unsigned NOT NULL AUTO_INCREMENT,
+			  `dictionary_id` smallint unsigned NOT NULL,
+			  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+			  `cron_expression` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT '0 2 * * *',
+			  `last_run` timestamp NULL DEFAULT NULL,
+			  `next_run` timestamp NULL DEFAULT NULL,
+			  `last_exit_code` int DEFAULT NULL,
+			  `last_log_file` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+			  `modified_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+			  `created_time` timestamp DEFAULT '1971-01-01 00:00:00',
+			  PRIMARY KEY (`id`),
+			  UNIQUE KEY `dictionary_id` (`dictionary_id`),
+			  CONSTRAINT `scheduler_dict_id_constraint` FOREIGN KEY (`dictionary_id`) REFERENCES `cspro_dictionaries`(`id`) ON DELETE CASCADE
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+			CREATE TRIGGER tr_cspro_breakout_scheduler BEFORE INSERT ON `cspro_breakout_scheduler` FOR EACH ROW SET NEW.`created_time` = CURRENT_TIMESTAMP;
+EOT;
+    $pdo->exec($sql);
+
     $sql = "INSERT IGNORE INTO `cspro_config` (`name`, `value`) VALUES	('schema_version', " . SCHEMA_VERSION . "),"
             . "('server_device_id', '" . guidv4() . "')";
     $pdo->exec($sql);

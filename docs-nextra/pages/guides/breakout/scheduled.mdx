@@ -1,8 +1,62 @@
+---
+title: Breakout Automatique - Planification par Dictionnaire
+description: Automatiser le breakout CSWeb avec le Web Scheduler UI, cron jobs ou webhooks pour un traitement en continu.
+---
+
 # Breakout Automatique
 
-Automatiser le breakout avec cron jobs ou webhooks pour un traitement en temps réel.
+Automatiser le breakout avec le Web Scheduler intégré, cron jobs ou webhooks pour un traitement en continu.
 
-## Avec Cron Jobs
+import { Callout } from 'nextra/components'
+
+<Callout type="info">
+**Recommandé** : Utilisez le **Web Scheduler** (interface graphique) pour planifier vos breakouts. Les méthodes cron manuel et webhook restent disponibles pour les cas avancés.
+</Callout>
+
+---
+
+## Avec le Web Scheduler (Recommandé)
+
+Le Web Scheduler permet de configurer la planification de breakout par dictionnaire directement depuis l'interface web, sans accès SSH.
+
+### Configuration rapide
+
+1. Naviguer vers **Settings > Data** dans l'interface CSWeb
+2. Repérer le card **Breakout Scheduler** sous le card Data Configuration
+3. Cliquer **Add Schedule** et sélectionner un dictionnaire
+4. Saisir l'expression cron (ex: `0 2 * * *` pour tous les jours à 2h)
+5. Activer le schedule et sauvegarder
+
+### Crontab unique requis
+
+Le Web Scheduler nécessite un seul cron système qui pilote tous les schedules :
+
+```bash
+# Ajouter une seule fois dans crontab
+* * * * * php /var/www/html/bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
+```
+
+Avec Docker :
+
+```bash
+* * * * * docker compose exec -T csweb php bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
+```
+
+### Fonctionnalités
+
+- **Un schedule par dictionnaire** avec expression cron indépendante
+- **Toggle on/off** sans supprimer la configuration
+- **Logs individuels** : `var/logs/breakout/{DICT_NAME}_{datetime}.log`
+- **Monitoring** : Last Run, Next Run, Last Result visibles dans le tableau
+- **Protection concurrence** : verrou automatique via `LockableTrait`
+
+> Pour une documentation complète du Web Scheduler : [Administration - Web Scheduler](/guides/admin/scheduler)
+
+---
+
+## Avec Cron Jobs (Méthode manuelle)
+
+Pour les cas où le Web Scheduler ne convient pas (schedules très spécifiques, scripts personnalisés).
 
 ### Configuration Cron
 
@@ -47,6 +101,8 @@ chmod +x /usr/local/bin/csweb-breakout.sh
 0 * * * * /usr/local/bin/csweb-breakout.sh EVAL_DICT
 ```
 
+---
+
 ## Avec Docker
 
 ### Docker Exec Cron
@@ -82,6 +138,8 @@ Fichier `crontab` :
 ```
 0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/breakout.log 2>&1
 ```
+
+---
 
 ## Avec Webhooks CSPro
 
@@ -127,11 +185,16 @@ if (!hash_equals($expectedSignature, $signature)) {
 }
 ```
 
+---
+
 ## Monitoring Jobs
 
 ### Logs
 
 ```bash
+# Logs Web Scheduler (individuels par dict)
+ls -la var/logs/breakout/
+
 # Tail logs en temps réel
 tail -f /var/log/csweb/breakout-*.log
 
@@ -156,88 +219,41 @@ if [ $? -ne 0 ]; then
 fi
 ```
 
-### Slack Notifications
-
-```bash
-#!/bin/bash
-DICT=$1
-SLACK_WEBHOOK="https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
-
-# Breakout
-php bin/console csweb:process-cases-by-dict $DICT
-
-if [ $? -eq 0 ]; then
-    curl -X POST -H 'Content-type: application/json' \
-      --data "{\"text\":\"✅ Breakout $DICT completed\"}" \
-      $SLACK_WEBHOOK
-else
-    curl -X POST -H 'Content-type: application/json' \
-      --data "{\"text\":\"❌ Breakout $DICT failed\"}" \
-      $SLACK_WEBHOOK
-fi
-```
+---
 
 ## Gestion Concurrence
 
-### Lock File
+### LockableTrait (Web Scheduler)
 
-Éviter breakout simultanés :
+La commande `csweb:scheduler-run` utilise `LockableTrait` de Symfony pour empêcher les exécutions concurrentes. Aucune configuration supplémentaire nécessaire.
 
-```bash
-#!/bin/bash
-DICT=$1
-LOCK_FILE="/tmp/breakout-$DICT.lock"
-
-# Vérifier lock
-if [ -f "$LOCK_FILE" ]; then
-    echo "Breakout already running for $DICT"
-    exit 1
-fi
-
-# Créer lock
-touch $LOCK_FILE
-
-# Breakout
-php bin/console csweb:process-cases-by-dict $DICT
-
-# Supprimer lock
-rm -f $LOCK_FILE
-```
-
-### Flock (Linux)
+### Flock (Cron Manuel)
 
 ```bash
 #!/bin/bash
 flock -n /tmp/breakout.lock -c "php bin/console csweb:process-cases-by-dict EVAL_DICT"
 ```
 
-## Performance
+---
 
-### Breakout Incrémental
+## Comparaison des Méthodes
 
-Traiter seulement nouveaux cases :
+| Critère | Web Scheduler | Cron Manuel | Webhook |
+|---|---|---|---|
+| Complexité setup | Faible | Moyenne | Élevée |
+| Interface graphique | Oui | Non | Non |
+| Logs individuels | Oui | Manuel | Manuel |
+| Monitoring intégré | Oui | Non | Non |
+| Temps réel | Non (polling min.) | Non | Oui |
+| Accès SSH requis | Non (sauf cron initial) | Oui | Non |
 
-```sql
--- Identifier dernière modification
-SELECT MAX(modified_date) FROM eval_cases;
-```
-
-Puis filtrer dans commande (si supporté).
-
-### Breakout Parallèle
-
-Plusieurs dictionnaires en parallèle :
-
-```bash
-#!/bin/bash
-php bin/console csweb:process-cases-by-dict DICT_1 &
-php bin/console csweb:process-cases-by-dict DICT_2 &
-wait
-```
+---
 
 ## Ressources
 
-- [Breakout Sélectif](/guides/breakout/selective)
-- [Monitoring Breakout](/guides/breakout/monitoring)
-- [Webhooks API](/reference/api/webhooks)
-- [CLI Reference](/reference/cli/process-cases)
+- [Web Scheduler - Guide Complet](/guides/admin/scheduler) - Documentation complète du Web Scheduler
+- [Breakout Sélectif](/guides/breakout/selective) - Breakout à la demande
+- [Monitoring Breakout](/guides/breakout/monitoring) - Surveillance des breakouts
+- [CLI - scheduler-run](/reference/cli/scheduler-run) - Référence de la commande
+- [Webhooks API](/reference/api/webhooks) - Configuration webhooks
+- [CLI Reference](/reference/cli/process-cases) - Commande process-cases
