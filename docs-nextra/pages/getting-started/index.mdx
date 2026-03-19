@@ -34,7 +34,7 @@ Stocke les métadonnées CSWeb :
 - Applications CSPro
 - Configuration des jobs
 
-**Localisation :** Sur le serveur CSWeb (Docker container `csweb_mysql`)
+**Localisation :** Sur le serveur CSWeb (Docker container `mysql`)
 
 ### 2. Base Breakout (Multi-SGBD)
 Stocke les données breakées des questionnaires :
@@ -91,7 +91,7 @@ Stocke les données breakées des questionnaires :
 ```bash
 git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
 cd pg_csweb8_latest_2026
-docker-compose up -d
+docker compose --profile local-postgres up -d
 ```
 
 **Base breakout :** PostgreSQL local (port 5432)
@@ -171,7 +171,7 @@ Configuration via UI ou fichier `.env`.
 
 **CSWeb Community :**
 ```bash
-docker-compose up -d # C'est tout!
+docker compose --profile local-postgres up -d # C'est tout!
 ```
 
 ### 4. Monitoring Temps Réel
