@@ -1,3 +1,5 @@
+.env
+test-results/
 logs/*
 src/api/app/config.php
 files/*

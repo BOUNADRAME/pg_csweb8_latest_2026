@@ -85,7 +85,7 @@ curl -X POST http://localhost:8080/api/dictionaries/upload \
 
 ```bash
 # Se connecter à PostgreSQL
-docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+docker compose exec postgres psql -U csweb_analytics -d csweb_analytics
 
 # Créer un schéma pour le dictionnaire
 CREATE SCHEMA IF NOT EXISTS eval_producteurs;
@@ -98,7 +98,7 @@ CREATE SCHEMA IF NOT EXISTS eval_producteurs;
 
 ```bash
 # Se connecter à MySQL
-docker exec -it csweb_mysql mysql -u csweb_user -p
+docker compose exec mysql mysql -u csweb_user -p
 
 # Créer une base pour le dictionnaire
 CREATE DATABASE IF NOT EXISTS eval_producteurs;
@@ -113,13 +113,11 @@ SHOW DATABASES;
 
 ```env
 # Base par défaut pour le breakout
-BREAKOUT_DB_TYPE=postgresql
-BREAKOUT_DB_HOST=csweb_postgres
-BREAKOUT_DB_PORT=5432
-BREAKOUT_DB_NAME=csweb_analytics
-BREAKOUT_DB_USER=csweb_user
-BREAKOUT_DB_PASSWORD=VOTRE_MOT_DE_PASSE
-BREAKOUT_DB_SCHEMA=eval_producteurs
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=csweb_analytics
+POSTGRES_USER=csweb_analytics
+POSTGRES_PASSWORD=VOTRE_MOT_DE_PASSE
 ```
 
 **Option 2 : Via API (par dictionnaire)**
@@ -130,11 +128,11 @@ curl -X POST http://localhost:8080/api/dictionaries/3/breakout-config \
  -H "Content-Type: application/json" \
  -d '{
  "dbType": "postgresql",
- "host": "csweb_postgres",
+ "host": "postgres",
  "port": 5432,
  "database": "csweb_analytics",
  "schema": "eval_producteurs",
- "user": "csweb_user",
+ "user": "csweb_analytics",
  "password": "VOTRE_MOT_DE_PASSE"
  }'
 ```
@@ -147,7 +145,7 @@ curl -X POST http://localhost:8080/api/dictionaries/3/breakout-config \
 
 ```bash
 # Se connecter au container CSWeb
-docker exec -it csweb_app bash
+docker compose exec csweb bash
 
 # Lancer le breakout sélectif
 php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS_USAID
@@ -163,7 +161,7 @@ Breakout Sélectif CSWeb
 =======================
 
 Dictionnaire: EVAL_PRODUCTEURS_USAID (ID: 3)
-Base cible: PostgreSQL (csweb_postgres:5432)
+Base cible: PostgreSQL (postgres:5432)
 Schéma: eval_producteurs
 
 [1/5] Création des tables... 
@@ -204,13 +202,13 @@ L'interface React Admin Panel permettra de déclencher les breakouts en 1 clic (
  ```
 
 2. **Se connecter au serveur**
- - Host : `csweb_postgres`
+ - Host : `postgres`
  - Port : `5432`
  - Database : `csweb_analytics`
- - Username : `csweb_user`
+ - Username : `csweb_analytics`
 
 3. **Explorer le schéma**
- - Naviguer vers : `Servers` `csweb_postgres` `Databases` `csweb_analytics` `Schemas` `eval_producteurs` `Tables`
+ - Naviguer vers : `Servers` `postgres` `Databases` `csweb_analytics` `Schemas` `eval_producteurs` `Tables`
 
 4. **Vérifier les tables créées**
  - `producteurs` (table principale)
@@ -298,7 +296,7 @@ HAVING COUNT(ph.photo_id) > 0;
 3. **Entrer les paramètres :**
  - Server : `localhost:5432`
  - Database : `csweb_analytics`
- - Username : `csweb_user`
+ - Username : `csweb_analytics`
  - Password : `[POSTGRES_PASSWORD]`
 4. **Sélectionner les tables du schéma `eval_producteurs`**
 5. **Créer vos visualisations !**
@@ -328,7 +326,7 @@ Database type: PostgreSQL
 Host: host.docker.internal (macOS/Windows) ou [IP_MACHINE] (Linux)
 Port: 5432
 Database name: csweb_analytics
-Username: csweb_user
+Username: csweb_analytics
 Password: [POSTGRES_PASSWORD]
 ```
 
@@ -343,7 +341,7 @@ Password: [POSTGRES_PASSWORD]
 **Solution :**
 ```bash
 # Lister tous les dictionnaires disponibles
-docker exec -it csweb_app php bin/console csweb:list-dictionaries
+docker compose exec csweb php bin/console csweb:list-dictionaries
 
 # Utiliser le nom exact
 php bin/console csweb:process-cases-by-dict [NOM_EXACT]
@@ -356,13 +354,13 @@ php bin/console csweb:process-cases-by-dict [NOM_EXACT]
 **Solution :**
 ```bash
 # Vérifier que PostgreSQL tourne
-docker-compose ps csweb_postgres
+docker compose ps postgres
 
 # Tester la connexion
-docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics
+docker compose exec postgres psql -U csweb_analytics -d csweb_analytics
 
 # Vérifier les variables .env
-docker exec csweb_app env | grep BREAKOUT
+docker compose exec csweb env | grep POSTGRES
 ```
 
 ### Erreur : "PDO driver not found"
@@ -372,10 +370,10 @@ docker exec csweb_app env | grep BREAKOUT
 **Solution :**
 ```bash
 # Vérifier les drivers disponibles
-docker exec -it csweb_app php bin/console csweb:check-database-drivers
+docker compose exec csweb php bin/console csweb:check-database-drivers
 
 # Si pdo_pgsql est manquant, rebuild le container
-docker-compose up -d --build csweb_app
+docker compose up -d --build csweb
 ```
 
 ### Breakout trop lent

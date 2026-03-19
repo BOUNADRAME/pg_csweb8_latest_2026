@@ -44,7 +44,7 @@ class DatabaseDriverDetector
      */
     private function detectDrivers(): void
     {
-        $loadedExtensions = get_loaded_extensions();
+        $loadedExtensions = array_map('strtolower', get_loaded_extensions());
 
         foreach (self::REQUIRED_EXTENSIONS as $dbType => $requiredExts) {
             $this->detectionResults[$dbType] = [

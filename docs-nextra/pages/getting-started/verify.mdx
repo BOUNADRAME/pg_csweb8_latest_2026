@@ -14,21 +14,21 @@ description: Checklist de vérification de l'installation CSWeb
 ### Vérifier que tous les containers tournent
 
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 **Résultat attendu :**
 
 | NAME | STATUS | PORTS |
 |------|--------|-------|
-| csweb_app | Up (healthy) | 0.0.0.0:8080->80/tcp |
-| csweb_mysql | Up (healthy) | 0.0.0.0:3306->3306/tcp |
-| csweb_postgres | Up (healthy) | 0.0.0.0:5432->5432/tcp |
+| csweb-app | Up (healthy) | 0.0.0.0:8080->80/tcp |
+| csweb-mysql-metadata | Up (healthy) | 0.0.0.0:3306->3306/tcp |
+| csweb-postgres-breakout | Up (healthy) | 0.0.0.0:5432->5432/tcp |
 | phpmyadmin | Up | 0.0.0.0:8081->80/tcp |
 | pgadmin | Up | 0.0.0.0:8082->80/tcp |
 
  **Tous les services doivent être "Up"**
- **csweb_app, csweb_mysql, csweb_postgres doivent être "healthy"**
+ **csweb-app, csweb-mysql-metadata, csweb-postgres-breakout doivent être "healthy"**
 
 ---
 
@@ -56,7 +56,7 @@ http://localhost:8081
 ```
 
  Interface de connexion phpMyAdmin visible Se connecter avec :
-- Server : `csweb_mysql`
+- Server : `mysql`
 - Username : `csweb_user`
 - Password : `[MYSQL_PASSWORD depuis .env]`
 
@@ -67,7 +67,7 @@ http://localhost:8082
 ```
 
  Interface de connexion pgAdmin visible Se connecter avec :
-- Email : `admin@csweb.local` (défini dans docker-compose.yml)
+- Email : `admin@csweb.local` (défini dans docker compose)
 - Password : `[PGADMIN_PASSWORD depuis .env]`
 
 ---
@@ -91,7 +91,7 @@ http://localhost:8082
 ### Vérifier les drivers disponibles
 
 ```bash
-docker exec -it csweb_app php bin/console csweb:check-database-drivers
+docker compose exec csweb php bin/console csweb:check-database-drivers
 ```
 
 **Résultat attendu :**
@@ -113,7 +113,7 @@ Database Drivers Check
 
 ```bash
 # Depuis votre machine hôte
-docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "SELECT version();"
+docker compose exec postgres psql -U csweb_analytics -d csweb_analytics -c "SELECT version();"
 ```
 
  Doit afficher la version PostgreSQL (ex: `PostgreSQL 16.1`)
@@ -122,10 +122,10 @@ docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "SELECT 
 1. Ouvrir http://localhost:8082
 2. Ajouter serveur :
  - Name : `CSWeb PostgreSQL`
- - Host : `csweb_postgres`
+ - Host : `postgres`
  - Port : `5432`
  - Database : `csweb_analytics`
- - Username : `csweb_user`
+ - Username : `csweb_analytics`
  - Password : `[POSTGRES_PASSWORD]`
 
  Connexion réussie
@@ -134,7 +134,7 @@ docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "SELECT 
 
 ```bash
 # Depuis votre machine hôte
-docker exec -it csweb_mysql mysql -u csweb_user -p -e "SELECT VERSION();"
+docker compose exec mysql mysql -u csweb_user -p -e "SELECT VERSION();"
 ```
 
  Doit afficher la version MySQL (ex: `8.0.35`)
@@ -142,7 +142,7 @@ docker exec -it csweb_mysql mysql -u csweb_user -p -e "SELECT VERSION();"
 **Ou depuis phpMyAdmin :**
 1. Ouvrir http://localhost:8081
 2. Se connecter (voir section 2)
-3. Vérifier que la base `csweb_db` existe Base `csweb_db` présente
+3. Vérifier que la base `csweb_metadata` existe Base `csweb_metadata` présente
 
 ---
 
@@ -159,7 +159,7 @@ Via l'interface web :
 ### Lancer le breakout
 
 ```bash
-docker exec -it csweb_app php bin/console csweb:process-cases-by-dict [NOM_DICTIONNAIRE]
+docker compose exec csweb php bin/console csweb:process-cases-by-dict [NOM_DICTIONNAIRE]
 ```
 
  Breakout se termine sans erreur Message "Breakout terminé avec succès !"
@@ -169,7 +169,7 @@ docker exec -it csweb_app php bin/console csweb:process-cases-by-dict [NOM_DICTI
 **PostgreSQL :**
 
 ```bash
-docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "\dt [SCHEMA].*"
+docker compose exec postgres psql -U csweb_analytics -d csweb_analytics -c "\dt [SCHEMA].*"
 ```
 
  Tables créées dans le schéma spécifié
@@ -177,7 +177,7 @@ docker exec -it csweb_postgres psql -U csweb_user -d csweb_analytics -c "\dt [SC
 **MySQL :**
 
 ```bash
-docker exec -it csweb_mysql mysql -u csweb_user -p -e "USE [DATABASE]; SHOW TABLES;"
+docker compose exec mysql mysql -u csweb_user -p -e "USE [DATABASE]; SHOW TABLES;"
 ```
 
  Tables créées dans la base spécifiée
@@ -224,10 +224,10 @@ docker volume inspect pg_csweb8_latest_2026_postgres_data
 
 ```bash
 # Logs en temps réel
-docker-compose logs -f csweb_app
+docker compose logs -f csweb
 
 # Dernières 50 lignes
-docker-compose logs --tail=50 csweb_app
+docker compose logs --tail=50 csweb
 ```
 
  Pas d'erreurs critiques (ERROR, CRITICAL)
@@ -236,7 +236,7 @@ docker-compose logs --tail=50 csweb_app
 ### Vérifier les logs PostgreSQL
 
 ```bash
-docker-compose logs --tail=50 csweb_postgres
+docker compose logs --tail=50 postgres
 ```
 
  Pas d'erreurs de connexion Messages de démarrage normaux
@@ -244,7 +244,7 @@ docker-compose logs --tail=50 csweb_postgres
 ### Vérifier les logs MySQL
 
 ```bash
-docker-compose logs --tail=50 csweb_mysql
+docker compose logs --tail=50 mysql
 ```
 
  Pas d'erreurs de connexion Messages de démarrage normaux
@@ -263,9 +263,9 @@ docker stats --no-stream
 
 | CONTAINER | CPU % | MEM USAGE | MEM % | NET I/O |
 |-----------|-------|-----------|-------|---------|
-| csweb_app | < 10% | < 512MB | < 10% | - |
-| csweb_postgres | < 5% | < 256MB | < 5% | - |
-| csweb_mysql | < 5% | < 256MB | < 5% | - |
+| csweb-app | < 10% | < 512MB | < 10% | - |
+| csweb-postgres-breakout | < 5% | < 256MB | < 5% | - |
+| csweb-mysql-metadata | < 5% | < 256MB | < 5% | - |
 
  CPU < 20% (idle)
  MEM < 2GB total
@@ -278,7 +278,7 @@ docker stats --no-stream
 
 ```bash
 # Vérifier que les secrets ne sont PAS les valeurs par défaut
-docker exec csweb_app env | grep -E "PASSWORD|SECRET"
+docker compose exec csweb env | grep -E "PASSWORD|SECRET"
 ```
 
  **NE DOIT PAS contenir :**
@@ -293,7 +293,7 @@ docker exec csweb_app env | grep -E "PASSWORD|SECRET"
 
 ```bash
 # En production, setup.php doit être supprimé ou renommé
-docker exec -it csweb_app ls public/setup/
+docker compose exec csweb ls public/setup/
 ```
 
  Doit retourner "No such file or directory" (ou renommé en `setup_disabled/`)
@@ -334,7 +334,7 @@ Failed requests: 0
 
 ```bash
 # Créer un backup
-docker exec -it csweb_postgres pg_dump -U csweb_user csweb_analytics > backup_test.sql
+docker compose exec postgres pg_dump -U csweb_analytics csweb_analytics > backup_test.sql
 
 # Vérifier que le fichier n'est pas vide
 ls -lh backup_test.sql
@@ -347,7 +347,7 @@ ls -lh backup_test.sql
 
 ```bash
 # Créer un backup
-docker exec -it csweb_mysql mysqldump -u csweb_user -p csweb_db > backup_mysql_test.sql
+docker compose exec mysql mysqldump -u csweb_user -p csweb_metadata > backup_mysql_test.sql
 
 # Vérifier
 ls -lh backup_mysql_test.sql
