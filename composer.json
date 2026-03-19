@@ -19,6 +19,7 @@
         "aura/sql": "^4.0",
         "bshaffer/oauth2-server-php": "^1.13",
         "doctrine/dbal": "^3.5",
+        "dragonmantank/cron-expression": "^3.3",
         "guzzlehttp/guzzle": "^7.5",
         "illuminate/support": "^8.83",
         "incenteev/composer-parameter-handler": "^2.1",

@@ -1,0 +1,133 @@
+---
+title: "CLI : csweb:scheduler-run"
+description: "Référence de la commande csweb:scheduler-run - Exécuter les breakouts planifiés via le Web Scheduler."
+---
+
+# csweb:scheduler-run
+
+Exécuter les breakouts planifiés dont l'heure d'exécution est atteinte. Conçue pour être appelée chaque minute via crontab.
+
+## Syntaxe
+
+```bash
+php bin/console csweb:scheduler-run [--env=ENV]
+```
+
+## Description
+
+La commande `csweb:scheduler-run` est le moteur d'exécution du Web Scheduler. Elle :
+
+1. Acquiert un **verrou exclusif** (empêche les exécutions concurrentes)
+2. Interroge la table `cspro_breakout_scheduler` pour trouver les schedules où `enabled=1` et `next_run <= NOW()`
+3. Pour chaque schedule due, lance `csweb:process-cases-by-dict` avec le nom du dictionnaire
+4. Capture la sortie dans un fichier log `var/logs/breakout/{DICT_NAME}_{datetime}.log`
+5. Met à jour les colonnes `last_run`, `next_run`, `last_exit_code` et `last_log_file`
+6. Relache le verrou
+
+## Options
+
+| Option | Description | Défaut |
+|---|---|---|
+| `--env` | Environnement Symfony | `dev` |
+| `-v`, `-vv`, `-vvv` | Niveau de verbosité | Normal |
+
+## Exemples
+
+### Exécution manuelle (test)
+
+```bash
+php bin/console csweb:scheduler-run --env=prod -vvv
+```
+
+### Crontab système (production)
+
+```bash
+# Exécuter chaque minute
+* * * * * php /var/www/html/bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
+```
+
+### Avec Docker
+
+```bash
+* * * * * docker compose exec -T csweb php bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
+```
+
+## Sortie
+
+### Aucun schedule due
+
+```
+No schedules due.
+```
+
+### Exécution réussie
+
+```
+Running breakout for dictionary: EVAL_DICT
+ [OK] Breakout completed for EVAL_DICT
+
+Running breakout for dictionary: KAIROS_DICT
+ [OK] Breakout completed for KAIROS_DICT
+```
+
+### Erreur
+
+```
+Running breakout for dictionary: EVAL_DICT
+ [ERROR] Breakout failed for EVAL_DICT (exit code: 1)
+```
+
+### Verrou actif
+
+```
+ ! [NOTE] The scheduler is already running in another process.
+```
+
+## Fichiers logs générés
+
+Chaque exécution crée un fichier dans `var/logs/breakout/` :
+
+```
+var/logs/breakout/EVAL_DICT_2026-03-19_02-00-01.log
+```
+
+Contenu type :
+
+```
+Command: /usr/bin/php /var/www/html/bin/console csweb:process-cases-by-dict EVAL_DICT --env=prod
+Started: 2026-03-19_02-00-01
+Exit code: 0
+
+--- STDOUT ---
+Running blob breakout process.
+...
+
+--- STDERR ---
+```
+
+## Code de sortie
+
+| Code | Signification |
+|---|---|
+| `0` | Succès (tous les breakouts terminés, ou aucun schedule due) |
+
+## Protection concurrence
+
+La commande utilise le `LockableTrait` de Symfony Console. Si une instance est déjà en cours d'exécution, la nouvelle instance se termine immédiatement avec un message d'avertissement et le code `0`.
+
+## Timeout
+
+Chaque processus de breakout individuel a un timeout de **3600 secondes** (1 heure). Si un breakout dépasse ce temps, le processus est interrompu et un code d'erreur est enregistré.
+
+## Prérequis
+
+- Table `cspro_breakout_scheduler` créée (schema version 8+)
+- Package `dragonmantank/cron-expression` installé
+- Au moins un schedule configuré et activé via l'interface Web
+
+## Ressources
+
+- [Web Scheduler - Guide](/guides/admin/scheduler) - Configuration et utilisation du scheduler
+- [Breakout Automatique](/guides/breakout/scheduled) - Toutes les méthodes d'automatisation
+- [process-cases-by-dict](/reference/cli/process-cases) - Commande de breakout sous-jacente
+- [Toutes les Commandes](/reference/cli/commands) - Liste complète des commandes CLI

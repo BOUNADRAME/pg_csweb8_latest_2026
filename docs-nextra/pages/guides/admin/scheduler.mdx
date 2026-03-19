@@ -1,230 +1,341 @@
+---
+title: Web Scheduler - Breakout Automatique par Dictionnaire
+description: Planifier et automatiser le breakout CSWeb par dictionnaire via l'interface Web, avec logs individuels et monitoring intégré.
+---
+
 # Web Scheduler
 
-Planifier et automatiser les jobs CSWeb (breakout, exports, cleanups).
+Planifier et automatiser les breakouts CSWeb directement depuis l'interface Web, sans éditer de crontab manuellement. Chaque dictionnaire peut avoir son propre planning et génère ses propres fichiers log.
 
 import { Callout } from 'nextra/components'
 
-<Callout type="warning">
-**Prochaine version** : Web Scheduler UI à venir. Actuellement : configuration manuelle via cron.
+<Callout type="info">
+**Nouveauté v2.1** : Le Web Scheduler remplace la configuration manuelle via crontab. Un seul cron système (`csweb:scheduler-run`) pilote l'ensemble des schedules configurés via l'UI.
 </Callout>
 
-## Configuration Actuelle (Cron)
+## Vue d'ensemble
 
-### Crontab
+### Principe
+
+Le Web Scheduler introduit une table dédiée `cspro_breakout_scheduler` qui stocke la configuration de planification pour chaque dictionnaire. Un unique crontab système appelle la commande `csweb:scheduler-run` chaque minute, qui interroge les schedules due et lance les breakouts correspondants.
+
+```
+┌─────────────────────────────────────────────────┐
+│              Interface Web (UI)                  │
+│                                                  │
+│  ┌──────────────────────────────────────────┐    │
+│  │  Page Data Settings                      │    │
+│  │  ┌────────────────────────────────────┐  │    │
+│  │  │  Card "Breakout Scheduler"         │  │    │
+│  │  │  - Add / Edit / Toggle / Delete    │  │    │
+│  │  │  - Cron expression par dict        │  │    │
+│  │  │  - Status, Last Run, Next Run      │  │    │
+│  │  └────────────────────────────────────┘  │    │
+│  └──────────────────────────────────────────┘    │
+└──────────────────────┬──────────────────────────┘
+                       │ AJAX (REST)
+                       v
+┌─────────────────────────────────────────────────┐
+│  Controller API (5 endpoints)                    │
+│  GET /scheduler/schedules                        │
+│  POST /scheduler/add                             │
+│  PUT /scheduler/update | /scheduler/toggle       │
+│  DELETE /scheduler/{id}                          │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       v
+┌─────────────────────────────────────────────────┐
+│  Service BreakoutScheduler.php                   │
+│  CRUD + getDueSchedules() + markRun()            │
+└──────────────────────┬──────────────────────────┘
+                       │
+                       v
+┌─────────────────────────────────────────────────┐
+│  Table MySQL : cspro_breakout_scheduler          │
+│  (FK vers cspro_dictionaries)                    │
+└──────────────────────┬──────────────────────────┘
+                       │
+         * * * * * (crontab)
+                       │
+                       v
+┌─────────────────────────────────────────────────┐
+│  csweb:scheduler-run (Commande Symfony)          │
+│  - Interroge getDueSchedules()                   │
+│  - Lance csweb:process-cases-by-dict par dict    │
+│  - Écrit logs dans var/logs/breakout/            │
+│  - Met à jour last_run, next_run, exit_code      │
+└─────────────────────────────────────────────────┘
+```
+
+### Avantages par rapport au cron manuel
+
+| Fonctionnalité | Cron Manuel | Web Scheduler |
+|---|---|---|
+| Configuration | Éditer crontab SSH | Interface Web |
+| Granularité | Par commande | Par dictionnaire |
+| Logs | Un seul fichier | Un log par dict + timestamp |
+| Monitoring | Aucun | Last Run, Next Run, Exit Code |
+| Toggle on/off | Commenter/décommenter | Bouton play/pause |
+| Historique | Non | Oui (table MySQL) |
+
+---
+
+## Configuration Initiale
+
+### 1. Activer le Crontab Système
+
+Un seul cron suffit pour piloter tous les schedules :
 
 ```bash
 # Éditer crontab
 crontab -e
 
-# Exemples de jobs
-# Breakout automatique toutes les heures
-0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
-
-# Cleanup logs tous les jours à 3h
-0 3 * * * find /var/log/csweb -name "*.log" -mtime +30 -delete
-
-# Backup DB tous les dimanches à 2h
-0 2 * * 0 /usr/local/bin/backup-db.sh
+# Ajouter cette ligne (exécution chaque minute)
+* * * * * php /var/www/html/bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
 ```
 
-### Docker Cron
-
-Pour jobs dans container Docker :
+### Avec Docker
 
 ```bash
-# Crontab sur hôte
-0 * * * * docker compose exec -T csweb php bin/console csweb:process-cases-by-dict EVAL_DICT >> /var/log/cron.log 2>&1
+# Crontab sur l'hôte
+* * * * * docker compose exec -T csweb php bin/console csweb:scheduler-run --env=prod >> /var/log/scheduler.log 2>&1
 ```
 
-## Jobs Recommandés
+### 2. Migration de la base de données
 
-### 1. Breakout Automatique
+Si vous upgrader depuis une version antérieure (schema version 7), la migration crée automatiquement la table `cspro_breakout_scheduler` :
 
 ```bash
-# Toutes les heures
-0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
+# Accéder à la page d'upgrade
+http://your-server/upgrade/upgrade.php
 ```
 
-### 2. Cleanup Logs
+Pour une nouvelle installation, la table est créée automatiquement lors du setup initial.
+
+---
+
+## Utilisation de l'Interface Web
+
+### Accéder au Scheduler
+
+1. Se connecter à CSWeb avec un compte **Administrateur**
+2. Naviguer vers **Settings > Data**
+3. Le card **Breakout Scheduler** apparaît sous le card Data Configuration
+
+### Ajouter un Schedule
+
+1. Cliquer sur **Add Schedule**
+2. Sélectionner le dictionnaire (seuls les dictionnaires configurés avec un schema breakout et non encore schedulés sont listés)
+3. Saisir l'expression cron (ex: `0 2 * * *` pour tous les jours à 2h)
+4. Cocher **Enabled** pour activer immédiatement
+5. Cliquer **Save**
+
+### Expressions Cron
+
+Format standard : `minute heure jour mois jour_semaine`
+
+| Expression | Signification |
+|---|---|
+| `0 2 * * *` | Tous les jours à 2h00 |
+| `0 */6 * * *` | Toutes les 6 heures |
+| `*/30 * * * *` | Toutes les 30 minutes |
+| `0 2 * * 1-5` | Lundi au vendredi à 2h00 |
+| `0 0 1 * *` | Premier jour du mois à minuit |
+| `0 2 * * 0` | Chaque dimanche à 2h00 |
+
+### Tableau de suivi
+
+La table affiche en temps réel :
+
+| Colonne | Description |
+|---|---|
+| **Dictionary** | Nom et label du dictionnaire |
+| **Schedule (Cron)** | Expression cron configurée |
+| **Status** | Badge Active (vert) ou Inactive (gris) |
+| **Last Run** | Date/heure de la dernière exécution |
+| **Next Run** | Prochaine exécution prévue |
+| **Last Result** | Badge OK (vert) ou Error avec code (rouge) |
+| **Actions** | Toggle, Edit, Delete |
+
+### Actions disponibles
+
+- **Toggle** (play/pause) : Active ou désactive le schedule sans le supprimer
+- **Edit** (crayon) : Modifier l'expression cron ou le statut enabled
+- **Delete** (corbeille) : Supprimer le schedule (avec confirmation)
+
+---
+
+## Logs par Dictionnaire
+
+Chaque exécution génère un fichier log individuel dans `var/logs/breakout/` :
+
+```
+var/logs/breakout/
+  EVAL_DICT_2026-03-19_02-00-01.log
+  EVAL_DICT_2026-03-20_02-00-00.log
+  KAIROS_DICT_2026-03-19_02-00-01.log
+  KAIROS_DICT_2026-03-20_02-00-00.log
+```
+
+### Contenu d'un fichier log
+
+```
+Command: /usr/bin/php /var/www/html/bin/console csweb:process-cases-by-dict EVAL_DICT --env=prod
+Started: 2026-03-19_02-00-01
+Exit code: 0
+
+--- STDOUT ---
+Running blob breakout process.
+Processing dictionary: EVAL_DICT- Running threads 0
+creating a new blob breakout thread
+...
+
+--- STDERR ---
+
+```
+
+### Consulter les logs
 
 ```bash
-# Supprimer logs > 30 jours
-0 3 * * * find /var/log/csweb -type f -name "*.log" -mtime +30 -delete
+# Derniers logs d'un dictionnaire
+ls -la var/logs/breakout/EVAL_DICT_*.log
+
+# Contenu du dernier log
+cat var/logs/breakout/EVAL_DICT_$(ls -t var/logs/breakout/EVAL_DICT_*.log | head -1)
+
+# Rechercher erreurs
+grep -l "Exit code: [^0]" var/logs/breakout/*.log
 ```
 
-### 3. Vacuum Database
+### Nettoyage automatique des logs
 
-PostgreSQL :
+Ajouter un cron de nettoyage :
 
 ```bash
-# Tous les dimanches à 2h
-0 2 * * 0 docker compose exec -T postgres vacuumdb -U csweb_analytics -d csweb_analytics
+# Supprimer logs de plus de 30 jours
+0 3 * * * find /var/www/html/var/logs/breakout -name "*.log" -mtime +30 -delete
 ```
 
-MySQL :
+---
+
+## Architecture Technique
+
+### Table MySQL
+
+```sql
+CREATE TABLE `cspro_breakout_scheduler` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `dictionary_id` smallint unsigned NOT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `cron_expression` varchar(100) NOT NULL DEFAULT '0 2 * * *',
+  `last_run` timestamp NULL DEFAULT NULL,
+  `next_run` timestamp NULL DEFAULT NULL,
+  `last_exit_code` int DEFAULT NULL,
+  `last_log_file` varchar(255) DEFAULT NULL,
+  `modified_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `created_time` timestamp DEFAULT '1971-01-01 00:00:00',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `dictionary_id` (`dictionary_id`),
+  CONSTRAINT FOREIGN KEY (`dictionary_id`) REFERENCES `cspro_dictionaries`(`id`) ON DELETE CASCADE
+);
+```
+
+> **Note** : La contrainte `UNIQUE` sur `dictionary_id` garantit un seul schedule par dictionnaire. La contrainte `ON DELETE CASCADE` supprime automatiquement le schedule si le dictionnaire est supprimé.
+
+### Endpoints API
+
+| Methode | Route | Description |
+|---|---|---|
+| GET | `/scheduler/schedules` | Liste des schedules + dictionnaires non schedulés |
+| POST | `/scheduler/add` | Ajouter un schedule |
+| PUT | `/scheduler/update` | Modifier cron + enabled |
+| PUT | `/scheduler/toggle` | Basculer enabled/disabled |
+| DELETE | `/scheduler/{id}` | Supprimer un schedule |
+
+### Dépendance PHP
+
+Le package `dragonmantank/cron-expression` (^3.3) est utilisé pour :
+- Valider les expressions cron saisies par l'utilisateur
+- Calculer la prochaine date d'exécution (`next_run`)
+
+---
+
+## Commande CLI : `csweb:scheduler-run`
+
+La commande est conçue pour être appelée chaque minute par le crontab système.
 
 ```bash
-# Tous les dimanches à 2h
-0 2 * * 0 docker compose exec -T mysql-breakout mysqlcheck -u breakout_user --password=PASSWORD --optimize --all-databases
+php bin/console csweb:scheduler-run --env=prod
 ```
 
-### 4. Backup Automatique
+### Fonctionnement
+
+1. Acquiert un **lock** (empêche les exécutions concurrentes via `LockableTrait`)
+2. Interroge `getDueSchedules()` : tous les schedules où `enabled=1` et `next_run <= NOW()`
+3. Pour chaque schedule due :
+   - Lance `csweb:process-cases-by-dict DICT_NAME` via `Symfony\Process`
+   - Capture stdout + stderr dans un fichier log `{DICT_NAME}_{datetime}.log`
+   - Appelle `markRun()` pour mettre à jour `last_run`, `next_run`, `last_exit_code`, `last_log_file`
+4. Relache le lock
+
+### Timeout
+
+Chaque processus de breakout a un timeout de **3600 secondes** (1 heure). Si un breakout dépasse ce temps, il est interrompu.
+
+---
+
+## Dépannage
+
+### Le scheduler ne s'exécute pas
+
+1. Vérifier que le crontab est actif :
+```bash
+crontab -l | grep scheduler
+```
+
+2. Vérifier les logs du scheduler :
+```bash
+tail -f /var/log/scheduler.log
+```
+
+3. Tester manuellement :
+```bash
+php bin/console csweb:scheduler-run --env=prod -vvv
+```
+
+### Schedule ajouté mais "Next Run" vide
+
+Le `next_run` n'est calculé que si le schedule est **enabled**. Vérifier que le toggle est sur Active.
+
+### Erreur "Invalid cron expression"
+
+L'expression cron doit respecter le format standard à 5 champs. Les extensions comme `@daily` ou `@hourly` ne sont pas supportées. Utiliser les équivalents numériques.
+
+### Lock : "The scheduler is already running"
+
+Si un breakout précédent est encore en cours, le lock empêche une nouvelle exécution. Attendre la fin du processus ou vérifier :
 
 ```bash
-# Tous les jours à 1h
-0 1 * * * /usr/local/bin/backup-csweb.sh
-
-# Tous les dimanches (backup complet)
-0 1 * * 0 /usr/local/bin/backup-csweb-full.sh
+# Voir si un processus scheduler est actif
+ps aux | grep scheduler-run
 ```
 
-## Script Backup
+---
 
-### backup-csweb.sh
+## Bonnes Pratiques
 
-```bash
-#!/bin/bash
-set -e
+1. **Un seul crontab** : Ne pas créer de crons manuels pour les dictionnaires gérés par le scheduler
+2. **Expressions prudentes** : Éviter `*/1 * * * *` pour des breakouts lourds - préférer des intervalles de 30 min minimum
+3. **Nettoyage logs** : Configurer un cron de cleanup pour `var/logs/breakout/`
+4. **Monitoring** : Consulter régulièrement la colonne "Last Result" pour détecter les erreurs
 
-DATE=$(date +%Y%m%d-%H%M%S)
-BACKUP_DIR="/backups/csweb"
-
-# Backup PostgreSQL
-docker compose exec -T postgres pg_dump -U csweb_analytics csweb_analytics > "$BACKUP_DIR/db-$DATE.sql"
-
-# Backup fichiers
-tar -czf "$BACKUP_DIR/files-$DATE.tar.gz" /var/www/html/files
-
-# Cleanup vieux backups (> 7 jours)
-find $BACKUP_DIR -type f -mtime +7 -delete
-
-echo "Backup completed: $DATE"
-```
-
-```bash
-chmod +x /usr/local/bin/backup-csweb.sh
-```
-
-## Monitoring Jobs
-
-### Logs Cron
-
-```bash
-# Voir logs cron
-tail -f /var/log/cron.log
-
-# Ou si journalctl
-journalctl -u cron -f
-```
-
-### Email Notifications
-
-Configurer MAILTO dans crontab :
-
-```bash
-MAILTO=admin@example.com
-
-0 * * * * cd /var/www/html && php bin/console csweb:process-cases-by-dict EVAL_DICT
-```
-
-### Health Check
-
-Script pour vérifier jobs :
-
-```bash
-#!/bin/bash
-# health-check-jobs.sh
-
-LAST_BREAKOUT=$(stat -c %Y /tmp/last-breakout.lock 2>/dev/null || echo 0)
-NOW=$(date +%s)
-DIFF=$(( (NOW - LAST_BREAKOUT) / 3600 ))
-
-if [ $DIFF -gt 24 ]; then
-    echo "ERROR: No breakout in last 24h"
-    exit 1
-fi
-
-echo "OK: Last breakout ${DIFF}h ago"
-```
-
-## Web UI (v2.1 Preview)
-
-### Fonctionnalités Prévues
-
-**Dashboard** :
-- 📅 Calendrier jobs planifiés
-- 📊 Historique exécutions
-- 🔔 Alertes en temps réel
-
-**Job Management** :
-- ✏️ Créer job via formulaire (plus de crontab)
-- ⏰ Scheduler visuel (drag & drop)
-- 📈 Logs streaming
-
-**Templates Jobs** :
-- Breakout automatique
-- Cleanup logs
-- Backup DB
-- Export CSV
-
-### Architecture Future
-
-```
-┌─────────────────┐
-│   Web UI        │ (React)
-│   Scheduler     │
-└────────┬────────┘
-         │
-         v
-┌─────────────────┐
-│  Scheduler API  │ (Symfony)
-└────────┬────────┘
-         │
-         v
-┌─────────────────┐
-│  Job Queue      │ (Redis/RabbitMQ)
-└────────┬────────┘
-         │
-         v
-┌─────────────────┐
-│  Worker         │ (Symfony Messenger)
-└─────────────────┘
-```
-
-## Alternative : Symfony Scheduler
-
-### Installation
-
-```bash
-composer require symfony/scheduler
-```
-
-### Configuration
-
-```php
-// config/packages/scheduler.yaml
-framework:
-    scheduler:
-        default_transport: default
-
-        schedules:
-            breakout:
-                frequency: '0 * * * *'  # Toutes les heures
-                command: 'csweb:process-cases-by-dict EVAL_DICT'
-
-            cleanup:
-                frequency: '0 3 * * *'  # 3h du matin
-                command: 'csweb:cleanup-logs'
-```
-
-### Lancer Scheduler
-
-```bash
-php bin/console messenger:consume scheduler
-```
+---
 
 ## Ressources
 
-- [Breakout Automatique](/guides/breakout/scheduled)
-- [Backup & Restore](/guides/deployment/backup)
-- [Monitoring](/guides/breakout/monitoring)
+- [Breakout Automatique](/guides/breakout/scheduled) - Méthodes alternatives (cron manuel, webhooks)
+- [Breakout Sélectif](/guides/breakout/selective) - Breakout à la demande
+- [CLI - scheduler-run](/reference/cli/scheduler-run) - Référence de la commande
+- [CLI - process-cases-by-dict](/reference/cli/process-cases) - Commande de breakout sous-jacente
+- [Monitoring](/guides/breakout/monitoring) - Surveillance des breakouts
+- [Backup & Restore](/guides/deployment/backup) - Sauvegardes automatiques

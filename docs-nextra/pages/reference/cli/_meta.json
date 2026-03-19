@@ -1,6 +1,7 @@
 {
   "overview": "Vue d'Ensemble",
   "process-cases": "process-cases-by-dict",
+  "scheduler-run": "scheduler-run",
   "check-drivers": "check-database-drivers",
   "commands": "Toutes les Commandes"
 }
