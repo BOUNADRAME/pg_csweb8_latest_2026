@@ -29,6 +29,25 @@ if [ -f /var/www/html/src/AppBundle/config.php ]; then
     chown -R www-data:www-data /var/www/html/var
     chmod -R 777 /var/www/html/var
     echo "[CSWeb] Cache cleared successfully."
+
+    # Remove UNIQUE constraint on schema_name (required for multi-dictionary breakout)
+    echo "[CSWeb] Checking schema_name constraint..."
+    php -r "
+        require '/var/www/html/src/AppBundle/config.php';
+        try {
+            \$pdo = new PDO('mysql:host=' . DBHOST . ';dbname=' . DBNAME . ';port=' . DBPORT, DBUSER, DBPASS);
+            \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            \$result = \$pdo->query(\"SHOW INDEX FROM cspro_dictionaries_schema WHERE Key_name = 'schema_name'\");
+            if (\$result->rowCount() > 0) {
+                \$pdo->exec('ALTER TABLE cspro_dictionaries_schema DROP KEY schema_name');
+                echo '[CSWeb] Dropped UNIQUE constraint on schema_name' . PHP_EOL;
+            } else {
+                echo '[CSWeb] schema_name constraint already removed' . PHP_EOL;
+            }
+        } catch (Exception \$e) {
+            echo '[CSWeb] Could not check/drop schema_name constraint: ' . \$e->getMessage() . PHP_EOL;
+        }
+    " 2>/dev/null || true
 else
     echo "[CSWeb] config.php not found, skipping cache clear (run /setup first)."
 fi

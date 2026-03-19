@@ -3,8 +3,7 @@ title: Installation
 description: Installer CSWeb Community Platform en 5 minutes avec Docker
 ---
 
-
-import { Tabs } from 'nextra/components'
+import { Tabs } from "nextra/components";
 
 # Installation CSWeb Community Platform
 
@@ -16,13 +15,13 @@ Ce guide vous permettra d'installer et de démarrer CSWeb Community Platform en 
 
 ### Système Requis
 
-| Composant | Version Minimale | Recommandé |
-|-----------|------------------|------------|
-| **Docker** | 20.10+ | Latest |
-| **Docker Compose** | 2.0+ | Latest |
-| **RAM** | 4 GB | 8 GB |
-| **Disque** | 10 GB | 20 GB |
-| **CPU** | 2 cores | 4 cores |
+| Composant          | Version Minimale | Recommandé |
+| ------------------ | ---------------- | ---------- |
+| **Docker**         | 20.10+           | Latest     |
+| **Docker Compose** | 2.0+             | Latest     |
+| **RAM**            | 4 GB             | 8 GB       |
+| **Disque**         | 10 GB            | 20 GB      |
+| **CPU**            | 2 cores          | 4 cores    |
 
 ### Installation Docker
 
@@ -36,9 +35,11 @@ sudo usermod -aG docker $USER
 newgrp docker
 
 # Vérifier l'installation
+
 docker --version
 docker compose version
-```
+
+````
  </div>
  <div>
 ```bash
@@ -52,7 +53,8 @@ brew install --cask docker
 # Vérifier l'installation
 docker --version
 docker compose version
-```
+````
+
  </div>
  <div>
 ```powershell
@@ -60,10 +62,13 @@ docker compose version
 # https://www.docker.com/products/docker-desktop/
 
 # Après installation, redémarrer le PC
+
 # Ouvrir PowerShell et vérifier
+
 docker --version
 docker compose version
-```
+
+````
  </div>
 </Tabs>
 
@@ -76,7 +81,7 @@ docker compose version
 ```bash
 git clone https://github.com/BOUNADRAME/pg_csweb8_latest_2026.git
 cd pg_csweb8_latest_2026
-```
+````
 
 ### Étape 2 : Configuration Environnement
 
@@ -90,25 +95,31 @@ nano .env  # ou vim, code, etc.
 
 **Variables critiques à modifier :**
 
+**Mode Breakout :**
 ```env
-# MODE BREAKOUT
 BREAKOUT_MODE=local
 BREAKOUT_DB_TYPE=postgresql
+```
 
-# APPLICATION
+**Application :**
+```env
 APP_ENV=dev
 APP_DEBUG=true
 APP_SECRET=CHANGEZ_CETTE_VALEUR_ALEATOIRE
+```
 
-# MYSQL - Métadonnées CSWeb (toujours local)
+**MySQL - Métadonnées CSWeb (toujours local) :**
+```env
 MYSQL_HOST=mysql
 MYSQL_PORT=3306
 MYSQL_DATABASE=csweb_metadata
 MYSQL_USER=csweb_user
 MYSQL_PASSWORD=CHANGEZ_MOT_DE_PASSE
 MYSQL_ROOT_PASSWORD=CHANGEZ_MOT_DE_PASSE_ROOT
+```
 
-# POSTGRESQL - Base Breakout
+**PostgreSQL - Base Breakout :**
+```env
 POSTGRES_HOST=postgres
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=csweb_analytics
@@ -150,6 +161,7 @@ csweb-postgres-breakout   Up (healthy)        0.0.0.0:5432->5432/tcp
 Ouvrez votre navigateur et accédez à :
 
 **CSWeb Application :**
+
 ```
 http://localhost:8080
 ```
@@ -171,17 +183,17 @@ Après le premier démarrage, CSWeb vous redirige vers le wizard de configuratio
 
 2. **Page Configuration** (`/setup/configure.php`) :
 
-   | Champ | Valeur | Description |
-   |-------|--------|-------------|
-   | **Database name** | `csweb_metadata` | Nom de la base MySQL métadonnées |
-   | **Hostname** | `mysql` | Nom du conteneur MySQL (pas localhost !) |
-   | **Database username** | `root` | Utilisateur MySQL (root nécessaire pour créer la DB) |
-   | **Database password** | `[MYSQL_ROOT_PASSWORD]` | Le mot de passe root défini dans `.env` |
-   | **CSWeb admin password** | `[MOT_DE_PASSE_FORT]` | Minimum 8 caractères |
-   | **Timezone** | `UTC` | Ou votre fuseau horaire |
-   | **Maximum execution time** | `300` | En secondes |
-   | **Path to files directory** | `/var/www/html/files` | Chemin par défaut |
-   | **CSWeb API URL** | `http://localhost/api/` | **Port 80 interne, PAS 8080 !** |
+   | Champ                       | Valeur                  | Description                                          |
+   | --------------------------- | ----------------------- | ---------------------------------------------------- |
+   | **Database name**           | `csweb_metadata`        | Nom de la base MySQL métadonnées                     |
+   | **Hostname**                | `mysql`                 | Nom du conteneur MySQL (pas localhost !)             |
+   | **Database username**       | `root`                  | Utilisateur MySQL (root nécessaire pour créer la DB) |
+   | **Database password**       | `[MYSQL_ROOT_PASSWORD]` | Le mot de passe root défini dans `.env`              |
+   | **CSWeb admin password**    | `[MOT_DE_PASSE_FORT]`   | Minimum 8 caractères                                 |
+   | **Timezone**                | `UTC`                   | Ou votre fuseau horaire                              |
+   | **Maximum execution time**  | `300`                   | En secondes                                          |
+   | **Path to files directory** | `/var/www/html/files`   | Chemin par défaut                                    |
+   | **CSWeb API URL**           | `http://localhost/api/` | **Port 80 interne, PAS 8080 !**                      |
 
    > **Important :** L'API URL doit être `http://localhost/api/` (sans le port 8080).
    > À l'intérieur du conteneur Docker, Apache écoute sur le port **80**.
@@ -269,6 +281,7 @@ Le mode **remote** permet de connecter CSWeb à un serveur de base de données *
 ### Fonctionnement
 
 En mode remote :
+
 1. Le **pilote par défaut** (`BREAKOUT_DB_TYPE`) dans `.env` détermine le driver PDO utilisé (PostgreSQL, MySQL ou SQL Server)
 2. La **connexion à la base distante** (host, user, password, database) est configurée **au moment du breakout** dans l'interface CSWeb
 3. CSWeb supporte les 3 types de bases : vous choisissez le pilote selon votre serveur distant
@@ -333,6 +346,7 @@ docker compose exec csweb php bin/console csweb:check-database-drivers
 ### Étape 4 : Configurer le breakout dans CSWeb
 
 La connexion au serveur distant se configure **dans l'interface CSWeb** au moment du breakout :
+
 1. Se connecter à `http://localhost:8080`
 2. Aller dans **Data** et sélectionner un dictionnaire
 3. Configurer le schéma breakout avec les informations du serveur distant :
@@ -346,26 +360,31 @@ La connexion au serveur distant se configure **dans l'interface CSWeb** au momen
 Le serveur distant doit être accessible depuis le conteneur CSWeb :
 
 **PostgreSQL :**
+
 ```ini
 # postgresql.conf
 listen_addresses = '*'
 ```
+
 ```
 # pg_hba.conf
 host    all    all    0.0.0.0/0    md5
 ```
 
 **MySQL :**
+
 ```ini
 # my.cnf
 bind-address = 0.0.0.0
 ```
 
 **SQL Server :**
+
 - TCP/IP activé dans SQL Server Configuration Manager
 - Port 1433 ouvert dans le firewall
 
 **Firewall :**
+
 ```bash
 # PostgreSQL
 sudo ufw allow from [IP_SERVEUR_CSWEB] to any port 5432
@@ -420,12 +439,12 @@ docker compose up -d csweb mysql
 
 ### Profils Docker Disponibles
 
-| Profil | Commande | Services |
-|--------|----------|----------|
-| **local-postgres** | `docker compose --profile local-postgres up -d` | CSWeb + MySQL + PostgreSQL |
-| **local-mysql** | `docker compose --profile local-mysql up -d` | CSWeb + MySQL + MySQL Breakout |
-| **local-sqlserver** | `docker compose --profile local-sqlserver up -d` | CSWeb + MySQL + SQL Server |
-| **dev** | `docker compose --profile dev up -d` | + phpMyAdmin + pgAdmin |
+| Profil              | Commande                                         | Services                       |
+| ------------------- | ------------------------------------------------ | ------------------------------ |
+| **local-postgres**  | `docker compose --profile local-postgres up -d`  | CSWeb + MySQL + PostgreSQL     |
+| **local-mysql**     | `docker compose --profile local-mysql up -d`     | CSWeb + MySQL + MySQL Breakout |
+| **local-sqlserver** | `docker compose --profile local-sqlserver up -d` | CSWeb + MySQL + SQL Server     |
+| **dev**             | `docker compose --profile dev up -d`             | + phpMyAdmin + pgAdmin         |
 
 ### Volumes Docker
 
