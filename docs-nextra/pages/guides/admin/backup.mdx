@@ -88,7 +88,7 @@ php bin/console csweb:backup-run --env=prod
 ```
 
 Workflow :
-1. Vérifie si un backup est dû (enabled + next_run <= NOW)
+1. Vérifie si un backup est dû (enabled + next\_run &lt;= NOW)
 2. Exécute `mysqldump` avec compression gzip
 3. Écrit un fichier log
 4. Met à jour `last_run`, `next_run`, `last_exit_code`
