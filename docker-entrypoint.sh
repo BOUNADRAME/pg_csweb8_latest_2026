@@ -24,8 +24,8 @@ chmod -R 775 /var/www/html/files
 # Clear Symfony cache if config.php exists (app is configured)
 if [ -f /var/www/html/src/AppBundle/config.php ]; then
     echo "[CSWeb] config.php found, clearing Symfony cache..."
-    php bin/console cache:clear --no-warmup 2>/dev/null || true
-    php bin/console cache:warmup 2>/dev/null || true
+    rm -rf /var/www/html/var/cache/*
+    su -s /bin/bash www-data -c "php /var/www/html/bin/console cache:warmup --env=prod --no-debug" 2>/dev/null || true
     chown -R www-data:www-data /var/www/html/var
     chmod -R 777 /var/www/html/var
     echo "[CSWeb] Cache cleared successfully."
@@ -35,7 +35,8 @@ if [ -f /var/www/html/src/AppBundle/config.php ]; then
     php -r "
         require '/var/www/html/src/AppBundle/config.php';
         try {
-            \$pdo = new PDO('mysql:host=' . DBHOST . ';dbname=' . DBNAME . ';port=' . DBPORT, DBUSER, DBPASS);
+            \$port = defined('DBPORT') ? DBPORT : '3306';
+            \$pdo = new PDO('mysql:host=' . DBHOST . ';dbname=' . DBNAME . ';port=' . \$port, DBUSER, DBPASS);
             \$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             \$result = \$pdo->query(\"SHOW INDEX FROM cspro_dictionaries_schema WHERE Key_name = 'schema_name'\");
             if (\$result->rowCount() > 0) {
@@ -103,6 +104,10 @@ if [ -f /etc/templates/mpm_prefork.conf ]; then
 fi
 
 echo "[CSWeb] Environment configuration applied."
+
+# Final permission fix — ensure var/ is fully owned by www-data before Apache starts
+chown -R www-data:www-data /var/www/html/var
+chmod -R 777 /var/www/html/var
 
 echo "[CSWeb] Initialization complete. Starting Apache..."
 

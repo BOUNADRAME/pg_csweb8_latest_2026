@@ -52,15 +52,15 @@ class HttpHelper {
                 $response = $e->getResponse();
             else
                 $response = new HttpHelperErrorResponse($e->getMessage());
-            $this->logger->addError('RequestException calling: ' . $uri);
-            $this->logger->addError($response->getBody());
+            $this->logger->error('RequestException calling: ' . $uri);
+            $this->logger->error($response->getBody());
         } catch (\Exception $e) {
             // Despite what Guzzle doc says, there are cases where
             // Guzzle throws an exception that is not derived
             // from RequestException.
             $response = new HttpHelperErrorResponse($e->getMessage());
-            $this->logger->addError('Exception calling: ' . $uri);
-            $this->logger->addError($e);
+            $this->logger->error('Exception calling: ' . $uri);
+            $this->logger->error($e);
         }
 
         return $response;

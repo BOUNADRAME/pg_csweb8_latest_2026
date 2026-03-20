@@ -11,6 +11,12 @@ $password = DBPASS;
 $password = str_replace("%", "%%", $password); //escape % character if any in the password
 $container->setParameter('database_password', $password);
 $container->setParameter('cspro_rest_api_url', API_URL);
+// Internal API URL for server-side calls (HttpHelper): use port 80 inside Docker
+$internalApiUrl = API_URL;
+if (file_exists('/.dockerenv') || getenv('BREAKOUT_MODE') !== false) {
+    $internalApiUrl = preg_replace('#://([^:/]+)(:\d+)?/#', '://$1/', $internalApiUrl);
+}
+$container->setParameter('cspro_internal_api_url', $internalApiUrl);
 $container->setParameter('csweb_api_files_folder', FILES_FOLDER);
 $container->setParameter('csweb_api_default_timezone', DEFAULT_TIMEZONE);
 $container->setParameter('csweb_max_script_execution_time', MAX_EXECUTION_TIME);

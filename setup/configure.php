@@ -37,12 +37,13 @@ function parentDirectory($url) {
 $setupError = false;
 $upgrade = 0;
 $errorCode = 0;
-$databaseName = "";
-$host = "";
-$databaseUsername = "";
-$databasePassword = "";
+// Pre-fill from environment variables (Docker) or use empty defaults
+$databaseName = getenv('MYSQL_DATABASE') ?: "";
+$host = getenv('MYSQL_HOST') ?: "";
+$databaseUsername = "root";
+$databasePassword = getenv('MYSQL_ROOT_PASSWORD') ?: "";
 $adminPassword = "";
-$timezone = date_default_timezone_get();
+$timezone = getenv('APP_TIMEZONE') ?: date_default_timezone_get();
 $filesDirectory = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'files';
 $maxExecutionTime = 300;
 
@@ -487,13 +488,18 @@ function writeApiConfigFile($databaseName, $host, $databaseUsername, $databasePa
 // Make sure that we can reach the API url.
 function testApiUrl($apiUrl, $username, $password) {
     try {
+        // In Docker, test against internal port 80 even if apiUrl has external port
+        $testUrl = $apiUrl;
+        if (file_exists('/.dockerenv') || getenv('BREAKOUT_MODE') !== false) {
+            $testUrl = 'http://localhost/api/';
+        }
         $client = new GuzzleHttp\Client();
         $body = json_encode(array("client_id" => "cspro_android",
             "client_secret" => "cspro",
             "grant_type" => "password",
             "username" => $username,
             "password" => $password));
-        $response = $client->request('POST', rtrim($apiUrl, '/') . '/token', ['body' => $body, 'headers' => ['Content-Type' => 'application/json',
+        $response = $client->request('POST', rtrim($testUrl, '/') . '/token', ['body' => $body, 'headers' => ['Content-Type' => 'application/json',
                 'Accept' => 'application/json']]);
 
         if ($response->getStatusCode() != 200)
@@ -528,7 +534,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         } else {
             createDatabase($databaseName, $host, $databaseUsername, $databasePassword, $adminPassword);
             writeApiConfigFile($databaseName, $host, $databaseUsername, $databasePassword, $adminPassword, $filesDirectory, $serverDeviceId, $timezone, $maxExecutionTime, $apiUrl);
+            // Clear Symfony cache and fix permissions so the API can load the new config
+            $projectDir = realpath(__DIR__ . '/..');
+            exec("rm -rf {$projectDir}/var/cache/* 2>&1");
+            exec("chown -R www-data:www-data {$projectDir}/var 2>&1");
+            exec("chmod -R 777 {$projectDir}/var 2>&1");
             testApiUrl($apiUrl, 'admin', $adminPassword);
+            // Fix permissions again after testApiUrl regenerated cache
+            exec("chown -R www-data:www-data {$projectDir}/var 2>&1");
+            exec("chmod -R 777 {$projectDir}/var 2>&1");
             header('Location: complete.php');
         }
     } catch (PDOException $e) {

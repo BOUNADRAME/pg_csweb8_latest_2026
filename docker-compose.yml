@@ -147,6 +147,7 @@ services:
       - --table-open-cache=${MYSQL_TABLE_OPEN_CACHE:-2000}
       - --wait-timeout=${MYSQL_WAIT_TIMEOUT:-28800}
       - --long-query-time=${MYSQL_SLOW_QUERY_TIME:-2}
+      - --log-bin-trust-function-creators=1
 
     networks:
       - csweb-network
