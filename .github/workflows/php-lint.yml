@@ -8,11 +8,14 @@ on:
       - 'src/**'
       - 'composer.json'
       - 'composer.lock'
+      - '.github/workflows/php-lint.yml'
   pull_request:
     branches: [ master, develop ]
     paths:
       - '**.php'
       - 'src/**'
+      - '.github/workflows/php-lint.yml'
+  workflow_dispatch:
 
 jobs:
   php-lint:
