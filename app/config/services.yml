@@ -48,7 +48,7 @@ services:
     AppBundle\Service\HttpHelper:
         public: true
         arguments:
-            $baseUri: '%cspro_rest_api_url%'
+            $baseUri: '%cspro_internal_api_url%'
     
     AppBundle\Service\OAuthHelper:
         public: true
