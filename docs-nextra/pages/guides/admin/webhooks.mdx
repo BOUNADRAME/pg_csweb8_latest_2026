@@ -1,14 +1,125 @@
-# Webhooks
+# Webhooks & Intégration API
 
-Configurer webhooks pour recevoir événements CSPro en temps réel.
+Intégrez CSWeb avec vos applications tierces pour piloter le breakout, gérer les logs et automatiser vos workflows.
 
 import { Callout } from 'nextra/components'
 
 <Callout type="info">
-**CSWeb Community Platform** inclut 3 webhooks prêts à l'emploi : breakout automatique, log monitoring, schema sync.
+**CSWeb Community Platform** permet deux types d'intégration :
+1. **Webhooks entrants** : CSPro → CSWeb (événements en temps réel)
+2. **API sortante** : Application tierce → CSWeb (pilotage du breakout sélectif, logs, monitoring)
 </Callout>
 
-## Webhooks Disponibles
+---
+
+## Cas d'Usage
+
+### 1. Piloter le Breakout depuis une Application Tierce
+
+Déclenchez le breakout sélectif d'un dictionnaire spécifique depuis votre dashboard ou application de monitoring.
+
+**Exemple :** Application de supervision qui lance automatiquement le breakout du dictionnaire `MENAGE` quand 1000 nouveaux questionnaires sont détectés.
+
+### 2. Centraliser les Logs dans un SIEM
+
+Envoyez les logs CSWeb vers votre système de monitoring externe (ELK Stack, Splunk, Datadog).
+
+**Exemple :** Alertes automatiques sur échecs de breakout ou erreurs de synchronisation.
+
+### 3. Intégration BI/Dashboard
+
+Récupérez les métriques de collecte en temps réel pour alimenter vos dashboards Power BI, Tableau ou Grafana.
+
+**Exemple :** Dashboard affichant le nombre de questionnaires par région, taux de synchronisation, progression du breakout.
+
+---
+
+## API pour Applications Tierces
+
+### Déclencher le Breakout Sélectif
+
+Lancez le breakout d'un dictionnaire spécifique depuis votre application.
+
+**Endpoint :** `POST /api/breakout/trigger`
+
+```bash
+curl -X POST http://localhost:8080/api/breakout/trigger \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dictionary": "MENAGE",
+    "mode": "selective"
+  }'
+```
+
+**Réponse :**
+```json
+{
+  "status": "success",
+  "job_id": "breakout_123456",
+  "dictionary": "MENAGE",
+  "started_at": "2026-03-21T10:30:00Z"
+}
+```
+
+### Récupérer les Logs
+
+Accédez aux logs de breakout depuis votre application de monitoring.
+
+**Endpoint :** `GET /api/logs/breakout`
+
+```bash
+curl -X GET "http://localhost:8080/api/logs/breakout?dictionary=MENAGE&limit=100" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+**Réponse :**
+```json
+{
+  "logs": [
+    {
+      "timestamp": "2026-03-21T10:30:15Z",
+      "level": "info",
+      "dictionary": "MENAGE",
+      "message": "Processing 1500 cases",
+      "progress": "45%"
+    }
+  ]
+}
+```
+
+### Métriques en Temps Réel
+
+Alimentez vos dashboards avec les métriques de collecte.
+
+**Endpoint :** `GET /api/metrics`
+
+```bash
+curl -X GET http://localhost:8080/api/metrics \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+**Réponse :**
+```json
+{
+  "total_cases": 15420,
+  "cases_by_dictionary": {
+    "MENAGE": 8200,
+    "INDIVIDU": 7220
+  },
+  "breakout_status": {
+    "MENAGE": "completed",
+    "INDIVIDU": "in_progress"
+  },
+  "sync_rate": "98.5%"
+}
+```
+
+---
+
+## Webhooks Entrants (CSPro → CSWeb)
+
+Recevez des événements en temps réel depuis CSPro pour automatiser vos workflows.
 
 ### 1. Breakout Webhook
 
