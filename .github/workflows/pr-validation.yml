@@ -1,0 +1,38 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: pdo, pdo_mysql, pdo_pgsql, mysqli, pgsql, zip, mbstring
+      
+      - name: Validate composer.json
+        run: composer validate --strict
+      
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-suggest
+      
+      - name: Check PHP syntax
+        run: find src -name "*.php" -print0 | xargs -0 -n1 php -l
+      
+      - name: Verify Docker Compose
+        run: docker compose config
+      
+      - name: Check for merge conflicts markers
+        run: |
+          if git grep -n "^<<<<<<< \|^=======$\|^>>>>>>> " -- ':!.github/workflows/*.yml'; then
+            echo "Found merge conflict markers in code!"
+            exit 1
+          fi

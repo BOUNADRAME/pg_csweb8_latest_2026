@@ -1,58 +1,43 @@
-## 📝 Description
+## Description
 
-Décrivez clairement les changements apportés dans cette PR.
+<!-- Décrivez clairement les changements apportés -->
 
-## 🔗 Issue liée
+## Type de changement
 
-Fixes #(numéro de l'issue)
+- [ ] 🐛 Correction de bug (fix)
+- [ ] ✨ Nouvelle fonctionnalité (feature)
+- [ ] 📝 Documentation
+- [ ] 🔧 Refactoring (sans changement fonctionnel)
+- [ ] ⚡ Performance
+- [ ] 🎨 UI/UX
 
-Ou bien :
-- Relates to #(numéro)
-- Part of #(numéro)
+## Motivation et Contexte
 
-## 🎯 Type de changement
+<!-- Pourquoi ce changement est nécessaire ? Quel problème résout-il ? -->
 
-- [ ] 🐛 Bug fix (changement non-breaking qui corrige un bug)
-- [ ] ✨ New feature (changement non-breaking qui ajoute une fonctionnalité)
-- [ ] 💥 Breaking change (correction ou fonctionnalité qui casse la compatibilité)
-- [ ] 📖 Documentation (changements de documentation uniquement)
-- [ ] 🎨 Style (formatage, points-virgules manquants, etc; pas de changement de code)
-- [ ] ♻️ Refactoring (ni correction de bug ni ajout de fonctionnalité)
-- [ ] ⚡ Performance (amélioration des performances)
-- [ ] ✅ Tests (ajout ou correction de tests)
-- [ ] 🔧 Chore (maintenance, dépendances, config, etc)
+## Comment a-t-il été testé ?
 
-## 🧪 Comment tester
+<!-- Décrivez comment vous avez testé vos changements -->
 
-Décrivez les étapes pour tester vos changements :
+- [ ] Tests locaux avec Docker
+- [ ] Tests manuels des fonctionnalités modifiées
+- [ ] Tests sur différents navigateurs (si UI)
 
-1. Aller sur '...'
-2. Exécuter '...'
-3. Vérifier que '...'
+## Checklist
 
-## 📸 Screenshots (si applicable)
-
-Ajoutez des screenshots pour illustrer les changements visuels.
-
-## ✅ Checklist
-
-- [ ] Mon code suit le style du projet
-- [ ] J'ai effectué une auto-review de mon code
-- [ ] J'ai commenté mon code, en particulier dans les zones difficiles
+- [ ] Mon code suit les conventions du projet
 - [ ] J'ai mis à jour la documentation si nécessaire
 - [ ] Mes changements ne génèrent pas de nouveaux warnings
-- [ ] J'ai ajouté des tests qui prouvent que ma correction fonctionne ou que ma fonctionnalité marche
-- [ ] Les tests unitaires passent localement avec mes changements
-- [ ] Toutes les dépendances sont à jour dans `composer.json` ou `package.json`
+- [ ] J'ai testé en local avec Docker
+- [ ] Mes commits sont clairs et bien formatés
+- [ ] J'ai résolu tous les conflits avec `master`
 
-## 🔍 Informations additionnelles
+## Screenshots (si applicable)
 
-Ajoutez toute autre information pertinente sur cette PR.
+<!-- Ajoutez des captures d'écran pour les changements UI -->
 
-## 👥 Reviewers
+## Références
 
-@BOUNADRAME (CC: autres reviewers si nécessaire)
+<!-- Issues liées, discussions, etc. -->
 
----
-
-**Merci pour votre contribution ! 🙏**
+Closes #issue_number

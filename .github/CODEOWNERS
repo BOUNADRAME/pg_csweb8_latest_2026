@@ -1,0 +1,24 @@
+# Code Owners pour CSWeb Community Platform
+# Ces personnes doivent approuver les changements avant merge
+
+# Propriétaire par défaut pour tout le repo
+* @BOUNADRAME
+
+# Documentation
+/docs-nextra/ @BOUNADRAME
+
+# Configuration Docker critique
+/docker-compose.yml @BOUNADRAME
+/Dockerfile @BOUNADRAME
+/.env.example @BOUNADRAME
+
+# Code source critique
+/src/AppBundle/Service/ @BOUNADRAME
+/src/AppBundle/Command/ @BOUNADRAME
+
+# Configuration Symfony
+/config/ @BOUNADRAME
+
+# Scripts de setup et upgrade
+/setup/ @BOUNADRAME
+/upgrade/ @BOUNADRAME
