@@ -139,15 +139,16 @@ PostgreSQL pour performance analytics, MySQL pour compatibilité, SQL Server pou
 
 [📖 Architecture Détaillée](/guides/architecture)
 
-### 📡 Webhooks & Monitoring
+### 📡 Webhooks & Intégration Applications Tierces
 
-**Le problème :** Pas de visibilité en temps réel sur la collecte et le traitement des données.
+**Le problème :** Impossible d'intégrer CSWeb avec d'autres systèmes ou de piloter le breakout depuis une application externe.
 
-**Notre solution :** Webhooks intégrés + monitoring temps réel pour automatiser vos workflows.
+**Notre solution :** API Webhooks pour contrôler CSWeb depuis vos applications.
 
-- Notifications sur événements CSPro (upload, sync, breakout)
-- Logs centralisés accessibles via interface web
-- Métriques et alertes configurables
+- **Déclencher le breakout sélectif** depuis une application tierce
+- **Gérer les logs** et monitoring via API
+- **Automatiser les workflows** (notifications, traitements post-breakout)
+- **Intégration BI/Dashboards** pour suivi temps réel
 
 [📖 Guide Webhooks](/guides/admin/webhooks)
 
