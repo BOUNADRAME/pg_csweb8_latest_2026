@@ -1,0 +1,333 @@
+---
+title: Comparaison des Solutions Docker
+description: CSWeb Community Platform vs autres solutions Docker CSWeb
+---
+
+# Comparaison des Solutions Docker pour CSWeb
+
+Cette page compare les différentes approches pour déployer CSWeb avec Docker.
+
+---
+
+## Solutions Disponibles
+
+### 1. docker-csweb (CSPro Users)
+
+**Repository :** [csprousers/docker-csweb](https://github.com/csprousers/docker-csweb)
+
+Une excellente solution pour démarrer rapidement avec CSWeb dans Docker. Simple et efficace pour :
+- Tests et développement local
+- Petits projets avec MySQL
+- Découverte de CSWeb
+
+**Points forts :**
+- Setup ultra-rapide (3 services : csweb + mysql + phpmyadmin)
+- Configuration minimale (6 variables)
+- Idéal pour débuter avec Docker + CSWeb
+
+**Cas d'usage :**
+- Développeurs qui découvrent CSWeb
+- Projets prototypes
+- Environnements de test simples
+
+---
+
+### 2. CSWeb Community Platform (Ce Projet)
+
+**Repository :** [BOUNADRAME/csweb-community](https://github.com/BOUNADRAME/csweb-community)
+
+Une solution enterprise-grade qui étend docker-csweb avec des fonctionnalités avancées pour la production.
+
+**Ce que nous ajoutons :**
+
+#### Architecture Multi-DB Flexible
+
+```bash
+# PostgreSQL (recommandé pour analytics)
+docker compose --profile local-postgres up -d
+
+# MySQL (compatible legacy)
+docker compose --profile local-mysql up -d
+
+# SQL Server (RGPH5 Sénégal, enterprise)
+docker compose --profile local-sqlserver up -d
+```
+
+**Avantage :** Choisissez le SGBD adapté à vos besoins analytics.
+
+---
+
+#### Breakout Sélectif par Dictionnaire
+
+```bash
+# Breaker UN dictionnaire spécifique (rapide, ciblé)
+php bin/console csweb:process-cases-by-dict EVAL_PRODUCTEURS
+
+# Au lieu du breakout global (lent, risqué)
+```
+
+**Avantage :** RGPH5 Sénégal - traitement des questionnaires en une fraction du temps grâce au breakout sélectif.
+
+---
+
+#### Scheduler Automatique
+
+**Cron intégré dans le conteneur :**
+- Breakout automatique toutes les minutes
+- Backup automatique des bases
+- Nettoyage des anciens backups
+
+```bash
+# Vérifier les jobs schedulés
+docker compose exec csweb crontab -l
+```
+
+**Avantage :** Pas besoin de configurer manuellement les tâches récurrentes.
+
+---
+
+#### Monitoring & Logs Centralisés
+
+**Healthchecks sur tous les services :**
+```bash
+docker compose ps
+# Tous les services affichent (healthy)
+```
+
+**Logs centralisés :**
+- Volume dédié `csweb_logs`
+- Logs streaming temps réel
+- Niveaux configurables (debug, info, error)
+
+**Avantage :** Détecter les problèmes avant qu'ils n'impactent la production.
+
+---
+
+#### Performance Tuning Exhaustif
+
+**60+ variables de configuration :**
+
+**PHP :**
+```env
+PHP_MEMORY_LIMIT=512M
+PHP_MAX_EXECUTION_TIME=300
+PHP_OPCACHE_MEMORY=128
+PHP_OPCACHE_MAX_FILES=10000
+```
+
+**MySQL :**
+```env
+MYSQL_MAX_CONNECTIONS=200
+MYSQL_INNODB_BUFFER_POOL_SIZE=256M
+MYSQL_MAX_ALLOWED_PACKET=64M
+```
+
+**PostgreSQL :**
+```env
+PG_MAX_CONNECTIONS=200
+PG_SHARED_BUFFERS=256MB
+PG_EFFECTIVE_CACHE_SIZE=1GB
+```
+
+**Avantage :** Optimisez chaque composant pour vos besoins de charge.
+
+---
+
+#### Architecture Séparée Metadata/Breakout
+
+```
+┌─────────────────┐      ┌──────────────────┐
+│  MySQL Metadata │      │  PostgreSQL       │
+│  (Users, Apps)  │      │  (Analytics Data) │
+└─────────────────┘      └──────────────────┘
+         ↑                         ↑
+         └────────── CSWeb ────────┘
+```
+
+**Avantage :** Séparez les préoccupations - metadata sur MySQL stable, analytics sur PostgreSQL performant.
+
+---
+
+#### Modes de Déploiement Flexibles
+
+**6 modes supportés :**
+
+| Mode | Base Metadata | Base Breakout | Cas d'Usage |
+|------|--------------|---------------|-------------|
+| **local-postgres** | MySQL local | PostgreSQL local | Dev/Test |
+| **local-mysql** | MySQL local | MySQL local | Compatible legacy |
+| **local-sqlserver** | MySQL local | SQL Server local | Écosystème Microsoft |
+| **remote-postgres** | MySQL local | PostgreSQL distant | Production INS |
+| **remote-mysql** | MySQL local | MySQL distant | Migration progressive |
+| **remote-sqlserver** | MySQL local | SQL Server distant | RGPH5 enterprise |
+
+**Avantage :** Adaptez l'architecture à votre infrastructure existante.
+
+---
+
+#### Sécurité Renforcée
+
+**Rate limiting intégré :**
+- Login : 5 requêtes/minute
+- API : 60 requêtes/minute
+- UI : 120 requêtes/minute
+
+**Security headers automatiques :**
+- `X-Content-Type-Options`
+- `X-Frame-Options`
+- `X-XSS-Protection`
+- `Content-Security-Policy`
+
+**Avantage :** Protection contre les attaques brute-force et XSS sans configuration.
+
+---
+
+#### Documentation Complète
+
+**Site Nextra avec 255+ pages :**
+- Guides d'installation détaillés
+- Troubleshooting et FAQ
+- Architecture expliquée
+- Best practices de production
+- API et webhooks
+
+**Avantage :** Réduisez le temps d'onboarding de vos équipes.
+
+---
+
+## Tableau Comparatif
+
+| Fonctionnalité | docker-csweb | CSWeb Community |
+|----------------|--------------|-----------------|
+| **Setup rapide** | ✅ 5 min | ✅ 5 min |
+| **MySQL support** | ✅ Oui | ✅ Oui |
+| **PostgreSQL support** | ❌ Non | ✅ Oui |
+| **SQL Server support** | ❌ Non | ✅ Oui |
+| **Breakout sélectif** | ❌ Non | ✅ Oui (par dictionnaire) |
+| **Scheduler automatique** | ❌ Non | ✅ Oui (cron intégré) |
+| **Monitoring** | ⚠️ Basique | ✅ Healthchecks + logs |
+| **Performance tuning** | ⚠️ 6 variables | ✅ 60+ variables |
+| **Modes déploiement** | 2 (release/dev) | 6 (local/remote × 3 DB) |
+| **Rate limiting** | ❌ Non | ✅ Oui |
+| **Security headers** | ❌ Non | ✅ Oui |
+| **Documentation** | ⚠️ README | ✅ Site complet (255+ pages) |
+| **Backup automatique** | ❌ Non | ✅ Oui |
+| **Architecture séparée** | ❌ Non | ✅ Oui (metadata/breakout) |
+
+**Légende :**
+- ✅ Supporté et optimisé
+- ⚠️ Basique ou limité
+- ❌ Non disponible
+
+---
+
+## Quand Utiliser Chaque Solution ?
+
+### Utilisez docker-csweb si :
+
+- Vous découvrez CSWeb et voulez tester rapidement
+- Vous avez un petit projet avec MySQL uniquement
+- Vous n'avez pas besoin de breakout sélectif
+- Vous gérez manuellement l'automation (cron externe)
+
+**Parfait pour :** Développeurs, prototypes, petits projets
+
+---
+
+### Utilisez CSWeb Community Platform si :
+
+- Vous déployez en production (RGPH, enquêtes statistiques)
+- Vous avez besoin de PostgreSQL ou SQL Server
+- Vous voulez du breakout sélectif (performance critique)
+- Vous avez besoin de monitoring et logs centralisés
+- Vous voulez de l'automation intégrée (scheduler, backup)
+- Vous gérez des volumes importants de données
+
+**Parfait pour :** Instituts statistiques, production RGPH, projets enterprise
+
+---
+
+## Migration depuis docker-csweb
+
+Si vous utilisez déjà docker-csweb et voulez migrer vers CSWeb Community Platform :
+
+### 1. Backup de vos données
+
+```bash
+# Backup MySQL
+docker compose exec mysql mysqldump -u root -p cspro > backup.sql
+```
+
+### 2. Cloner CSWeb Community
+
+```bash
+git clone https://github.com/BOUNADRAME/csweb-community.git
+cd csweb-community
+```
+
+### 3. Configurer le .env
+
+```env
+# Reprendre vos paramètres MySQL existants
+MYSQL_HOST=mysql
+MYSQL_DATABASE=cspro  # Ou votre nom de DB
+MYSQL_USER=cspro
+MYSQL_PASSWORD=votre_mot_de_passe
+
+# Ajouter la config breakout (nouvelle)
+BREAKOUT_MODE=local
+BREAKOUT_DB_TYPE=postgresql
+```
+
+### 4. Démarrer avec vos données
+
+```bash
+# Démarrer avec PostgreSQL breakout
+docker compose --profile local-postgres up -d
+
+# Restaurer vos données metadata
+docker compose exec mysql mysql -u root -p cspro < backup.sql
+```
+
+### 5. Configurer le breakout sélectif
+
+Via l'interface web CSWeb :
+1. Admin Panel → Dictionaries
+2. Configurer la base breakout PostgreSQL pour chaque dictionnaire
+3. Lancer le premier breakout sélectif
+
+**Migration transparente :** Vos utilisateurs, applications et dictionnaires sont préservés.
+
+---
+
+## Compatibilité
+
+Les trois solutions sont **100% compatibles** avec CSWeb 8 officiel :
+
+- Applications CSPro Android fonctionnent à l'identique
+- API CSWeb identique
+- Format de données identique
+- Migration bidirectionnelle possible
+
+**Vous pouvez changer de solution à tout moment sans perdre vos données.**
+
+---
+
+## Contribution
+
+CSWeb Community Platform est open-source et accueille les contributions :
+
+- **Issues :** [GitHub Issues](https://github.com/BOUNADRAME/csweb-community/issues)
+- **Pull Requests :** Bienvenues !
+- **Documentation :** Améliorations suggérées
+
+Nous remercions la communauté CSPro Users pour leur travail pionnier sur docker-csweb qui a inspiré ce projet.
+
+---
+
+## Prochaines Étapes
+
+- [Installation](/getting-started/installation) - Déployer CSWeb Community en 5 minutes
+- [Breakout Sélectif](/guides/breakout/selective) - Guide complet
+- [Configuration Multi-DB](/guides/database/multi-db) - PostgreSQL, MySQL, SQL Server
+- [Architecture](/guides/architecture) - Comprendre l'architecture séparée
