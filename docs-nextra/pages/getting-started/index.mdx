@@ -15,13 +15,13 @@ description: Introduction à CSWeb Community Platform
 
 | Fonctionnalité | CSWeb Vanilla | CSWeb Community |
 |----------------|---------------|-----------------|
-| **Installation** | 2-3 jours (Apache, MySQL, PHP) | 5 minutes (Docker) |
+| **Installation** | Setup manuel (Apache, MySQL, PHP) | Setup automatisé en 5 minutes (Docker) |
 | **Breakout** | Global (tous les dictionnaires) | Sélectif (par dictionnaire) |
 | **Base de données** | MySQL uniquement | PostgreSQL, MySQL, SQL Server |
 | **Scheduler** | Crontab manuel | Web UI avec builder visuel |
 | **Monitoring** | Logs SSH requis | Streaming temps réel |
 | **Admin UI** | Basique | React moderne + Tailwind |
-| **Documentation** | Limitée | 255+ pages (FR) |
+| **Documentation** | Dispersée et difficile d'accès | Unifiée et accessible (255+ pages) |
 
 ---
 
@@ -143,6 +143,14 @@ docker compose --profile local-postgres up -d
 [Guide scheduler ](/guides/admin/scheduler)
 
 ---
+
+## Pourquoi CSWeb Community Platform ?
+
+### Basé sur docker-csweb, mais avec des fonctionnalités avancées
+
+CSWeb Community Platform s'inspire du travail de la communauté CSPro Users ([docker-csweb](https://github.com/csprousers/docker-csweb)) qui a simplifié le déploiement Docker de CSWeb. Nous avons étendu cette base pour répondre aux besoins de production des instituts statistiques.
+
+### Ce que nous ajoutons
 
 ## Différences Clés vs CSWeb Vanilla
 

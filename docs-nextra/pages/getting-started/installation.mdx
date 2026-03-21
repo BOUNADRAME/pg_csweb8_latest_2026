@@ -364,8 +364,9 @@ Après le premier démarrage, CSWeb vous redirige vers le wizard de configuratio
    | **CSWeb API URL**           | `http://localhost/api/` | **Port 80 interne, PAS 8080 !**                      |
 
    > **Important :** L'API URL doit être `http://localhost/api/` (sans le port 8080).
-   > À l'intérieur du conteneur Docker, Apache écoute sur le port **80**.
+   > À l'intérieur du conteneur Docker, CSWeb accède à sa propre API via le port interne **80**.
    > Le port 8080 est uniquement le mapping externe visible dans votre navigateur.
+   > CSEntry et les services internes communiquent directement via localhost:80, pas via le port exposé 8080.
 
 3. **Cliquer sur "Next"** pour finaliser l'installation.
 
@@ -449,10 +450,10 @@ Ajouter `--profile dev` pour activer phpMyAdmin et pgAdmin :
 docker compose --profile local-postgres --profile dev up -d
 ```
 
-| Outil          | URL                      | Credentials                          |
-| -------------- | ------------------------ | ------------------------------------ |
-| **phpMyAdmin** | `http://localhost:8081`   | Server: `mysql` / User: `root`       |
-| **pgAdmin**    | `http://localhost:8082`   | Email/Password définis dans `.env`   |
+| Outil          | URL                     | Credentials                        |
+| -------------- | ----------------------- | ---------------------------------- |
+| **phpMyAdmin** | `http://localhost:8081` | Server: `mysql` / User: `root`     |
+| **pgAdmin**    | `http://localhost:8082` | Email/Password définis dans `.env` |
 
 ---
 
@@ -536,7 +537,7 @@ sudo ufw allow from [IP_SERVEUR_CSWEB] to any port 1433
 | **local-mysql**     | `docker compose --profile local-mysql up -d`     | CSWeb + MySQL + MySQL Breakout |
 | **local-sqlserver** | `docker compose --profile local-sqlserver up -d` | CSWeb + MySQL + SQL Server     |
 | **dev**             | `--profile dev` (combinable)                     | + phpMyAdmin + pgAdmin         |
-| *(aucun)*           | `docker compose up -d csweb mysql`               | CSWeb + MySQL (mode remote)    |
+| _(aucun)_           | `docker compose up -d csweb mysql`               | CSWeb + MySQL (mode remote)    |
 
 ### Volumes Docker
 
