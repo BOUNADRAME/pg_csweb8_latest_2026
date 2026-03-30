@@ -132,6 +132,7 @@ EOT;
 			  `dictionary_id` smallint unsigned NOT NULL,
                           `host_name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
                           `port` smallint unsigned DEFAULT NULL,
+                          `db_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'postgresql',
 			  `schema_name` varchar(191) COLLATE utf8mb4_unicode_ci NOT NULL,
 			  `schema_user_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
 			  `schema_password` VARBINARY(255) NOT NULL,

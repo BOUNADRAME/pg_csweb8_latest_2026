@@ -17,7 +17,7 @@ class DataSettings {
     }
 
     public function getDataSettings() {
-        $dataSettings = $this->pdo->query('SELECT `cspro_dictionaries`.`id` as id, `dictionary_name` as name, `dictionary_label` as label, `cspro_dictionaries_schema`.`host_name` as targetHostName, `cspro_dictionaries_schema`.`port` as targetPort, `schema_name` as targetSchemaName,'
+        $dataSettings = $this->pdo->query('SELECT `cspro_dictionaries`.`id` as id, `dictionary_name` as name, `dictionary_label` as label, `cspro_dictionaries_schema`.`host_name` as targetHostName, `cspro_dictionaries_schema`.`port` as targetPort, `cspro_dictionaries_schema`.`db_type` as dbType, `schema_name` as targetSchemaName,'
                         . ' `schema_user_name` as dbUserName, AES_DECRYPT(`schema_password`, \'cspro\') as dbPassword, `additional_config` as additionalConfig, `map_info` as mapInfo FROM `cspro_dictionaries_schema` RIGHT JOIN cspro_dictionaries'
                         . '  ON dictionary_id = cspro_dictionaries.id    ORDER BY dictionary_label')->fetchAll();
         $this->getDataCounts($dataSettings);
@@ -33,7 +33,7 @@ class DataSettings {
         $bind = [];
         $dataSetting = null;
         try {
-            $stm = 'SELECT `cspro_dictionaries`.`id` as id, `dictionary_name` as name, `dictionary_label` as label, `cspro_dictionaries_schema`.`host_name` as targetHostName, `cspro_dictionaries_schema`.`port` as targetPort, `schema_name` as targetSchemaName,'
+            $stm = 'SELECT `cspro_dictionaries`.`id` as id, `dictionary_name` as name, `dictionary_label` as label, `cspro_dictionaries_schema`.`host_name` as targetHostName, `cspro_dictionaries_schema`.`port` as targetPort, `cspro_dictionaries_schema`.`db_type` as dbType, `schema_name` as targetSchemaName,'
                     . ' `schema_user_name` as dbUserName, AES_DECRYPT(`schema_password`, \'cspro\') as dbPassword, `additional_config` as additionalConfig, `map_info` as mapInfo FROM `cspro_dictionaries_schema` RIGHT JOIN cspro_dictionaries'
                     . '  ON dictionary_id = cspro_dictionaries.id  WHERE dictionary_name = :dictName';
 
@@ -50,13 +50,22 @@ class DataSettings {
         return $dataSetting;
     }
 
+    public static function resolveDriver(string $dbType): string {
+        return match (strtolower($dbType)) {
+            'mysql'     => 'pdo_mysql',
+            'sqlserver' => 'pdo_sqlsrv',
+            default     => 'pdo_pgsql',   // postgresql
+        };
+    }
+
     private function buildConnectionParams(array $dataSetting): array {
+        $driver = self::resolveDriver($dataSetting['dbType'] ?? 'postgresql');
         $params = [
             'dbname'   => $dataSetting['targetSchemaName'],
             'user'     => $dataSetting['dbUserName'],
             'password' => $dataSetting['dbPassword'],
             'host'     => $dataSetting['targetHostName'],
-            'driver'   => 'pdo_pgsql',
+            'driver'   => $driver,
         ];
         if (!empty($dataSetting['targetPort'])) {
             $params['port'] = (int) $dataSetting['targetPort'];
@@ -79,12 +88,13 @@ class DataSettings {
             $isConnected = $conn->connect();
 //if connection successful add
             if ($isConnected) {
-                $stm = "INSERT INTO `cspro_dictionaries_schema`(`dictionary_id`, `host_name`, `port`, `schema_name`, `schema_user_name`, `schema_password`, `additional_config`, `map_info`) "
-                        . "VALUES (:id, :targetHostName, :targetPort, :targetSchemaName, :dbUserName, AES_ENCRYPT(:dbPassword, :keyString), :additionalConfig, :mapInfo)";
+                $stm = "INSERT INTO `cspro_dictionaries_schema`(`dictionary_id`, `host_name`, `port`, `db_type`, `schema_name`, `schema_user_name`, `schema_password`, `additional_config`, `map_info`) "
+                        . "VALUES (:id, :targetHostName, :targetPort, :dbType, :targetSchemaName, :dbUserName, AES_ENCRYPT(:dbPassword, :keyString), :additionalConfig, :mapInfo)";
 
                 $bind['id'] = $dataSetting['id'];
                 $bind['targetHostName'] = $dataSetting['targetHostName'];
                 $bind['targetPort'] = !empty($dataSetting['targetPort']) ? (int) $dataSetting['targetPort'] : null;
+                $bind['dbType'] = strtolower($dataSetting['dbType'] ?? 'postgresql');
                 $bind['targetSchemaName'] = $dataSetting['targetSchemaName'];
                 $bind['dbUserName'] = $dataSetting['dbUserName'];
                 $bind['dbPassword'] = $dataSetting['dbPassword'];
@@ -121,7 +131,7 @@ class DataSettings {
             if ($isConnected) {
                 $hasProcessCasesUpdateOccurred = $this->hasProcessCasesOptionsUpdated($dataSetting);
 
-                $stm = "UPDATE `cspro_dictionaries_schema` SET `host_name` = :targetHostName, `port` = :targetPort, `schema_name` = :targetSchemaName,"
+                $stm = "UPDATE `cspro_dictionaries_schema` SET `host_name` = :targetHostName, `port` = :targetPort, `db_type` = :dbType, `schema_name` = :targetSchemaName,"
                         . " `schema_user_name` = :dbUserName, `schema_password` = AES_ENCRYPT(:dbPassword, :keyString), "
                         . " `additional_config` = :additionalConfig, `map_info` = :mapInfo"
                         . " WHERE `dictionary_id` = :id";
@@ -129,6 +139,7 @@ class DataSettings {
                 $bind['id'] = $dataSetting['id'];
                 $bind['targetHostName'] = $dataSetting['targetHostName'];
                 $bind['targetPort'] = !empty($dataSetting['targetPort']) ? (int) $dataSetting['targetPort'] : null;
+                $bind['dbType'] = strtolower($dataSetting['dbType'] ?? 'postgresql');
                 $bind['targetSchemaName'] = $dataSetting['targetSchemaName'];
                 $bind['dbUserName'] = $dataSetting['dbUserName'];
                 $bind['dbPassword'] = $dataSetting['dbPassword'];

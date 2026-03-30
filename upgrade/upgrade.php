@@ -321,11 +321,24 @@ EOT;
                 }
             }
 
+            function schema10To11($pdo) {
+                try {
+                    $col = $pdo->query("SHOW COLUMNS FROM `cspro_dictionaries_schema` LIKE 'db_type'")->rowCount();
+                    if ($col === 0) {
+                        $pdo->exec("ALTER TABLE `cspro_dictionaries_schema` ADD COLUMN `db_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'postgresql' AFTER `port`");
+                    }
+                    $pdo->exec("UPDATE `cspro_config` SET `value`=11 WHERE `name` = 'schema_version'");
+                } catch (\Exception $e) {
+                    throw $e;
+                }
+            }
+
             $migrateFuncs = array(
                 5 => 'schema5To6',
                 7 => 'schema7To8',
                 8 => 'schema8To9',
-                9 => 'schema9To10'
+                9 => 'schema9To10',
+                10 => 'schema10To11'
             );
 
             // Check if app was already configured

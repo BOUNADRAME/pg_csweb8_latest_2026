@@ -28,12 +28,13 @@ class MapDataRepository {
     public function getDBALConnection($dataSetting) {
         $conn = null;
         if (isset($dataSetting)) {
+            $driver = DataSettings::resolveDriver($dataSetting['dbType'] ?? 'postgresql');
             $connectionParams = [
                 'dbname'   => $dataSetting['targetSchemaName'],
                 'user'     => $dataSetting['dbUserName'],
                 'password' => $dataSetting['dbPassword'],
                 'host'     => $dataSetting['targetHostName'],
-                'driver'   => 'pdo_pgsql',
+                'driver'   => $driver,
             ];
             if (!empty($dataSetting['targetPort'])) {
                 $connectionParams['port'] = (int) $dataSetting['targetPort'];
