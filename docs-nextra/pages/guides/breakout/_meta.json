@@ -1,5 +1,6 @@
 {
   "selective": "Breakout Sélectif",
   "scheduled": "Breakout Automatique",
-  "monitoring": "Monitoring"
+  "monitoring": "Monitoring",
+  "remote-docker": "Breakout Distant (Docker)"
 }
