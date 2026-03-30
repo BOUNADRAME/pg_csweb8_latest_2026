@@ -46,13 +46,16 @@ class DictionarySchemaHelper {
     }
 
     private function getConnectionParameters(): bool {
-        $stm = "SELECT host_name, schema_name, schema_user_name, AES_DECRYPT(schema_password, '" . "cspro') as `password` FROM `cspro_dictionaries_schema` JOIN `cspro_dictionaries` ON dictionary_id = cspro_dictionaries.id WHERE cspro_dictionaries.dictionary_name = :dictName";
+        $stm = "SELECT host_name, port, schema_name, schema_user_name, AES_DECRYPT(schema_password, '" . "cspro') as `password` FROM `cspro_dictionaries_schema` JOIN `cspro_dictionaries` ON dictionary_id = cspro_dictionaries.id WHERE cspro_dictionaries.dictionary_name = :dictName";
         $bind = ['dictName' => $this->dictionaryName];
 
         $result = $this->pdo->fetchOne($stm, $bind);
 
         if ($result) {
             $this->connectionParams = ['dbname' => $result['schema_name'], 'user' => $result['schema_user_name'], 'password' => $result['password'], 'host' => $result['host_name'], 'driver' => 'pdo_pgsql'];
+            if (!empty($result['port'])) {
+                $this->connectionParams['port'] = (int) $result['port'];
+            }
             return true;
         } else {
             $this->connectionParams = null;

@@ -308,10 +308,24 @@ EOT;
                 }
             }
 
+            function schema9To10($pdo) {
+                try {
+                    // Add port column to cspro_dictionaries_schema for non-default remote DB ports
+                    $col = $pdo->query("SHOW COLUMNS FROM `cspro_dictionaries_schema` LIKE 'port'")->rowCount();
+                    if ($col === 0) {
+                        $pdo->exec("ALTER TABLE `cspro_dictionaries_schema` ADD COLUMN `port` smallint unsigned DEFAULT NULL AFTER `host_name`");
+                    }
+                    $pdo->exec("UPDATE `cspro_config` SET `value`=10 WHERE `name` = 'schema_version'");
+                } catch (\Exception $e) {
+                    throw $e;
+                }
+            }
+
             $migrateFuncs = array(
                 5 => 'schema5To6',
                 7 => 'schema7To8',
-                8 => 'schema8To9'
+                8 => 'schema8To9',
+                9 => 'schema9To10'
             );
 
             // Check if app was already configured

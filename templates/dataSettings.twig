@@ -105,6 +105,14 @@
                         </div>
                         <!-- form-group row -->
                         <div class="form-group row has-feedback">
+                            <label class="col-sm-4 control-label" for="port">Port</label>
+                            <div class="col-sm-8">
+                                <input type="number" class="form-control" name="targetPort" id="port" placeholder="Leave blank for default (PostgreSQL: 5432, MySQL: 3306, SQL Server: 1433)" min="1" max="65535">
+                                <div class="help-block with-errors"></div>
+                            </div>
+                        </div>
+                        <!-- form-group row -->
+                        <div class="form-group row has-feedback">
                             <label class="col-sm-4 control-label" for="db-user-name">Database username</label>
                             <div class="col-sm-8">
                                 <input type="text" class="form-control" name="dbUserName" id="db-user-name" placeholder="Name of database user. Must already exist."
@@ -293,6 +301,14 @@
                                 <div class="col-sm-8">
                                     <input type="text" class="form-control" name="edit-targetHostName" id="edit-host-name" placeholder="Hostname of database server (e.g. localhost)."
                                            data-required-error="Host name is required" required>
+                                    <div class="help-block with-errors"></div>
+                                </div>
+                            </div>
+                            <!-- form-group row -->
+                            <div class="form-group row has-feedback">
+                                <label class="col-sm-4 control-label" for="edit-port">Port</label>
+                                <div class="col-sm-8">
+                                    <input type="number" class="form-control" name="edit-targetPort" id="edit-port" placeholder="Leave blank for default (PostgreSQL: 5432, MySQL: 3306, SQL Server: 1433)" min="1" max="65535">
                                     <div class="help-block with-errors"></div>
                                 </div>
                             </div>
@@ -1737,6 +1753,7 @@
                     if (dataSettings[i].id == dictionaryId) {
                         console.log(dataSettings[i]);
                         $("#edit-host-name").val(dataSettings[i].targetHostName);
+                        $("#edit-port").val(dataSettings[i].targetPort || "");
                         $("#edit-target-db-name").val(dataSettings[i].targetSchemaName);
                         $("#edit-source-data").val(dataSettings[i].label);
                         $("#edit-configId").val(dictionaryId);

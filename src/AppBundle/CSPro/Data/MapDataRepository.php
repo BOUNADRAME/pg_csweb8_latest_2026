@@ -28,7 +28,16 @@ class MapDataRepository {
     public function getDBALConnection($dataSetting) {
         $conn = null;
         if (isset($dataSetting)) {
-            $connectionParams = ['dbname' => $dataSetting['targetSchemaName'], 'user' => $dataSetting['dbUserName'], 'password' => $dataSetting['dbPassword'], 'host' => $dataSetting['targetHostName'], 'driver' => 'pdo_pgsql'];
+            $connectionParams = [
+                'dbname'   => $dataSetting['targetSchemaName'],
+                'user'     => $dataSetting['dbUserName'],
+                'password' => $dataSetting['dbPassword'],
+                'host'     => $dataSetting['targetHostName'],
+                'driver'   => 'pdo_pgsql',
+            ];
+            if (!empty($dataSetting['targetPort'])) {
+                $connectionParams['port'] = (int) $dataSetting['targetPort'];
+            }
             $config = new Configuration();
             $conn = DriverManager::getConnection($connectionParams, $config);
         }
