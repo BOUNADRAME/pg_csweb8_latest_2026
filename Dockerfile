@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y \
     gnupg2 \
     gettext-base \
     default-mysql-client \
+    nodejs \
+    npm \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -68,6 +70,10 @@ COPY . /var/www/html
 
 # Install PHP dependencies (--no-scripts car config.php est genere via /setup)
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+# Install frontend dependencies (Bootstrap, FontAwesome, jQuery, etc.)
+RUN npm install -g bower --quiet \
+    && bower install --allow-root
 
 # Set base permissions
 RUN chown -R www-data:www-data /var/www/html \
