@@ -35,7 +35,6 @@ services:
       - "${CSWEB_PORT:-8080}:80"
 
     volumes:
-      - ./:/var/www/html
       - csweb_files:/var/www/html/files
       - csweb_logs:/var/www/html/var/logs
       # Templates for envsubst (processed at startup by docker-entrypoint.sh)
