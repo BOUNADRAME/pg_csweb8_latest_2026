@@ -36,7 +36,7 @@
 <br/>
 
 <div class="alert alert-success" role="alert">Setup Complete!</div>'
-<a href="../" class="btn btn-primary float-right">Login</a>
+<a href="../" class="btn btn-primary pull-right">Login</a>
 </div>
 
 </body>

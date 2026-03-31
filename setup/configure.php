@@ -718,8 +718,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     <div class="form-group row">
                         <div class="col-sm-12">
-                            <a href="index.php" class="btn btn-primary float-left" role="button">Back</a>
-                            <button id="next" name="next" class="btn btn-primary float-right">Next</button>
+                            <a href="index.php" class="btn btn-primary pull-left" role="button">Back</a>
+                            <button id="next" name="next" class="btn btn-primary pull-right">Next</button>
                         </div>
                     </div>
 

@@ -163,11 +163,11 @@ foreach ($tests as $label => $result) {
                                 echo '<div class="alert alert-warning" role="alert">You are running PHP 5.6. If you are unable to login to CSWeb after the setup, you have to set always_populate_raw_post_data = -1 in your php.ini file.</div>';
                             }
                             echo '<div class="alert alert-success" role="alert">Your server meets all the requirements. Click next to begin configuration.</div>';
-                            echo '<a href="configure.php" class="btn btn-primary float-right"">Next</a>';
+                            echo '<a href="configure.php" class="btn btn-primary pull-right"">Next</a>';
                             echo '<div style="padding-bottom: 50px"></div>';
                         } else {
                             echo '<div class="alert alert-danger" role="alert">Your server is missing one or more required settings. Please correct the issue(s) and click "Try Again".</div>';
-                            echo '<form action="" method="get"><input type="submit" class="btn btn-primary float-right" value="Try Again"></form>';
+                            echo '<form action="" method="get"><input type="submit" class="btn btn-primary pull-right" value="Try Again"></form>';
                             echo '<div style="padding-bottom: 50px"></div>';
                         }
                         ?>
