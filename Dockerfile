@@ -50,9 +50,9 @@ RUN docker-php-ext-install \
     zip \
     opcache
 
-# Install PHP extensions for SQL Server (latest stable compatible with PHP 8.1)
+# Install PHP SQL Server extension (pdo_sqlsrv only — sqlsrv standalone not available on PHP 8.3)
 RUN pecl install sqlsrv pdo_sqlsrv \
-    && docker-php-ext-enable sqlsrv pdo_sqlsrv
+    && docker-php-ext-enable pdo_sqlsrv
 
 # Enable Apache modules
 RUN a2enmod rewrite headers ssl
