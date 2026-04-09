@@ -97,6 +97,9 @@ services:
       - APACHE_MAX_KEEP_ALIVE_REQUESTS=${APACHE_MAX_KEEP_ALIVE_REQUESTS:-100}
       - APACHE_TIMEOUT=${APACHE_TIMEOUT:-300}
 
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
     depends_on:
       - mysql
 
