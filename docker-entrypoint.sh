@@ -21,6 +21,29 @@ chown -R www-data:www-data /var/www/html/files
 chmod -R 777 /var/www/html/var
 chmod -R 775 /var/www/html/files
 
+# ============================================================================
+# Persist config.php across container recreations
+# ============================================================================
+CONFIG_SRC="/var/www/html/src/AppBundle/config.php"
+CONFIG_PERSIST="/var/www/html/config-persist/config.php"
+
+mkdir -p /var/www/html/config-persist
+
+if [ -f "$CONFIG_SRC" ] && [ ! -L "$CONFIG_SRC" ] && [ ! -f "$CONFIG_PERSIST" ]; then
+    # First run after setup: config.php exists but not yet persisted — save it
+    cp "$CONFIG_SRC" "$CONFIG_PERSIST"
+    rm -f "$CONFIG_SRC"
+    ln -s "$CONFIG_PERSIST" "$CONFIG_SRC"
+    echo "[CSWeb] config.php persisted to volume."
+elif [ -f "$CONFIG_PERSIST" ]; then
+    # Container recreated: restore symlink from persisted config
+    rm -f "$CONFIG_SRC"
+    ln -s "$CONFIG_PERSIST" "$CONFIG_SRC"
+    echo "[CSWeb] config.php restored from volume."
+fi
+
+chown -R www-data:www-data /var/www/html/config-persist
+
 # Clear Symfony cache if config.php exists (app is configured)
 if [ -f /var/www/html/src/AppBundle/config.php ]; then
     echo "[CSWeb] config.php found, clearing Symfony cache..."

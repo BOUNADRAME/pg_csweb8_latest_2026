@@ -16,9 +16,10 @@ echo "============================================"
 echo "[1/5] Stopping containers and removing volumes..."
 docker compose --profile local-postgres --profile local-mysql --profile local-sqlserver --profile dev down -v --remove-orphans 2>/dev/null || true
 
-# Remove config.php
+# Remove config.php (local + persisted in Docker volume)
 echo "[2/5] Removing config.php..."
 rm -f src/AppBundle/config.php
+docker volume rm csweb_config 2>/dev/null || true
 
 # Clear cache and logs
 echo "[3/5] Clearing cache and logs..."

@@ -37,6 +37,7 @@ services:
     volumes:
       - csweb_files:/var/www/html/files
       - csweb_logs:/var/www/html/var/logs
+      - csweb_config:/var/www/html/config-persist
       # Templates for envsubst (processed at startup by docker-entrypoint.sh)
       - ./docker/apache/000-default.conf:/etc/templates/000-default.conf:ro
       - ./docker/apache/mpm_prefork.conf:/etc/templates/mpm_prefork.conf:ro
@@ -375,6 +376,12 @@ volumes:
     driver: local
     labels:
       - "com.csweb.volume=logs"
+
+  csweb_config:
+    driver: local
+    labels:
+      - "com.csweb.volume=config"
+      - "com.csweb.role=configuration"
 
   mysql_metadata:
     driver: local
