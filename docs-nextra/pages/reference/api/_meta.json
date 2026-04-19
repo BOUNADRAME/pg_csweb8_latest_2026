@@ -2,5 +2,6 @@
   "oauth": "OAuth2 Authentication",
   "dictionaries": "Dictionaries API",
   "breakout": "Breakout API",
+  "breakout-status": "Breakout Status Webhook",
   "webhooks": "Webhooks API"
 }
